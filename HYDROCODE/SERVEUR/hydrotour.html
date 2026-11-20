@@ -329,6 +329,10 @@ html:has(.sheet[open]){overflow:hidden}
 .sum small{display:block;color:var(--muted);font-size:11.5px}
 
 .cap{margin:6px 0 0;color:var(--muted);font-size:12.5px}
+/* Étalonnage : un point par ligne, les champs de saisie alignés entre eux. */
+.etal-points{display:grid;gap:8px;justify-items:start;margin-top:8px}
+.etal-points .row{align-items:center}
+.etal-points label{display:inline-flex;align-items:center;gap:8px;font-size:14px}
 .acts{list-style:none;margin:0;padding:0}
 .acts li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:.5px solid var(--sep)}
 .acts li:first-child{border-top:0}
@@ -598,27 +602,30 @@ input:focus{outline:0;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,t
         <p>Chaque sonde s'étalonne séparément. Dans tous les cas : plonge la sonde, attends qu'une nouvelle mesure arrive et que la valeur brute se stabilise, puis enregistre. L'EC n'est mesurée qu'une fois par minute, les autres toutes les 10 s.</p>
 
         <h4 style="margin:16px 0 2px">pH</h4>
-        <p class="cap">Deux solutions tampons, de pH au choix : rince la sonde entre les deux. Tension lue en ce moment : <b id="etal-ph-brut">—</b>. En mémoire : <span id="etal-ph-cal">—</span>.</p>
-        <div class="row">
-          <label>Tampon 1 <input id="etal-ph1" type="number" step="0.01" min="0" max="14" value="7.00" inputmode="decimal" style="width:80px"></label>
-          <button class="btn" type="button" data-etal="ph=1" data-champ="#etal-ph1" data-msg="#etal-ph-msg" data-type="ph">Enregistrer</button>
-          <label>Tampon 2 <input id="etal-ph2" type="number" step="0.01" min="0" max="14" value="4.00" inputmode="decimal" style="width:80px"></label>
-          <button class="btn" type="button" data-etal="ph=2" data-champ="#etal-ph2" data-msg="#etal-ph-msg" data-type="ph">Enregistrer</button>
+        <p class="cap">Deux solutions tampons, de pH au choix : rince la sonde entre les deux.</p>
+        <p class="cap">Tension lue en ce moment : <b id="etal-ph-brut">—</b>. En mémoire : <span id="etal-ph-cal">—</span>.</p>
+        <div class="etal-points">
+          <div class="row"><label>Tampon 1 <input id="etal-ph1" type="number" step="0.01" min="0" max="14" value="7.00" inputmode="decimal" style="width:80px"></label>
+            <button class="btn" type="button" data-etal="ph=1" data-champ="#etal-ph1" data-msg="#etal-ph-msg" data-type="ph">Enregistrer</button></div>
+          <div class="row"><label>Tampon 2 <input id="etal-ph2" type="number" step="0.01" min="0" max="14" value="4.00" inputmode="decimal" style="width:80px"></label>
+            <button class="btn" type="button" data-etal="ph=2" data-champ="#etal-ph2" data-msg="#etal-ph-msg" data-type="ph">Enregistrer</button></div>
         </div>
         <p id="etal-ph-msg" class="cap" role="status"></p>
 
         <h4 style="margin:16px 0 2px">Conductivité (EC)</h4>
-        <p class="cap">Deux solutions étalons, de conductivité au choix, en µS/cm : rince la sonde entre les deux. Rapport x mesuré en ce moment : <b id="etal-ec-brut">—</b>. En mémoire : <span id="etal-ec-cal">—</span>.</p>
-        <div class="row">
-          <label>Solution 1 <span><input id="etal-ec1" type="number" step="1" min="1" max="200000" value="1413" inputmode="numeric" style="width:90px"> µS/cm</span></label>
-          <button class="btn" type="button" data-etal="ec=1" data-champ="#etal-ec1" data-msg="#etal-ec-msg" data-type="ec">Enregistrer</button>
-          <label>Solution 2 <span><input id="etal-ec2" type="number" step="1" min="1" max="200000" value="12880" inputmode="numeric" style="width:90px"> µS/cm</span></label>
-          <button class="btn" type="button" data-etal="ec=2" data-champ="#etal-ec2" data-msg="#etal-ec-msg" data-type="ec">Enregistrer</button>
+        <p class="cap">Deux solutions étalons, de conductivité au choix, en µS/cm : rince la sonde entre les deux.</p>
+        <p class="cap">Rapport x mesuré en ce moment : <b id="etal-ec-brut">—</b>. En mémoire : <span id="etal-ec-cal">—</span>.</p>
+        <div class="etal-points">
+          <div class="row"><label>Solution 1 <span><input id="etal-ec1" type="number" step="1" min="1" max="200000" value="1413" inputmode="numeric" style="width:90px"> µS/cm</span></label>
+            <button class="btn" type="button" data-etal="ec=1" data-champ="#etal-ec1" data-msg="#etal-ec-msg" data-type="ec">Enregistrer</button></div>
+          <div class="row"><label>Solution 2 <span><input id="etal-ec2" type="number" step="1" min="1" max="200000" value="12880" inputmode="numeric" style="width:90px"> µS/cm</span></label>
+            <button class="btn" type="button" data-etal="ec=2" data-champ="#etal-ec2" data-msg="#etal-ec-msg" data-type="ec">Enregistrer</button></div>
         </div>
         <p id="etal-ec-msg" class="cap" role="status"></p>
 
         <h4 style="margin:16px 0 2px">Niveau d'eau</h4>
-        <p class="cap">Réservoir vide, puis réservoir plein : le ruban change de résistance quand l'eau monte. Résistance lue en ce moment : <b id="etal-niv-brut">—</b>. En mémoire : <span id="etal-niv-cal">—</span>.</p>
+        <p class="cap">Réservoir vide, puis réservoir plein : le ruban change de résistance quand l'eau monte.</p>
+        <p class="cap">Résistance lue en ce moment : <b id="etal-niv-brut">—</b>. En mémoire : <span id="etal-niv-cal">—</span>.</p>
         <div class="row">
           <button class="btn" type="button" data-etal="niveau=vide" data-msg="#etal-niv-msg" data-type="niveau">Réservoir vide</button>
           <button class="btn" type="button" data-etal="niveau=plein" data-msg="#etal-niv-msg" data-type="niveau">Réservoir plein</button>
@@ -626,7 +633,8 @@ input:focus{outline:0;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,t
         <p id="etal-niv-msg" class="cap" role="status"></p>
 
         <h4 style="margin:16px 0 2px">Température de l'eau</h4>
-        <p class="cap">Plonge un thermomètre de référence à côté de la sonde, attends qu'ils soient tous deux stables, puis saisis la température du thermomètre. L'écart sera ajouté à toutes les mesures suivantes. Sonde en ce moment : <b id="etal-temp-brut">—</b>. En mémoire : <span id="etal-temp-cal">—</span>.</p>
+        <p class="cap">Plonge un thermomètre de référence à côté de la sonde, attends qu'ils soient tous deux stables, puis saisis la température du thermomètre. L'écart sera ajouté à toutes les mesures suivantes.</p>
+        <p class="cap">Sonde en ce moment : <b id="etal-temp-brut">—</b>. En mémoire : <span id="etal-temp-cal">—</span>.</p>
         <div class="row">
           <label>Thermomètre <span><input id="etal-temp" type="number" step="0.1" min="-5" max="60" inputmode="decimal" style="width:80px"> °C</span></label>
           <button class="btn" type="button" data-etal="" data-param="temperature" data-champ="#etal-temp" data-msg="#etal-temp-msg" data-type="temperature">Enregistrer</button>
