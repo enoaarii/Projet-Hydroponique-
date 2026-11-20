@@ -1,0 +1,1413 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[french]{babel}
+\frenchsetup{StandardLists=true}
+\usepackage[margin=2.3cm,headheight=14pt]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{icomma}
+\usepackage{graphicx}
+\usepackage{booktabs,array,tabularx,multirow}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{pdflscape}
+\usepackage[european,straightvoltages]{circuitikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc,babel}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{bleutitre}{HTML}{1F4E9A}
+\definecolor{fondcalc}{HTML}{F3F6FB}
+\definecolor{fonddemo}{HTML}{FBF7EE}
+\definecolor{fondres}{HTML}{EEF7F1}
+\definecolor{fondalerte}{HTML}{FDEDEC}
+
+\titleformat{\section}{\Large\bfseries\color{bleutitre}}{\thesection}{0.8em}{}
+\titleformat{\subsection}{\large\bfseries\color{bleutitre}}{\thesubsection}{0.8em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{bleutitre}}{\thesubsubsection}{0.8em}{}
+
+\newcommand{\entete}{\small Étude électrique (version 2), tour hydroponique HydroTour}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\entete}
+\fancyhead[R]{\small Enoaarii RAPARII}
+\fancyfoot[C]{\small Page \thepage\ / \pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{\fancyhf{}\fancyhead[L]{\entete}\fancyhead[R]{\small Enoaarii RAPARII}\fancyfoot[C]{\small Page \thepage\ / \pageref{LastPage}}}
+
+\newtcolorbox{calcul}[1]{breakable,enhanced,colback=fondcalc,colframe=bleutitre,
+  fonttitle=\bfseries,title={Calcul de #1},arc=2mm,boxrule=0.6pt,before skip=10pt,after skip=10pt}
+\newtcolorbox{demo}[1]{breakable,enhanced,colback=fonddemo,colframe=black!60,
+  fonttitle=\bfseries,title={Démonstration : #1},arc=2mm,boxrule=0.6pt,before skip=10pt,after skip=10pt}
+\newtcolorbox{resume}{breakable,enhanced,colback=fondres,colframe=black!55,
+  fonttitle=\bfseries,title={Résumé},arc=2mm,boxrule=0.6pt,before skip=12pt}
+\newtcolorbox{alerte}[1]{breakable,enhanced,colback=fondalerte,colframe=red!60!black,
+  fonttitle=\bfseries,title={#1},arc=2mm,boxrule=0.6pt,before skip=10pt,after skip=10pt}
+
+\newcommand{\U}[1]{\,\mathrm{#1}}
+\setlength{\parskip}{4pt}
+\setlength{\parindent}{0pt}
+\renewcommand{\arraystretch}{1.25}
+\setlength{\abovedisplayskip}{10pt}
+\setlength{\belowdisplayskip}{10pt}
+\setlength{\jot}{8pt}
+
+\begin{document}
+
+%================ PAGE DE GARDE =================
+\begin{titlepage}
+\thispagestyle{plain}
+\centering
+\vspace*{1.5cm}
+{\large Université de la Polynésie française}\\[4pt]
+{\large Licence 3 Sciences pour l'ingénieur (SPI)}\\[4pt]
+{Projet tutoré 2026-2027}
+\vspace{3.5cm}
+
+{\color{bleutitre}\rule{\linewidth}{1pt}}\\[12pt]
+{\Huge\bfseries\color{bleutitre} Étude électrique}\\[8pt]
+{\Large\color{bleutitre} Version 2}\\[12pt]
+{\Large Tour hydroponique verticale autonome HydroTour}\\[6pt]
+{\large Schéma, bilan de consommation, dimensionnement du panneau et des batteries,\\ câbles, fusibles et protocole de mesure}\\[12pt]
+{\color{bleutitre}\rule{\linewidth}{1pt}}
+\vspace{3cm}
+
+{\Large Enoaarii RAPARII}\\[6pt]
+{Équipe projet de 3 étudiants}\\[6pt]
+{Site de culture : UPF, Tahiti}
+\vfill
+{Version 2 du 1\textsuperscript{er} novembre 2026 (remplace la version 1)}
+\end{titlepage}
+\setcounter{page}{2}
+
+\tableofcontents
+\newpage
+
+%================ CHANGEMENTS =================
+\section*{Changements depuis la version 1}
+\addcontentsline{toc}{section}{Changements depuis la version 1}
+
+Cette version 2 reprend la structure, les données d'étiquette du panneau TE1250, l'irradiation de dimensionnement ($H = 4{,}2\U{kWh/m^2/j}$) et le rendement du convertisseur 12 V vers 5 V ($\eta = 0{,}83$) de la version 1. Les démonstrations sont réécrites et complétées. Les points suivants changent.
+
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{3.6cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Sujet} & \textbf{Version 1} & \textbf{Version 2} \\
+\midrule
+Pompes & P1 à P5, dont une pompe d'appoint P5 et un bac de secours & Bac principal unique de 152 L, appoint manuel. Pompes nommées par fonction : pompe de circulation, pompes doseuses engrais A, engrais B, pH$-$ \\
+Carte de puissance & Une sortie par pompe & Carte 6318 (8 MOSFET). Circulation câblée sur 2 canaux en parallèle (0 et 1) : pertes divisées par 2 \\
+Capteurs & SHT31, BH1750, ADXL345, deux eTape & DHT11, capteur de lumière analogique, LIS3DHTR (Sensor Kit), un seul eTape. ADS1115 : A0 = EC, A1 = eTape. pH sur l'entrée A1 de l'Arduino \\
+Batteries & Plomb AGM supposé & LiFePO4 d'après le cahier des charges. Les deux cas sont calculés côte à côte (partie~\ref{sec:batterie}), la technologie réelle est à lire sur l'étiquette \\
+Consommation & $281\U{Wh/j}$ & $226{,}1\U{Wh/j}$. Écart surtout dû à l'électronique : $91{,}8\U{Wh/j}$ estimés composant par composant, contre $149{,}8\U{Wh/j}$ en version 1 (point d'essai du convertisseur à 1~A). Pompe d'appoint retirée ; régulateur et MOSFET ajoutés. La mesure M2 tranchera \\
+Production pire mois & $336\U{Wh/j}$ disponibles & $354{,}5\U{Wh/j}$ (LiFePO4) ou $317{,}2\U{Wh/j}$ (AGM), facteurs de pertes détaillés un par un \\
+Fusibles & $F_{PV} = 10\U{A}$, $F_{B1} = 5\U{A}$, $F_{B2} = 15\U{A}$, $F_2 = 7{,}5\U{A}$ & $F_{PV}$, $F_{B1}$, $F_{B2}$ inchangés ; $F_2 = 4\U{A}$ (sans P5) ; nouveau $F_3 = 2\U{A}$ en entrée du convertisseur 5 V \\
+Modèle du panneau & Modèle à une diode, courbes du TE1250 à 25, 47, 50 et 75~°C & Même modèle, en plus validé sur les courbes mesurées du SLP055 \\
+Mesures & Absentes & Protocole complet, tableaux, CSV modèle et script de traitement (partie~\ref{sec:protocole}) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\newpage
+%================ 1 =================
+\section{Présentation du système électrique}
+
+La tour est alimentée uniquement par le soleil. L'énergie suit le chemin suivant : le panneau produit, le régulateur MPPT adapte et charge les batteries, les batteries stockent pour la nuit, le convertisseur 12 V vers 5 V alimente l'électronique, et la carte MOSFET commande les pompes en 12 V.
+
+\begin{center}
+\begin{tikzpicture}[
+  bloc/.style={draw=bleutitre,rounded corners=3pt,fill=fondcalc,align=center,text width=3.4cm,minimum height=2.0cm,font=\footnotesize,line width=0.8pt},
+  fl/.style={-{Latex[length=2.5mm]},line width=1pt,color=black!70},
+  fd/.style={-{Latex[length=2mm]},line width=0.7pt,dashed,color=bleutitre}]
+\node[bloc] (pv) {\textbf{Produit l'électricité}\\ Panneau TE1250\\ 120 Wc};
+\node[bloc,right=1.0cm of pv] (mppt) {\textbf{Régule et protège}\\ MPPT 20 A\\ SLC-MPPT2420D\\ fusibles};
+\node[bloc,right=1.0cm of mppt] (bat) {\textbf{Stocke}\\ Batteries 12 V\\ 6 Ah + 17 Ah\\ en parallèle};
+\node[bloc,below=1.2cm of mppt] (conv) {\textbf{Convertit}\\ UBEC 12 V vers 5 V\\ $\eta \approx 0{,}83$};
+\node[bloc,below=1.2cm of bat] (ina) {\textbf{Mesure l'énergie}\\ INA260\\ ligne batterie};
+\node[bloc,below=1.2cm of conv] (pi) {\textbf{Décide}\\ Raspberry Pi 3 B\\ + dongle Wi-Fi};
+\node[bloc,left=1.0cm of pi] (ard) {\textbf{Lit et agit}\\ Arduino Uno R3\\ (USB : 5 V + données)};
+\node[bloc,below=1.2cm of ard] (capt) {\textbf{Mesure l'eau et l'air}\\ pH, EC, eTape, DS18B20,\\ DHT11, lumière,\\ LIS3DHTR, ADS1115};
+\node[bloc,below=1.2cm of pi] (mos) {\textbf{Commute}\\ Carte 6318\\ 8 MOSFET};
+\node[bloc,right=1.0cm of mos] (pompes) {\textbf{Fait circuler et dose}\\ Pompe de circulation\\ Engrais A, engrais B, pH$-$};
+\draw[fl] (pv) -- (mppt);
+\draw[fl] (mppt) -- (bat);
+\draw[fl] ($(mppt.south)+(-0.6,0)$) -- node[left,font=\scriptsize]{sortie LOAD} ($(conv.north)+(-0.6,0)$);
+\draw[fl] (conv) -- node[left,font=\scriptsize]{5 V} (pi);
+\draw[fl] (pi) -- node[above,font=\scriptsize]{USB} (ard);
+\draw[fd] (ard) -- node[left,font=\scriptsize]{I2C, analogique} (capt);
+\draw[fd] (ard.south east) -- node[above,font=\scriptsize,sloped]{I2C} (mos.north west);
+\draw[fl] (mos) -- (pompes);
+\draw[fd] (pi) -- node[above,font=\scriptsize,sloped]{I2C} (ina);
+\draw[fl,color=black!45] ($(mppt.south)+(0.6,0)$) |- ($(ina.north east)+(0.5,0.4)$) |- node[right,font=\scriptsize,pos=0.25]{12 V (sortie LOAD)} (pompes.east);
+\end{tikzpicture}
+\end{center}
+
+\textbf{Conventions.} Les batteries sont des batteries de 12 V nominal. Pour le LiFePO4, la tension moyenne en décharge vaut $U_B = 12{,}8\U{V}$ (4 éléments de $3{,}2\U{V}$) ; pour le plomb AGM, $U_B = 12{,}0\U{V}$. Tous les courants côté 12 V de la partie consommation sont calculés à $12{,}8\U{V}$ : à puissance égale, c'est le cas LiFePO4. Le cas AGM est traité dans la partie~\ref{sec:batterie}.
+
+\begin{resume}
+Sept fonctions : produire (panneau), réguler et protéger (MPPT, fusibles), stocker (batteries), mesurer l'énergie (INA260), convertir (UBEC), décider (Pi), lire et agir (Arduino, carte MOSFET, pompes, capteurs). Le schéma complet est donné à la page suivante.
+\end{resume}
+
+%================ 2 SCHEMA (paysage) =================
+\begin{landscape}
+\section{Schéma électrique complet}
+\label{sec:schema}
+\begin{center}
+\resizebox{\linewidth}{!}{%
+\begin{circuitikz}[font=\small, line width=0.7pt]
+  \tikzset{boite/.style={draw=bleutitre,line width=1pt,fill=fondcalc,rounded corners=2pt,align=center}}
+  % ---- rail négatif commun
+  \draw[line width=1.2pt] (0,-0.4) -- (22.4,-0.4);
+  \node[anchor=west,font=\footnotesize] at (22.5,-0.4) {Rail négatif commun (0 V)};
+  % ---- panneau
+  \draw (0,-0.4) to[pvsource, l_={\begin{tabular}{c}TE1250\\120 Wc\end{tabular}}] (0,6);
+  \node[font=\footnotesize] at (-0.45,5.5) {$+$};
+  \draw (0,6) to[fuse, l={$F_{PV}$ 10 A}, a={4 mm²}] (3.5,6);
+  % ---- MPPT
+  \draw[boite] (3.5,1) rectangle (6.5,7.5);
+  \node[align=center,font=\bfseries] at (5,4.4) {Régulateur\\MPPT 20 A\\[2pt]\normalfont\footnotesize SLC-MPPT2420D};
+  \node[anchor=west,font=\scriptsize] at (3.55,6) {PV$+$};
+  \node[anchor=east,font=\scriptsize] at (6.45,6) {BAT$+$};
+  \node[anchor=north,font=\scriptsize] at (5.6,7.5) {LOAD$+$};
+  \node[anchor=south,font=\scriptsize] at (4,1) {PV$-$};
+  \node[anchor=south,font=\scriptsize] at (5,1) {BAT$-$};
+  \node[anchor=south,font=\scriptsize] at (6,1) {LOAD$-$};
+  \draw (4,1) -- (4,-0.4) node[circ]{};
+  \draw (5,1) -- (5,-0.4) node[circ]{};
+  \draw (6,1) -- (6,-0.4) node[circ]{};
+  % ---- INA260
+  \draw[boite] (7.3,5.4) rectangle (9.5,6.6);
+  \node[font=\footnotesize] at (8.4,6) {\textbf{INA260}};
+  \draw (6.5,6) -- (7.3,6);
+  \node[anchor=north,font=\scriptsize] at (7.7,5.4) {IN$+$};
+  \node[anchor=north,font=\scriptsize] at (9.1,5.4) {IN$-$};
+  \draw (8.4,5.4) -- (8.4,-0.4) node[circ]{};
+  % ---- bus batteries
+  \draw (9.5,6) -- (13.8,6);
+  \draw (11,6) node[circ]{} to[fuse, l_={$F_{B1}$ 5 A}] (11,3.6) to[battery1, l_={\begin{tabular}{c}B1\\12 V 6 Ah\end{tabular}}, invert] (11,-0.4) node[circ]{};
+  \draw (13.8,6) to[fuse, l_={$F_{B2}$ 15 A}] (13.8,3.6) to[battery1, l_={\begin{tabular}{c}B2\\12 V 17 Ah\end{tabular}}, invert] (13.8,-0.4) node[circ]{};
+  \node[font=\scriptsize,align=center] at (12.4,7.0) {bus batteries, câbles 2,5 mm²\\de même longueur};
+  \node[font=\scriptsize] at (8.2,6.25) {};
+  % ---- ligne LOAD
+  \draw (5.6,7.5) -- (5.6,8.4) -- (14.5,8.4) to[fuse, l={$F_2$ 4 A}] (17,8.4) node[circ]{};
+  \node[font=\scriptsize,align=center] at (10,8.75) {sortie LOAD, 1,5 mm²};
+  \node[font=\scriptsize,align=center,anchor=north west] at (17.05,8.3) {bornier 12 V};
+  % ---- UBEC
+  \draw (17,8.4) to[fuse, l={$F_3$ 2 A}] (19.6,8.4);
+  \draw[boite] (19.6,7.8) rectangle (21.6,9.0);
+  \node[font=\footnotesize,align=center] at (20.6,8.4) {\textbf{UBEC}\\12 V / 5 V};
+  \draw (21.2,7.8) -- (21.2,7.2) -- (22.4,7.2) -- (22.4,-0.4) node[circ]{};
+  % ---- Pi
+  \draw (21.6,8.4) -- node[above,font=\scriptsize]{5 V, 0,5 mm²} (23.6,8.4);
+  \draw[boite] (23.6,7.4) rectangle (27,9.4);
+  \node[font=\footnotesize,align=center] at (25.3,8.4) {\textbf{Raspberry Pi 3 B}\\cerveau\\+ dongle Wi-Fi USB};
+  % I2C Pi -> INA260
+  \draw[dashed,bleutitre,line width=0.8pt] (25.3,9.4) -- (25.3,10.2) -- (8.4,10.2) -- (8.4,6.6);
+  \node[font=\scriptsize,color=bleutitre,anchor=south] at (16,10.2) {I2C du Pi (SDA, SCL, 3,3 V) : mesure de U et I batterie};
+  % ---- Arduino
+  \draw[boite] (23.6,4.2) rectangle (27,6.4);
+  \node[font=\footnotesize,align=center] at (25.3,5.3) {\textbf{Arduino Uno R3}\\+ base Grove\\actionneur, sécurités};
+  \draw[line width=1.2pt,color=black!70] (25.3,7.4) -- node[right,font=\scriptsize,align=left]{USB\\5 V + données} (25.3,6.4);
+  % ---- Capteurs
+  \draw[boite] (23.6,-0.1) rectangle (27.4,3.4);
+  \node[font=\scriptsize,align=left,anchor=north west] at (23.7,3.35) {\textbf{Capteurs (5 V de l'Arduino)}\\
+  pH Gravity V2 : A1 Uno\\
+  EC DFR0300 : ADS1115 A0\\
+  \quad (alim. par D7 à la lecture)\\
+  eTape 30 cm : ADS1115 A1\\
+  DS18B20 : D8 \quad DHT11 : D3\\
+  Lumière : A3 \quad LIS3DHTR : I2C\\
+  ADS1115 0x48, RTC : I2C};
+  \draw[dashed,bleutitre,line width=0.8pt] (25.3,4.2) -- (25.3,3.4);
+  % ---- carte 6318
+  \draw[boite] (17.8,3.2) rectangle (22.0,5.6);
+  \node[font=\footnotesize,align=center] at (19.9,4.6) {\textbf{Carte Adafruit 6318}\\8 MOSFET, MCP23017 0x20};
+  \draw (17,8.4) -- (17,5.0) -- (17.8,5.0);
+  \node[anchor=west,font=\scriptsize] at (17.85,5.0) {V$+$};
+  \draw (17.8,3.6) -- (17.4,3.6) -- (17.4,-0.4) node[circ]{};
+  \node[anchor=west,font=\scriptsize] at (17.85,3.6) {GND};
+  \draw[dashed,bleutitre,line width=0.8pt] (23.6,5.3) -- node[above,font=\scriptsize]{I2C} (22.0,5.3);
+  % ---- pompes
+  \draw (18.15,3.2) -- (18.15,2.9) -- (18.35,2.9);
+  \draw (18.55,3.2) -- (18.55,2.9) -- (18.35,2.9);
+  \draw (18.35,2.9) to[elmech] (18.35,1.3) -- (18.85,1.3) -- (18.85,3.2);
+  \draw (19.6,3.2) to[elmech] (19.6,1.3) -- (19.95,1.3) -- (19.95,3.2);
+  \draw (20.5,3.2) to[elmech] (20.5,1.3) -- (20.85,1.3) -- (20.85,3.2);
+  \draw (21.4,3.2) to[elmech] (21.4,1.3) -- (21.75,1.3) -- (21.75,3.2);
+  \node[font=\scriptsize,align=center] at (18.5,0.55) {circul.\\c. 0 + 1};
+  \node[font=\scriptsize,align=center] at (19.75,0.55) {eng. A\\c. 2};
+  \node[font=\scriptsize,align=center] at (20.65,0.55) {eng. B\\c. 3};
+  \node[font=\scriptsize,align=center] at (21.55,0.55) {pH$-$\\c. 4};
+\end{circuitikz}}
+\end{center}
+
+\vspace{-2mm}
+{\footnotesize
+\textbf{Lecture du schéma.} Trait plein : puissance. Pointillés bleus : bus de données. Chaque pompe se raccorde entre la borne V$+$ et la sortie MOSFET de son canal (commutation côté négatif, diode de roue libre intégrée à la carte). La pompe de circulation utilise les canaux 0 et 1 reliés en parallèle. L'INA260 est inséré entre la borne BAT$+$ du régulateur et le bus batteries : il mesure le courant net (charge moins décharge) et la tension batterie. Le schéma suppose que le régulateur a un négatif commun (PV$-$, BAT$-$ et LOAD$-$ reliés en interne) : à vérifier sur sa notice ; sinon, ne pas relier PV$-$ et LOAD$-$ au rail. Ordre de branchement : batteries d'abord (fusibles retirés jusqu'à la fin du câblage), panneau ensuite ; débranchement dans l'ordre inverse.
+}
+\end{landscape}
+
+%================ 3 BILAN =================
+\section{Bilan de consommation}
+\label{sec:conso}
+
+\subsection{Électronique alimentée en 5 V}
+
+Le Raspberry Pi, le dongle Wi-Fi, l'Arduino (par l'USB du Pi) et tous les capteurs sont alimentés en 5 V par l'UBEC. Les valeurs sont des courants \textbf{moyens} en fonctionnement normal (hypothèses justifiées dans \texttt{HYPOTHESES.md}, à vérifier par la mesure M2).
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}X r r r}
+\toprule
+\textbf{Composant} & \textbf{$I$ moyen (mA)} & \textbf{$P$ à 5 V (W)} & \textbf{$E$ sur 24 h (Wh)} \\
+\midrule
+Raspberry Pi 3 Model B (sans écran, charge faible) & 450 & 2,250 & 54,00 \\
+Dongle Wi-Fi USB à antenne externe & 120 & 0,600 & 14,40 \\
+Arduino Uno R3 & 50 & 0,250 & 6,00 \\
+Base Grove (LED témoin) & 3 & 0,015 & 0,36 \\
+Carte pH Gravity V2.0 & 5 & 0,025 & 0,60 \\
+Carte EC DFR0300 (alimentée seulement à la lecture) & 0,2 & 0,001 & 0,02 \\
+eTape 30 cm et sa résistance de référence & 2 & 0,010 & 0,24 \\
+ADS1115 & 0,2 & 0,001 & 0,02 \\
+DS18B20 & 0,5 & 0,003 & 0,06 \\
+DHT11 & 0,3 & 0,002 & 0,04 \\
+Capteur de lumière (analogique) & 0,5 & 0,003 & 0,06 \\
+Accéléromètre LIS3DHTR & 0,02 & 0,000 & 0,00 \\
+Module RTC & 0,2 & 0,001 & 0,02 \\
+INA260 (partie logique) & 1,1 & 0,006 & 0,13 \\
+Carte 6318 : MCP23017 et LED témoin & 2 & 0,010 & 0,24 \\
+\midrule
+\textbf{Total côté 5 V} & \textbf{635} & \textbf{3,175} & \textbf{76,20} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+Le Raspberry Pi et le dongle Wi-Fi représentent à eux seuls $90\U{\%}$ de la consommation de l'électronique : c'est là qu'une économie aurait un effet (désactiver le HDMI, les LED, le Bluetooth, le Wi-Fi interne si le dongle est utilisé).
+
+\begin{demo}{énergie consommée par un composant}
+La puissance instantanée reçue par un dipôle est le produit de la tension à ses bornes par le courant qui le traverse :
+\[
+P = U \, I
+\]
+L'énergie est l'intégrale de la puissance sur la durée $\Delta t$ :
+\[
+E = \int_{0}^{\Delta t} P(t)\,\mathrm{d}t
+\]
+Si $P$ est constante sur la durée de fonctionnement $\Delta t$, elle sort de l'intégrale :
+\[
+E = P \int_{0}^{\Delta t} \mathrm{d}t
+\]
+\[
+E = P \, \Delta t
+\]
+Avec $P$ en watts et $\Delta t$ en heures, $E$ est en wattheures ($1\U{Wh} = 3600\U{J}$). Pour un courant \emph{moyen} $\bar I$ sous tension constante, $\bar P = U \bar I$ donne la même énergie que le courant réel.
+\end{demo}
+
+\begin{calcul}{l'énergie de l'électronique}
+Courant total côté 5 V (somme des courants, car tous les composants sont en parallèle sur le 5 V) :
+\[
+I_5 = 0{,}635\U{A}
+\]
+Puissance côté 5 V :
+\[
+P_5 = U_5 \, I_5 = 5{,}0\U{V} \times 0{,}635\U{A}
+\]
+\[
+P_5 = 3{,}175\U{W}
+\]
+Énergie sur une journée de 24 h :
+\[
+E_5 = P_5 \, \Delta t = 3{,}175\U{W} \times 24\U{h}
+\]
+\[
+E_5 = 76{,}2\U{Wh/j}
+\]
+\end{calcul}
+
+\subsection{Pertes du convertisseur 12 V vers 5 V}
+
+\begin{demo}{puissance absorbée par un convertisseur}
+Le rendement est le rapport de la puissance utile fournie à la puissance absorbée :
+\[
+\eta = \frac{P_{\text{sortie}}}{P_{\text{entrée}}}
+\]
+On isole la puissance d'entrée :
+\[
+P_{\text{entrée}} = \frac{P_{\text{sortie}}}{\eta}
+\]
+La puissance perdue (chaleur) est la différence, puis on factorise $P_{\text{sortie}}$ :
+\[
+P_{\text{pertes}} = P_{\text{entrée}} - P_{\text{sortie}}
+\]
+\[
+P_{\text{pertes}} = P_{\text{sortie}} \left( \frac{1}{\eta} - 1 \right)
+\]
+\end{demo}
+
+\begin{calcul}{la puissance prise sur le 12 V par l'électronique}
+\[
+P_{12,e} = \frac{P_5}{\eta} = \frac{3{,}175\U{W}}{0{,}83}
+\]
+\[
+P_{12,e} = 3{,}825\U{W}
+\]
+\[
+P_{\text{conv}} = 3{,}175\U{W} \times \left( \frac{1}{0{,}83} - 1 \right)
+\]
+\[
+P_{\text{conv}} = 0{,}650\U{W}
+\]
+Courant moyen pris sur la batterie par l'électronique :
+\[
+I_{12,e} = \frac{P_{12,e}}{U_B} = \frac{3{,}825\U{W}}{12{,}8\U{V}}
+\]
+\[
+I_{12,e} = 0{,}299\U{A}
+\]
+Énergie journalière prise sur le 12 V (dont $0{,}650\U{W} \times 24\U{h} = 15{,}6\U{Wh}$ de pertes) :
+\[
+E_{12,e} = 3{,}825\U{W} \times 24\U{h}
+\]
+\[
+E_{12,e} = 91{,}8\U{Wh/j}
+\]
+\end{calcul}
+
+\subsection{Pompe de circulation}
+
+\textbf{Planning} (heure de Tahiti) : de 6 h à 18 h, 15 min de marche puis 15 min d'arrêt, soit 2 marches par heure pendant 12 h ; la nuit, 15 min à 21 h, 0 h et 3 h.
+
+\begin{calcul}{la durée de marche journalière}
+Jour : 12 heures, 2 marches de $0{,}25\U{h}$ par heure :
+\[
+t_{\text{jour}} = 12 \times 2 \times 0{,}25\U{h} = 6{,}00\U{h}
+\]
+Nuit : 3 marches de $0{,}25\U{h}$ :
+\[
+t_{\text{nuit}} = 3 \times 0{,}25\U{h} = 0{,}75\U{h}
+\]
+\[
+t_c = 6{,}00\U{h} + 0{,}75\U{h} = 6{,}75\U{h/j}
+\]
+\end{calcul}
+
+\begin{calcul}{l'énergie et le courant de la pompe de circulation}
+\[
+E_c = P_c \, t_c = 19\U{W} \times 6{,}75\U{h}
+\]
+\[
+E_c = 128{,}25\U{Wh/j}
+\]
+\[
+I_c = \frac{P_c}{U_B} = \frac{19\U{W}}{12{,}8\U{V}}
+\]
+\[
+I_c = 1{,}48\U{A}
+\]
+\end{calcul}
+
+\subsection{Pertes dans les MOSFET de la carte 6318}
+
+Chaque canal de la carte utilise un transistor MOSFET dont la résistance à l'état passant vaut $R_{DS(on)} = 70\U{m\Omega}$ (valeur de fiche du composant, voir \texttt{HYPOTHESES.md}).
+
+\begin{demo}{pertes d'un MOSFET et intérêt de deux canaux en parallèle}
+Un MOSFET saturé se comporte comme une résistance $R_{DS(on)}$. La loi d'Ohm donne $U_{DS} = R_{DS(on)} I$, donc la puissance dissipée vaut :
+\[
+P = U_{DS} \, I = R_{DS(on)} \, I^2
+\]
+Avec deux canaux identiques en parallèle, les deux résistances égales se partagent le courant en deux moitiés égales :
+\[
+I_1 = I_2 = \frac{I}{2}
+\]
+La puissance totale est la somme des deux :
+\[
+P_{2} = R_{DS(on)} \left(\frac{I}{2}\right)^2 + R_{DS(on)} \left(\frac{I}{2}\right)^2
+\]
+\[
+P_{2} = 2 \, R_{DS(on)} \, \frac{I^2}{4}
+\]
+\[
+P_{2} = \frac{R_{DS(on)} \, I^2}{2}
+\]
+La perte totale est divisée par 2 et chaque transistor ne dissipe plus que le quart de la perte d'un canal seul : il chauffe 4 fois moins.
+\end{demo}
+
+\begin{calcul}{les pertes MOSFET de la circulation}
+Un seul canal (pour comparaison) :
+\[
+P_1 = 0{,}070\U{\Omega} \times (1{,}48\U{A})^2 = 0{,}154\U{W}
+\]
+Deux canaux en parallèle :
+\[
+P_2 = \frac{0{,}070\U{\Omega} \times (1{,}48\U{A})^2}{2} = 0{,}077\U{W}
+\]
+Énergie perdue par jour :
+\[
+E_{\text{MOS}} = 0{,}077\U{W} \times 6{,}75\U{h} = 0{,}52\U{Wh/j}
+\]
+\end{calcul}
+
+\subsection{Pompes doseuses}
+
+Les trois pompes péristaltiques (engrais A, engrais B, pH$-$) absorbent environ $I_d = 0{,}30\U{A}$ sous 12 V et débitent environ $Q = 80\U{mL/min}$ en charge (hypothèse, à mesurer : mesure M5).
+
+\begin{calcul}{la puissance d'une pompe doseuse}
+\[
+P_d = U_B \, I_d = 12{,}8\U{V} \times 0{,}30\U{A}
+\]
+\[
+P_d = 3{,}84\U{W}
+\]
+\end{calcul}
+
+\textbf{Estimation du volume d'engrais dosé par jour.} Les laitues prélèvent les sels minéraux, donc l'EC baisse. On suppose une baisse de $\Delta EC = 0{,}05\U{mS/cm}$ par jour dans le bac de $V_{\text{bac}} = 152\U{L}$, et une solution mère telle qu'ajouter $1\U{mL}$ de A et $1\U{mL}$ de B par litre d'eau augmente l'EC de $s = 0{,}56\U{mS/cm}$ (hypothèses justifiées dans \texttt{HYPOTHESES.md}, à confirmer par l'étude hydraulique et chimique).
+
+\begin{demo}{volume de solution mère pour corriger l'EC}
+En solution diluée, l'EC est proportionnelle à la concentration en sels, donc à la dose $d$ de solution mère par litre de bac :
+\[
+\Delta EC = s \, d
+\]
+La dose est le volume ajouté divisé par le volume du bac :
+\[
+d = \frac{V_A}{V_{\text{bac}}}
+\]
+On remplace et on isole $V_A$ :
+\[
+\Delta EC = s \, \frac{V_A}{V_{\text{bac}}}
+\]
+\[
+V_A = \frac{\Delta EC \; V_{\text{bac}}}{s}
+\]
+La durée de fonctionnement d'une pompe de débit $Q$ est le volume divisé par le débit :
+\[
+t = \frac{V}{Q}
+\]
+\end{demo}
+
+\begin{calcul}{la durée de dosage par jour}
+\[
+V_A = \frac{0{,}05\U{mS/cm} \times 152\U{L}}{0{,}56\U{(mS/cm)/(mL/L)}}
+\]
+\[
+V_A = 13{,}6\U{mL/j}
+\]
+Le même volume d'engrais B est dosé : $V_B = 13{,}6\U{mL/j}$. Pour le pH$-$, on suppose $V_{pH} = 6\U{mL/j}$.
+\[
+t_A = \frac{13{,}6\U{mL}}{80\U{mL/min}} = 0{,}170\U{min} = 10{,}2\U{s}
+\]
+\[
+t_B = 10{,}2\U{s}
+\]
+\[
+t_{pH} = \frac{6\U{mL}}{80\U{mL/min}} = 0{,}075\U{min} = 4{,}5\U{s}
+\]
+Énergie estimée :
+\[
+E_{d,\text{est}} = 3{,}84\U{W} \times \frac{(10{,}2 + 10{,}2 + 4{,}5)\U{s}}{3600\U{s/h}}
+\]
+\[
+E_{d,\text{est}} = 0{,}027\U{Wh/j}
+\]
+\textbf{Valeur retenue (majorant).} Le programme limite chaque commande à $30\U{s}$. En supposant au plus 10 commandes de $30\U{s}$ par pompe et par jour (cas d'un dérèglement) :
+\[
+E_{d} = 3 \times 10 \times 30\U{s} \times \frac{3{,}84\U{W}}{3600\U{s/h}}
+\]
+\[
+E_{d} = 0{,}96\U{Wh/j}
+\]
+\end{calcul}
+
+\subsection{Autoconsommation du régulateur}
+
+\begin{calcul}{l'autoconsommation du MPPT}
+Courant propre supposé $I_{\text{MPPT}} = 15\U{mA}$, jour et nuit :
+\[
+P_{\text{MPPT}} = 12{,}8\U{V} \times 0{,}015\U{A} = 0{,}192\U{W}
+\]
+\[
+E_{\text{MPPT}} = 0{,}192\U{W} \times 24\U{h} = 4{,}61\U{Wh/j}
+\]
+\end{calcul}
+
+\subsection{Énergie journalière totale}
+
+\begin{center}
+\begin{tabular}{l r r r}
+\toprule
+\textbf{Poste} & \textbf{$P$ (W)} & \textbf{Durée (h/j)} & \textbf{$E$ (Wh/j)} \\
+\midrule
+Électronique 5 V (vue du 12 V, pertes UBEC comprises) & 3,825 & 24 & 91,81 \\
+\quad dont pertes du convertisseur & 0,650 & 24 & 15,61 \\
+Pompe de circulation & 19,0 & 6,75 & 128,25 \\
+Pertes MOSFET circulation (2 canaux) & 0,077 & 6,75 & 0,52 \\
+Pompes doseuses (majorant) & 3,84 & 0,25 & 0,96 \\
+Autoconsommation du MPPT & 0,192 & 24 & 4,61 \\
+\midrule
+\textbf{Total} & & & \textbf{226,1} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{calcul}{l'énergie journalière}
+\[
+E_j = 91{,}81 + 128{,}25 + 0{,}52 + 0{,}96 + 4{,}61\U{Wh/j}
+\]
+\[
+E_j = 226{,}1\U{Wh/j}
+\]
+La pompe de circulation représente $128{,}25 / 226{,}1 = 57\U{\%}$ du besoin, l'électronique $41\U{\%}$.
+\end{calcul}
+
+\begin{resume}
+Besoin journalier : $E_j = 226{,}1\U{Wh/j}$ (version 1 : $281\U{Wh/j}$). Circulation $128{,}25\U{Wh}$ (57 \%), électronique $91{,}8\U{Wh}$ dont $15{,}6\U{Wh}$ de pertes du convertisseur, doseuses moins de $1\U{Wh}$. Courant de repos sur le 12 V : environ $0{,}31\U{A}$ ; courant pompe de circulation : $1{,}48\U{A}$. Les deux canaux MOSFET en parallèle divisent les pertes par 2 ($0{,}077\U{W}$ au lieu de $0{,}154\U{W}$).
+\end{resume}
+
+%================ 4 PANNEAU =================
+\newpage
+\section{Dimensionnement du panneau}
+\label{sec:panneau}
+
+\subsection{Données d'étiquette du TE1250}
+
+\begin{center}
+\begin{tabular}{l c c}
+\toprule
+\textbf{Grandeur (conditions STC : 1000 W/m², 25 °C)} & \textbf{Symbole} & \textbf{Valeur} \\
+\midrule
+Puissance crête & $P_c$ & $120\U{Wc}$ \\
+Puissance minimale garantie & $P_{\min}$ & $117{,}5\U{W}$ \\
+Tension au point de puissance maximale & $V_{mp}$ & $17{,}6\U{V}$ \\
+Courant au point de puissance maximale & $I_{mp}$ & $6{,}8\U{A}$ \\
+Courant de court-circuit & $I_{sc}$ & $7{,}3\U{A}$ \\
+Tension de circuit ouvert & $V_{oc}$ & $22{,}0\U{V}$ \\
+Calibre maximal du fusible série & & $10\U{A}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Les coefficients de température du TE1250 ne figurent pas sur l'étiquette : on prend ceux du SLP055 (même technologie 36 cellules) : $\beta_{V} = -80\U{mV/°C}$, $\alpha_{I} = +0{,}065\U{\%/°C}$, $\gamma_P = -0{,}5\U{\%/°C}$, NOCT $= 47\U{°C}$.
+
+\subsection{Modèle à une diode du panneau}
+
+\begin{demo}{équation du modèle à une diode}
+\textbf{Une cellule.} Une cellule éclairée se représente par :
+\begin{itemize}[nosep]
+\item une source de courant $I_{ph}$ (photocourant), proportionnelle à l'éclairement ;
+\item une diode (la jonction PN) traversée par le courant $I_D$ ;
+\item une résistance parallèle $R_{sh}$ (fuites), traversée par $I_{sh}$ ;
+\item une résistance série $R_s$ (contacts, grilles, rubans), traversée par le courant de sortie $I$.
+\end{itemize}
+\textbf{Loi des nœuds} au point commun de la source, de la diode et de $R_{sh}$ :
+\[
+I_{ph} = I_D + I_{sh} + I
+\]
+\[
+I = I_{ph} - I_D - I_{sh}
+\]
+\textbf{Tension interne.} La diode et $R_{sh}$ sont soumises à la tension de sortie augmentée de la chute dans $R_s$ (loi des mailles) :
+\[
+V_j = V + R_s I
+\]
+\textbf{Diode.} Le courant d'une jonction PN suit la loi exponentielle :
+\[
+I_D = I_0 \left[ \exp\!\left( \frac{V_j}{n V_T} \right) - 1 \right]
+\]
+avec $I_0$ le courant de saturation, $n$ le facteur d'idéalité (entre 1 et 2) et $V_T$ la tension thermique :
+\[
+V_T = \frac{k \, T}{q}
+\]
+($k = 1{,}381 \times 10^{-23}\U{J/K}$, $q = 1{,}602 \times 10^{-19}\U{C}$, $T$ en kelvins ; à $25\U{°C}$, $V_T = 25{,}7\U{mV}$).
+
+\textbf{Résistance parallèle} (loi d'Ohm) :
+\[
+I_{sh} = \frac{V_j}{R_{sh}}
+\]
+\textbf{Panneau de $N_s$ cellules en série.} Le même courant traverse toutes les cellules et leurs tensions s'additionnent : on remplace $n V_T$ par $a = n N_s V_T$ et on utilise les résistances totales $R_s$ et $R_{sh}$ du panneau. En remplaçant $I_D$ et $I_{sh}$ dans la loi des nœuds :
+\[
+I = I_{ph} - I_0 \left[ \exp\!\left( \frac{V + R_s I}{a} \right) - 1 \right] - \frac{V + R_s I}{R_{sh}}
+\]
+$I$ figure des deux côtés : l'équation est implicite et se résout numériquement (recherche du zéro pour chaque tension $V$).
+\end{demo}
+
+\begin{demo}{identification des paramètres à partir de l'étiquette}
+\textbf{Court-circuit} ($V = 0$, $I = I_{sc}$). La tension interne $R_s I_{sc}$ est très petite, la diode ne conduit presque pas :
+\[
+I_{sc} \approx I_{ph} - \frac{R_s I_{sc}}{R_{sh}}
+\]
+\[
+I_{ph} = I_{sc} \left( 1 + \frac{R_s}{R_{sh}} \right)
+\]
+\textbf{Circuit ouvert} ($I = 0$, $V = V_{oc}$) :
+\[
+0 = I_{ph} - I_0 \left[ \exp\!\left( \frac{V_{oc}}{a} \right) - 1 \right] - \frac{V_{oc}}{R_{sh}}
+\]
+\[
+I_0 = \frac{I_{ph} - V_{oc}/R_{sh}}{\exp\left( V_{oc}/a \right) - 1}
+\]
+\textbf{Point de puissance maximale.} Il reste deux inconnues, $n$ et $R_s$ ($R_{sh}$ est fixée à $200\U{\Omega}$, valeur courante, peu influente). Deux conditions les déterminent : la courbe passe par $(V_{mp}, I_{mp})$, et la puissance y est maximale, donc sa dérivée est nulle :
+\[
+I(V_{mp}) = I_{mp}
+\]
+\[
+\left. \frac{\mathrm{d}(V I)}{\mathrm{d}V} \right|_{V_{mp}} = 0
+\]
+Ces deux équations sont résolues numériquement (script \texttt{modele\_panneau.py}).
+
+\textbf{Effet de la température.} D'après les coefficients, pour une température de cellule $T_c$ :
+\[
+I_{sc}(T_c) = I_{sc,\text{STC}} \left[ 1 + \alpha_I (T_c - 25\U{°C}) \right]
+\]
+\[
+V_{oc}(T_c) = V_{oc,\text{STC}} + \beta_V (T_c - 25\U{°C})
+\]
+$I_{ph}$ et $I_0$ sont recalculés avec ces valeurs, et $a$ avec la nouvelle $V_T$.
+\end{demo}
+
+\begin{calcul}{les paramètres du TE1250}
+Résultat de la résolution numérique :
+\[
+n = 1{,}063 \qquad R_s = 0{,}234\U{\Omega} \qquad R_{sh} = 200\U{\Omega}
+\]
+\[
+a = n \, N_s \, V_T = 1{,}063 \times 36 \times 0{,}0257\U{V} = 0{,}983\U{V}
+\]
+\[
+I_{ph} = 7{,}3\U{A} \times \left( 1 + \frac{0{,}234\U{\Omega}}{200\U{\Omega}} \right) = 7{,}309\U{A}
+\]
+\[
+I_0 = \frac{7{,}309\U{A} - 22{,}0\U{V}/200\U{\Omega}}{\exp(22{,}0\U{V}/0{,}983\U{V}) - 1} = 1{,}37 \times 10^{-9}\U{A}
+\]
+\end{calcul}
+
+\textbf{Validation du modèle sur le SLP055.} La même méthode appliquée au SLP055 ($n = 1{,}74$, $R_s = 0{,}143\U{\Omega}$) donne les courbes de la figure~\ref{fig:valid}, comparées aux points de puissance maximale lus sur ses courbes fournies.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/validation_slp055.pdf}
+\caption{Modèle à une diode du SLP055 et points de puissance maximale lus sur ses courbes.}
+\label{fig:valid}
+\end{figure}
+
+\begin{center}
+\begin{tabular}{c c c c}
+\toprule
+\textbf{Température} & \textbf{$P_{\max}$ lue (W)} & \textbf{$P_{\max}$ modèle (W)} & \textbf{Écart} \\
+\midrule
+25 °C & 55,0 & 55,0 & 0,0 \% \\
+47 °C & 50,1 & 49,3 & $-$1,5 \% \\
+50 °C & 49,5 & 48,6 & $-$1,9 \% \\
+75 °C & 43,8 & 42,1 & $-$3,9 \% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Le modèle est légèrement pessimiste à chaud (moins de 4 \% d'écart) : il convient pour dimensionner.
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.92\linewidth]{figures/te1250_courbes.pdf}
+\caption{Caractéristiques I(U) et P(U) du TE1250 calculées par le modèle à une diode, sous 1000 W/m².}
+\label{fig:te1250}
+\end{figure}
+
+\begin{center}
+\begin{tabular}{c c c c c}
+\toprule
+\textbf{$T_c$} & \textbf{$V_{mp}$ (V)} & \textbf{$I_{mp}$ (A)} & \textbf{$P_{\max}$ (W)} & \textbf{$V_{oc}$ (V)} \\
+\midrule
+25 °C & 17,60 & 6,80 & 119,7 & 22,00 \\
+47 °C & 15,82 & 6,83 & 107,9 & 20,24 \\
+50 °C & 15,58 & 6,83 & 106,3 & 20,00 \\
+54 °C & 15,26 & 6,83 & 104,2 & 19,68 \\
+75 °C & 13,60 & 6,82 & 92,8 & 18,00 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Même à $75\U{°C}$, $V_{mp} = 13{,}6\U{V}$ reste au-dessus de la tension de charge d'une batterie 12 V vide : le régulateur MPPT peut toujours charger. C'est la principale raison d'utiliser un régulateur MPPT plutôt qu'une simple liaison directe.
+
+\subsection{Température des cellules}
+
+\begin{demo}{température de cellule à partir de la NOCT}
+La cellule reçoit une puissance proportionnelle à l'éclairement $G$ et la cède à l'air par convection et rayonnement, de façon à peu près proportionnelle à l'écart de température. En régime établi, puissance reçue $=$ puissance cédée :
+\[
+\alpha \, G = h \, (T_c - T_a)
+\]
+\[
+T_c - T_a = \frac{\alpha}{h} \, G = K \, G
+\]
+La NOCT est la température atteinte sous $G = 800\U{W/m^2}$ avec $T_a = 20\U{°C}$ :
+\[
+\text{NOCT} - 20\U{°C} = K \times 800\U{W/m^2}
+\]
+\[
+K = \frac{\text{NOCT} - 20\U{°C}}{800\U{W/m^2}}
+\]
+\[
+T_c = T_a + \frac{\text{NOCT} - 20\U{°C}}{800\U{W/m^2}} \; G
+\]
+\end{demo}
+
+\begin{calcul}{la température de cellule en milieu de journée (pire mois)}
+Hypothèses : $T_a = 27\U{°C}$ et $G = 800\U{W/m^2}$ en milieu de journée.
+\[
+T_c = 27\U{°C} + \frac{47\U{°C} - 20\U{°C}}{800\U{W/m^2}} \times 800\U{W/m^2}
+\]
+\[
+T_c = 54\U{°C}
+\]
+\end{calcul}
+
+\begin{calcul}{le facteur de température}
+Avec le coefficient de puissance $\gamma_P = -0{,}5\U{\%/°C}$ :
+\[
+k_T = 1 + \gamma_P \, (T_c - 25\U{°C})
+\]
+\[
+k_T = 1 - 0{,}005\U{/°C} \times (54\U{°C} - 25\U{°C})
+\]
+\[
+k_T = 0{,}855
+\]
+\textbf{Vérification sur les courbes du SLP055.} Interpolation linéaire entre $50\U{°C}$ ($49{,}5\U{W}$) et $75\U{°C}$ ($43{,}8\U{W}$) :
+\[
+P(54\U{°C}) = 49{,}5\U{W} + (43{,}8 - 49{,}5)\U{W} \times \frac{54 - 50}{75 - 50}
+\]
+\[
+P(54\U{°C}) = 48{,}6\U{W}
+\]
+\[
+\frac{48{,}6\U{W}}{55{,}0\U{W}} = 0{,}883
+\]
+Les courbes donnent une perte un peu plus faible ($0{,}883$) que le coefficient ($0{,}855$). On garde $k_T = 0{,}855$, qui est plus prudent. Le modèle du TE1250 donne $104{,}2 / 119{,}7 = 0{,}870$, entre les deux.
+\end{calcul}
+
+\subsection{Énergie produite le pire mois}
+
+\begin{demo}{énergie produite à partir de l'irradiation journalière}
+La puissance d'un panneau est proportionnelle à l'éclairement $G$ ; à $G_{\text{STC}} = 1000\U{W/m^2}$ elle vaut $P_c$ :
+\[
+P(t) = P_c \, \frac{G(t)}{G_{\text{STC}}}
+\]
+On intègre sur la journée :
+\[
+E_{\text{th}} = \int_{\text{jour}} P(t) \, \mathrm{d}t = \frac{P_c}{G_{\text{STC}}} \int_{\text{jour}} G(t)\,\mathrm{d}t
+\]
+L'intégrale de l'éclairement sur la journée est l'irradiation journalière $H$ :
+\[
+E_{\text{th}} = P_c \, \frac{H}{G_{\text{STC}}}
+\]
+Le rapport $H / G_{\text{STC}}$ est un nombre d'heures, appelé heures équivalentes de plein soleil. Les pertes réelles sont prises en compte par un produit de facteurs (chaque perte s'applique à ce qui reste après la précédente) :
+\[
+E_{\text{prod}} = E_{\text{th}} \; k_T \; k_{\text{tol}} \; k_s \; k_{\text{MPPT}} \; k_{\text{câbles}} \; k_{\text{bat}}
+\]
+\end{demo}
+
+\textbf{Facteurs retenus.}
+\begin{itemize}[nosep]
+\item $k_T = 0{,}855$ : température des cellules (calcul précédent) ;
+\item $k_{\text{tol}} = 117{,}5 / 120 = 0{,}979$ : tolérance de fabrication (puissance minimale garantie de l'étiquette) ;
+\item $k_s = 0{,}95$ : salissures, sel marin, poussière, orientation imparfaite ;
+\item $k_{\text{MPPT}} = 0{,}95$ : rendement du régulateur ;
+\item $k_{\text{câbles}} = 0{,}98$ : chutes de tension dans les câbles (partie~\ref{sec:cables}) ;
+\item $k_{\text{bat}} = 0{,}95$ (LiFePO4) ou $0{,}85$ (AGM) : rendement énergétique charge puis décharge. Il est appliqué à toute l'énergie, alors qu'une partie est consommée directement le jour : c'est prudent.
+\end{itemize}
+
+\begin{calcul}{l'énergie produite par le TE1250 le pire mois}
+Irradiation du pire mois retenue : $H = 4{,}2\U{kWh/m^2/j}$.
+\[
+E_{\text{th}} = 120\U{W} \times \frac{4200\U{Wh/m^2/j}}{1000\U{W/m^2}}
+\]
+\[
+E_{\text{th}} = 120\U{W} \times 4{,}2\U{h/j} = 504\U{Wh/j}
+\]
+Rapport de performance (cas LiFePO4) :
+\[
+PR = 0{,}855 \times 0{,}979 \times 0{,}95 \times 0{,}95 \times 0{,}98 \times 0{,}95
+\]
+\[
+PR = 0{,}703
+\]
+\[
+E_{\text{prod}} = 504\U{Wh/j} \times 0{,}703
+\]
+\[
+E_{\text{prod}} = 354{,}5\U{Wh/j}
+\]
+Cas AGM ($k_{\text{bat}} = 0{,}85$) : $PR = 0{,}629$ et $E_{\text{prod}} = 317{,}2\U{Wh/j}$.
+\end{calcul}
+
+\begin{calcul}{la marge du panneau}
+\[
+m = \frac{E_{\text{prod}}}{E_j} - 1
+\]
+\[
+m_{\text{LFP}} = \frac{354{,}5\U{Wh/j}}{226{,}1\U{Wh/j}} - 1 = 0{,}57 = +57\U{\%}
+\]
+\[
+m_{\text{AGM}} = \frac{317{,}2\U{Wh/j}}{226{,}1\U{Wh/j}} - 1 = 0{,}40 = +40\U{\%}
+\]
+\textbf{Sensibilité.} Avec une irradiation plus faible de $H = 3{,}9\U{kWh/m^2/j}$, la production LiFePO4 tombe à $329{,}2\U{Wh/j}$ : la marge reste de $+46\U{\%}$.
+\end{calcul}
+
+\textbf{Comparaison avec l'ancien panneau SLP055.} Avec les mêmes facteurs (hors tolérance), il produirait $55\U{W} \times 4{,}2\U{h} \times 0{,}718 = 166\U{Wh/j}$, soit moins que le besoin de $226{,}1\U{Wh/j}$ : il ne peut servir que d'appoint.
+
+\begin{resume}
+Le modèle à une diode, validé à moins de 4 \% sur les courbes du SLP055, donne pour le TE1250 : $P_{\max} = 104{,}2\U{W}$ à $15{,}3\U{V}$ pour une cellule à $54\U{°C}$. Le pire mois ($H = 4{,}2\U{kWh/m^2/j}$), le panneau fournit $354{,}5\U{Wh/j}$ en LiFePO4 ($317{,}2\U{Wh/j}$ en AGM) pour un besoin de $226{,}1\U{Wh/j}$ : marge de $+57\U{\%}$ ($+40\U{\%}$ en AGM). Le panneau de 120 Wc est suffisant ; le SLP055 seul ne l'est pas.
+\end{resume}
+
+%================ 5 BATTERIE =================
+\newpage
+\section{Dimensionnement des batteries}
+\label{sec:batterie}
+
+\subsection{LiFePO4 ou plomb AGM : les deux cas}
+
+Le cahier des charges indique des batteries LiFePO4, la version 1 les supposait au plomb AGM. Les deux technologies se comportent très différemment ; le tableau donne les valeurs retenues pour chacune.
+
+\begin{center}
+\begin{tabular}{l c c}
+\toprule
+\textbf{Grandeur} & \textbf{LiFePO4} & \textbf{Plomb AGM} \\
+\midrule
+Tension nominale de calcul $U_B$ & 12,8 V & 12,0 V \\
+Profondeur de décharge admise (DoD) & 80 \% & 50 \% \\
+Rendement énergétique charge et décharge & 0,95 & 0,85 \\
+Courant de charge admis (usage courant) & $0{,}5\,C$ & $0{,}25\,C$ \\
+Tension de charge (absorption) & 14,2 à 14,6 V & 14,4 à 14,7 V \\
+Tension de maintien (floating) & aucune ou 13,6 V & 13,5 à 13,8 V \\
+Tension au repos, batterie pleine & environ 13,4 V & environ 12,8 V \\
+Tension au repos, batterie vide & environ 12,0 V & environ 11,9 V (à 50 \%) \\
+Protection interne (BMS) & oui, en général & non \\
+\midrule
+Énergie nominale (23 Ah) & 294,4 Wh & 276,0 Wh \\
+Énergie utilisable (23 Ah) & 235,5 Wh & 138,0 Wh \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{alerte}{À vérifier par l'étudiant avant tout raccordement}
+\begin{itemize}[nosep]
+\item Lire sur l'\textbf{étiquette de chaque batterie} sa technologie (LiFePO4, \og Lithium Iron Phosphate \fg, ou \og SLA, AGM, Lead Acid \fg).
+\item \textbf{Mettre en parallèle deux technologies différentes est interdit} : tensions de charge, courbes de décharge et protections différentes ; l'une serait surchargée ou détruite. Si les deux batteries ne sont pas de la même technologie, n'en utiliser qu'une, ou en remplacer une.
+\item Régler le régulateur MPPT sur le type de batterie réel (profil lithium ou plomb).
+\end{itemize}
+\end{alerte}
+
+\begin{demo}{énergie utilisable d'une batterie}
+Une capacité $C$ (en ampères-heures) délivrée sous une tension moyenne $U_B$ correspond à l'énergie (même raisonnement que $E = P \Delta t$ avec $P = U_B I$) :
+\[
+E_{\text{nom}} = U_B \, C
+\]
+On ne s'autorise à prélever que la fraction DoD pour préserver la durée de vie :
+\[
+E_u = U_B \, C \; \text{DoD}
+\]
+Deux batteries de même tension en parallèle additionnent leurs capacités (les courants s'additionnent à tension égale) :
+\[
+C = C_1 + C_2 = 6\U{Ah} + 17\U{Ah} = 23\U{Ah}
+\]
+\end{demo}
+
+\begin{calcul}{l'énergie utilisable}
+\[
+E_{u,\text{LFP}} = 12{,}8\U{V} \times 23\U{Ah} \times 0{,}80 = 235{,}5\U{Wh}
+\]
+\[
+E_{u,\text{AGM}} = 12{,}0\U{V} \times 23\U{Ah} \times 0{,}50 = 138{,}0\U{Wh}
+\]
+\end{calcul}
+
+\subsection{Autonomie de nuit}
+
+La nuit compte 14 h sans production utile (de 17 h à 7 h, hypothèse prudente pour juin). Pendant cette période, la circulation tourne 7 fois 15 min (17 h, 17 h 30, 21 h, 0 h, 3 h, 6 h, 6 h 30).
+
+\begin{calcul}{l'énergie consommée la nuit}
+\[
+t_{c,\text{nuit}} = 7 \times 0{,}25\U{h} = 1{,}75\U{h}
+\]
+\[
+E_n = (3{,}825 + 0{,}192)\U{W} \times 14\U{h} + (19 + 0{,}077)\U{W} \times 1{,}75\U{h}
+\]
+\[
+E_n = 56{,}24\U{Wh} + 33{,}38\U{Wh} = 89{,}6\U{Wh}
+\]
+Part de l'énergie utilisable :
+\[
+\frac{E_n}{E_{u,\text{LFP}}} = \frac{89{,}6\U{Wh}}{235{,}5\U{Wh}} = 38\U{\%}
+\]
+\[
+\frac{E_n}{E_{u,\text{AGM}}} = \frac{89{,}6\U{Wh}}{138{,}0\U{Wh}} = 65\U{\%}
+\]
+Profondeur de décharge réelle au matin : $89{,}6 / 294{,}4 = 30\U{\%}$ (LiFePO4) ou $89{,}6 / 276{,}0 = 32\U{\%}$ (AGM).
+\end{calcul}
+
+\subsection{Jours sans soleil}
+
+\begin{calcul}{l'autonomie sans aucune production}
+\[
+N_0 = \frac{E_u}{E_j}
+\]
+\[
+N_{0,\text{LFP}} = \frac{235{,}5\U{Wh}}{226{,}1\U{Wh/j}} = 1{,}04\U{j}
+\]
+\[
+N_{0,\text{AGM}} = \frac{138{,}0\U{Wh}}{226{,}1\U{Wh/j}} = 0{,}61\U{j}
+\]
+\end{calcul}
+
+\begin{calcul}{l'autonomie par jours très couverts}
+Un jour très couvert apporte encore environ $H_c = 1{,}2\U{kWh/m^2/j}$ (hypothèse). Production :
+\[
+E_{c,\text{LFP}} = 120\U{W} \times 1{,}2\U{h} \times 0{,}703 = 101{,}3\U{Wh/j}
+\]
+Déficit journalier :
+\[
+D_{\text{LFP}} = 226{,}1\U{Wh/j} - 101{,}3\U{Wh/j} = 124{,}9\U{Wh/j}
+\]
+Nombre de jours couverts consécutifs supportés en partant de batteries pleines :
+\[
+N_{c,\text{LFP}} = \frac{235{,}5\U{Wh}}{124{,}9\U{Wh/j}} = 1{,}9\U{j}
+\]
+Cas AGM : $E_c = 90{,}6\U{Wh/j}$, $D = 135{,}5\U{Wh/j}$, $N_c = 138{,}0 / 135{,}5 = 1{,}0\U{j}$.
+\end{calcul}
+
+\textbf{Interprétation.} Les batteries couvrent largement la nuit, mais pas une longue période couverte. Le programme du Raspberry Pi doit donc prévoir un \textbf{mode sobriété} déclenché sur la tension batterie mesurée par l'INA260 (par exemple sous $12{,}9\U{V}$ en LiFePO4 au repos) : circulation réduite à 10 min par heure le jour, nuit inchangée. La consommation descend alors vers $154\U{Wh/j}$. La batterie de 23 Ah pour deux jours sans soleil complet demanderait :
+\[
+C_{2j} = \frac{2 \times 226{,}1\U{Wh}}{12{,}8\U{V} \times 0{,}80} = 44\U{Ah} \quad \text{(LiFePO4)}
+\]
+\[
+C_{2j} = \frac{2 \times 226{,}1\U{Wh}}{12{,}0\U{V} \times 0{,}50} = 75\U{Ah} \quad \text{(AGM)}
+\]
+
+\subsection{Mise en parallèle de deux batteries de capacités différentes}
+
+\begin{demo}{partage du courant entre deux batteries en parallèle}
+Chaque batterie se modélise par une force électromotrice $E_k$ en série avec une résistance interne $R_k$. En parallèle, elles ont la même tension $U$ aux bornes :
+\[
+U = E_1 - R_1 I_1 = E_2 - R_2 I_2
+\]
+Si les deux batteries sont au même état de charge, $E_1 = E_2$, donc :
+\[
+R_1 I_1 = R_2 I_2
+\]
+Avec $I = I_1 + I_2$ le courant total :
+\[
+I_1 = I \, \frac{R_2}{R_1 + R_2}
+\qquad
+I_2 = I \, \frac{R_1}{R_1 + R_2}
+\]
+Pour une même technologie, la résistance interne est à peu près inversement proportionnelle à la capacité, $R_k = r / C_k$. On remplace :
+\[
+I_1 = I \, \frac{r/C_2}{r/C_1 + r/C_2}
+\]
+On multiplie haut et bas par $C_1 C_2 / r$ :
+\[
+I_1 = I \, \frac{C_1}{C_1 + C_2}
+\]
+Chaque batterie prend une part du courant proportionnelle à sa capacité : elles se chargent et se déchargent au même régime ($I_k / C_k$ identique).
+
+\textbf{Courant de circulation.} Si l'on relie deux batteries dont les tensions diffèrent de $\Delta E = E_1 - E_2$, sans charge extérieure, la maille donne :
+\[
+I_{\text{circ}} = \frac{E_1 - E_2}{R_1 + R_2}
+\]
+\end{demo}
+
+\begin{calcul}{le partage du courant de charge et le courant de circulation}
+Courant de charge maximal sortant du régulateur :
+\[
+I_{\text{ch}} = \frac{P_c \; k_{\text{MPPT}}}{U_B} = \frac{120\U{W} \times 0{,}95}{12{,}8\U{V}} = 8{,}9\U{A}
+\]
+\[
+I_{B1} = 8{,}9\U{A} \times \frac{6\U{Ah}}{23\U{Ah}} = 2{,}32\U{A} \quad (0{,}39\,C)
+\]
+\[
+I_{B2} = 8{,}9\U{A} \times \frac{17\U{Ah}}{23\U{Ah}} = 6{,}58\U{A} \quad (0{,}39\,C)
+\]
+En LiFePO4, $0{,}39\,C < 0{,}5\,C$ : acceptable. En AGM, $0{,}39\,C > 0{,}25\,C$ : charge un peu trop forte en plein soleil (vieillissement accéléré).
+
+Courant de circulation si l'on relie les batteries avec $0{,}3\U{V}$ d'écart ($R_{B1} = 60\U{m\Omega}$ supposé, donc $R_{B2} = 60 \times 6/17 = 21\U{m\Omega}$) :
+\[
+I_{\text{circ}} = \frac{0{,}3\U{V}}{0{,}060\U{\Omega} + 0{,}021\U{\Omega}} = 3{,}7\U{A}
+\]
+Un faible écart de tension provoque déjà un courant important : d'où les précautions suivantes.
+\end{calcul}
+
+\textbf{Précautions de mise en parallèle.}
+\begin{enumerate}[nosep]
+\item Même technologie et même tension nominale (obligatoire).
+\item Charger chaque batterie séparément jusqu'à pleine charge, puis vérifier au multimètre un écart de tension inférieur à $0{,}05\U{V}$ avant de les relier.
+\item Un fusible par batterie ($F_{B1}$, $F_{B2}$), au plus près de la borne $+$ : un court-circuit interne d'une batterie ne doit pas être alimenté par l'autre.
+\item Câbles de même section et de même longueur entre chaque batterie et le bus.
+\item Raccordement \og en diagonale \fg : le $+$ du bus pris sur une batterie et le $-$ sur l'autre, pour équilibrer les chutes de tension.
+\item En LiFePO4, chaque batterie a son BMS : si l'un coupe, toute la charge passe dans l'autre (voir le choix des fusibles, partie~\ref{sec:cables}).
+\item Remplacer les deux batteries ensemble en fin de vie.
+\end{enumerate}
+
+\begin{resume}
+Capacité totale $23\U{Ah}$. Énergie utilisable : $235{,}5\U{Wh}$ en LiFePO4 (DoD 80 \%), $138{,}0\U{Wh}$ en AGM (DoD 50 \%). La nuit consomme $89{,}6\U{Wh}$, soit 38 \% (LiFePO4) ou 65 \% (AGM) de l'énergie utilisable. Autonomie sans soleil : $1{,}0\U{j}$ (LiFePO4) ou $0{,}6\U{j}$ (AGM) ; par jours très couverts : $1{,}9\U{j}$ ou $1{,}0\U{j}$. Un mode sobriété piloté par la tension batterie est nécessaire. La technologie réelle des deux batteries doit être lue sur leurs étiquettes : jamais deux technologies différentes en parallèle.
+\end{resume}
+
+%================ 6 CABLES FUSIBLES =================
+\newpage
+\section{Sections de câbles et fusibles}
+\label{sec:cables}
+
+\subsection{Chute de tension et section minimale}
+
+\begin{demo}{section minimale d'un câble}
+La résistance d'un conducteur de longueur $\ell$ et de section $S$ vaut :
+\[
+R = \rho \, \frac{\ell}{S}
+\]
+Le courant fait l'aller et le retour : pour une liaison de longueur $L$, $\ell = 2L$ :
+\[
+R = \frac{2 \rho L}{S}
+\]
+La chute de tension (loi d'Ohm) :
+\[
+\Delta U = R \, I = \frac{2 \rho L I}{S}
+\]
+On impose $\Delta U \le \varepsilon \, U$ (chute relative maximale $\varepsilon$) :
+\[
+\frac{2 \rho L I}{S} \le \varepsilon U
+\]
+\[
+S \ge \frac{2 \rho L I}{\varepsilon U}
+\]
+La résistivité du cuivre augmente avec la température :
+\[
+\rho(T) = \rho_{20} \left[ 1 + \alpha_{Cu} (T - 20\U{°C}) \right]
+\]
+\end{demo}
+
+\begin{calcul}{la résistivité du cuivre à 60 °C}
+Câbles au soleil ou dans le boîtier chaud : $T = 60\U{°C}$.
+\[
+\rho = 0{,}0172\U{\Omega\,mm^2/m} \times \left[ 1 + 0{,}00393\U{/°C} \times (60 - 20)\U{°C} \right]
+\]
+\[
+\rho = 0{,}0199\U{\Omega\,mm^2/m}
+\]
+\end{calcul}
+
+\begin{calcul}{la section du câble panneau vers régulateur}
+$L = 5\U{m}$, $I = 6{,}83\U{A}$ et $U = 15{,}26\U{V}$ (point de puissance maximale à $54\U{°C}$), $\varepsilon = 3\U{\%}$ :
+\[
+S \ge \frac{2 \times 0{,}0199\U{\Omega\,mm^2/m} \times 5\U{m} \times 6{,}83\U{A}}{0{,}03 \times 15{,}26\U{V}}
+\]
+\[
+S \ge \frac{1{,}359\U{\Omega\,mm^2\,A}}{0{,}458\U{V}} = 2{,}97\U{mm^2}
+\]
+On choisit $4\U{mm^2}$ (câble solaire). Chute réelle :
+\[
+\Delta U = \frac{2 \times 0{,}0199 \times 5 \times 6{,}83}{4}\U{V} = 0{,}34\U{V} \quad (2{,}2\U{\%})
+\]
+\end{calcul}
+
+Les autres liaisons sont calculées de la même façon :
+
+\begin{center}
+\small
+\begin{tabular}{l c c c c c c c}
+\toprule
+\textbf{Liaison} & \textbf{$L$ (m)} & \textbf{$I$ (A)} & \textbf{$U$ (V)} & \textbf{$\varepsilon$} & \textbf{$S_{\min}$ (mm²)} & \textbf{$S$ (mm²)} & \textbf{$\Delta U$ réel} \\
+\midrule
+Panneau vers MPPT & 5,0 & 6,83 & 15,3 & 3 \% & 2,97 & 4 & 2,2 \% \\
+MPPT vers INA260 vers bus & 0,5 & 8,91 & 12,8 & 1 \% & 1,38 & 4 & 0,35 \% \\
+Bus vers B1 (6 Ah) & 0,3 & 2,32 & 12,8 & 0,5 \% & 0,43 & 2,5 & 0,09 \% \\
+Bus vers B2 (17 Ah) & 0,3 & 6,58 & 12,8 & 0,5 \% & 1,23 & 2,5 & 0,25 \% \\
+Sortie LOAD vers bornier & 0,5 & 2,70 & 12,8 & 1 \% & 0,42 & 1,5 & 0,28 \% \\
+Bornier vers circulation & 3,0 & 1,48 & 12,8 & 3 \% & 0,46 & 1,5 & 0,92 \% \\
+Bornier vers doseuse & 1,0 & 0,30 & 12,8 & 3 \% & 0,03 & 0,5 & 0,19 \% \\
+UBEC vers Pi (5 V) & 0,3 & 1,00 & 5,0 & 2 \% & 0,12 & 0,5 & 0,48 \% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+La chute totale du panneau aux batteries vaut environ $2{,}2 + 0{,}35 = 2{,}6\U{\%}$ au courant maximal, et nettement moins en moyenne sur la journée : le facteur $k_{\text{câbles}} = 0{,}98$ est cohérent. Sur le 5 V du Pi, une chute supérieure à $0{,}25\U{V}$ provoque des alertes de sous-tension : le câble court de $0{,}5\U{mm^2}$ est indispensable (éviter un câble USB fin et long).
+
+\subsection{Fusibles}
+
+\begin{demo}{règle de choix d'un fusible}
+Le fusible doit laisser passer le courant normal maximal $I_b$ sans fondre ni vieillir, d'où une marge de $25\U{\%}$ :
+\[
+I_n \ge 1{,}25 \, I_b
+\]
+et il doit fondre avant que le câble protégé chauffe dangereusement, donc rester sous le courant admissible du câble $I_z$ :
+\[
+1{,}25 \, I_b \le I_n \le I_z
+\]
+On prend le calibre normalisé immédiatement supérieur à $1{,}25\,I_b$ (valeurs courantes : 1, 2, 3, 4, 5, 7,5, 10, 15, 20 A).
+\end{demo}
+
+\begin{calcul}{les calibres des fusibles}
+\textbf{$F_{PV}$ (panneau).} Le courant maximal est le courant de court-circuit, augmenté à chaud :
+\[
+1{,}25 \times 7{,}3\U{A} = 9{,}1\U{A} \;\Rightarrow\; I_n = 10\U{A}
+\]
+C'est aussi le calibre maximal autorisé par l'étiquette du panneau.
+
+\textbf{$F_{B1}$ (batterie 6 Ah).} Courant normal en charge $2{,}32\U{A}$ :
+\[
+1{,}25 \times 2{,}32\U{A} = 2{,}9\U{A} \;\Rightarrow\; I_n = 5\U{A} \text{ (conservé)}
+\]
+Si le BMS de B2 coupe, les $8{,}9\U{A}$ de charge passeraient dans B1 : le fusible de 5 A fond et protège la petite batterie.
+
+\textbf{$F_{B2}$ (batterie 17 Ah).} Normalement $6{,}58\U{A}$, mais jusqu'à $8{,}9\U{A}$ si B1 est déconnectée :
+\[
+1{,}25 \times 8{,}9\U{A} = 11{,}1\U{A} \;\Rightarrow\; I_n = 15\U{A} \text{ (conservé)}
+\]
+
+\textbf{$F_2$ (sortie LOAD, toutes les charges).} Courant maximal : circulation, trois doseuses ensemble (cas extrême) et électronique :
+\[
+I_b = 1{,}48\U{A} + 3 \times 0{,}30\U{A} + 0{,}30\U{A} = 2{,}68\U{A}
+\]
+\[
+1{,}25 \times 2{,}68\U{A} = 3{,}4\U{A} \;\Rightarrow\; I_n = 4\U{A}
+\]
+(La version 1 prévoyait $7{,}5\U{A}$ avec la pompe d'appoint ; sans elle, $4\U{A}$ protège mieux.)
+
+\textbf{$F_3$ (entrée UBEC).} Courant d'entrée maximal si l'UBEC fournit ses $3\U{A}$ nominaux :
+\[
+I_{\text{entrée,max}} = \frac{5\U{V} \times 3\U{A}}{0{,}83 \times 12{,}8\U{V}} = 1{,}41\U{A}
+\]
+\[
+1{,}25 \times 1{,}41\U{A} = 1{,}8\U{A} \;\Rightarrow\; I_n = 2\U{A}
+\]
+\end{calcul}
+
+\begin{center}
+\begin{tabular}{l l c c c}
+\toprule
+\textbf{Fusible} & \textbf{Emplacement} & \textbf{$I_b$ (A)} & \textbf{Calibre v1} & \textbf{Calibre v2} \\
+\midrule
+$F_{PV}$ & panneau, borne $+$ & 7,3 & 10 A & 10 A \\
+$F_{B1}$ & batterie 6 Ah, borne $+$ & 2,32 & 5 A & 5 A \\
+$F_{B2}$ & batterie 17 Ah, borne $+$ & 6,58 (8,9) & 15 A & 15 A \\
+$F_2$ & sortie LOAD du MPPT & 2,68 & 7,5 A & 4 A \\
+$F_3$ & entrée de l'UBEC & 0,30 (1,41) & absent & 2 A \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Autres vérifications.} L'INA260 supporte $15\U{A}$ en continu : avec $F_{B2} = 15\U{A}$ en amont et $8{,}9\U{A}$ maximum en fonctionnement, il est protégé. La tension maximale du panneau (matin frais, $T_c = 20\U{°C}$) vaut $22{,}0 - 0{,}080 \times (20 - 25) = 22{,}4\U{V}$ : à vérifier inférieure à la tension PV maximale de la notice du régulateur. Chaque canal de la carte 6318 supporte $3{,}6\U{A}$ en pointe : la circulation ($0{,}74\U{A}$ par canal) et les doseuses ($0{,}30\U{A}$) sont loin de cette limite.
+
+\begin{resume}
+Câbles : $4\U{mm^2}$ panneau vers régulateur (chute $2{,}2\U{\%}$) et régulateur vers bus, $2{,}5\U{mm^2}$ vers chaque batterie, $1{,}5\U{mm^2}$ pour la sortie LOAD et la pompe de circulation, $0{,}5\U{mm^2}$ pour les doseuses et le 5 V du Pi. Fusibles : $F_{PV} = 10\U{A}$, $F_{B1} = 5\U{A}$, $F_{B2} = 15\U{A}$ (inchangés), $F_2 = 4\U{A}$ (au lieu de 5 A), nouveau $F_3 = 2\U{A}$ en entrée de l'UBEC.
+\end{resume}
+
+%================ 7 PROTOCOLE =================
+\newpage
+\section{Protocole de mesure}
+\label{sec:protocole}
+
+Ce protocole permet de remplacer les hypothèses de cette étude par des valeurs mesurées. Les fichiers sont dans le dossier \texttt{protocole/} :
+\begin{itemize}[nosep]
+\item \texttt{modele\_mesures\_ponctuelles.csv} : modèle vide pour les mesures M1, M2, M4, M5 ;
+\item \texttt{modele\_mesures\_energie.csv} : modèle vide pour l'enregistrement d'une journée (M3) ;
+\item \texttt{traitement\_mesures.py} : script de traitement ; lancé sans argument, il fonctionne sur des données d'\textbf{EXEMPLE} fictives (\texttt{exemple\_*.csv}).
+\end{itemize}
+
+\textbf{Matériel.} Multimètre avec calibre 10 A continu ; INA260 déjà câblé (lecture par le Raspberry Pi) ; testeur USB (courant 5 V) si disponible ; éprouvette graduée de 100 mL et chronomètre ; thermomètre infrarouge (facultatif) ; fiches de relevé ci-dessous.
+
+\textbf{Sécurité.} Ne jamais brancher le multimètre en ampèremètre en parallèle sur la batterie (court-circuit). Ouvrir le circuit, brancher le multimètre en série, puis refermer. Retirer le fusible concerné pendant les manipulations de câbles.
+
+\subsection{M1 : courant de chaque pompe}
+\begin{enumerate}[nosep]
+\item Retirer $F_2$, débrancher le fil $+$ de la pompe sur la carte 6318, insérer le multimètre (calibre 10 A) en série.
+\item Remettre $F_2$, commander la pompe depuis le Pi (\texttt{D 0 60000} pour la circulation, \texttt{D 1 10000} pour l'engrais A, etc.).
+\item Relever le courant après 5 s de marche (régime établi) et la tension aux bornes de la pompe.
+\item Recommencer pour chaque pompe ; pour les doseuses, le tuyau doit être en charge (plongé dans le liquide).
+\end{enumerate}
+
+\begin{center}
+\begin{tabular}{|p{4.2cm}|p{2.2cm}|p{2.2cm}|p{2.2cm}|p{2.8cm}|}
+\hline
+\textbf{Pompe} & \textbf{$U$ mesurée (V)} & \textbf{$I$ mesuré (A)} & \textbf{$P = UI$ (W)} & \textbf{Théorie} \\
+\hline
+Circulation (canaux 0 + 1) & & & & 1,48 A, 19 W \\[6pt]\hline
+Doseuse engrais A & & & & 0,30 A \\[6pt]\hline
+Doseuse engrais B & & & & 0,30 A \\[6pt]\hline
+Doseuse pH$-$ & & & & 0,30 A \\[6pt]\hline
+\end{tabular}
+\end{center}
+
+\subsection{M2 : consommation au repos et rendement de l'UBEC}
+\begin{enumerate}[nosep]
+\item La nuit (pas de charge), toutes pompes arrêtées, le Pi en fonctionnement normal.
+\item Relever le courant batterie donné par l'INA260 pendant 10 min (une valeur par minute) et en faire la moyenne.
+\item Contrôler une valeur au multimètre en série sur la sortie LOAD.
+\item Si un testeur USB est disponible, mesurer le courant 5 V du Pi ; calculer le rendement $\eta = (U_5 I_5)/(U_{12} I_{12})$.
+\end{enumerate}
+
+\begin{center}
+\begin{tabular}{|p{5cm}|p{3cm}|p{3cm}|p{3cm}|}
+\hline
+\textbf{Grandeur} & \textbf{Mesure} & \textbf{Unité} & \textbf{Théorie} \\
+\hline
+Courant de repos 12 V (INA260, moyenne) & & A & 0,314 \\[6pt]\hline
+Courant de repos 12 V (multimètre) & & A & 0,314 \\[6pt]\hline
+Tension de sortie UBEC & & V & 5,0 \\[6pt]\hline
+Courant 5 V (testeur USB) & & A & 0,635 \\[6pt]\hline
+Rendement UBEC calculé & & sans unité & 0,83 \\[6pt]\hline
+\end{tabular}
+\end{center}
+
+\subsection{M3 : production et bilan sur une journée}
+\begin{enumerate}[nosep]
+\item Choisir une journée représentative ; noter la météo (ensoleillé, nuageux, pluie).
+\item Enregistrer toutes les 5 min, de 0 h à 24 h, la tension et le courant batterie de l'INA260 (le cerveau peut l'écrire directement dans le CSV ; courant positif en charge).
+\item De 6 h à 18 h, relever toutes les 30 min la tension et le courant du panneau (afficheur du régulateur ou multimètre), et mettre 0 la nuit. Toutes les lignes doivent être remplies.
+\item Noter l'état de la pompe de circulation (1 marche, 0 arrêt).
+\item Lancer \texttt{python3 traitement\_mesures.py journee.csv ponctuel.csv}.
+\end{enumerate}
+
+\begin{center}
+\begin{tabular}{|p{1.4cm}|p{2.0cm}|p{2.0cm}|p{2.0cm}|p{2.0cm}|p{1.4cm}|p{2.0cm}|}
+\hline
+\textbf{Heure} & \textbf{$U_{\text{bat}}$ (V)} & \textbf{$I_{\text{bat}}$ (A)} & \textbf{$I_{PV}$ (A)} & \textbf{$U_{PV}$ (V)} & \textbf{Pompe} & \textbf{Remarque} \\
+\hline
+06:00 & & & & & & \\\hline
+08:00 & & & & & & \\\hline
+10:00 & & & & & & \\\hline
+12:00 & & & & & & \\\hline
+14:00 & & & & & & \\\hline
+16:00 & & & & & & \\\hline
+18:00 & & & & & & \\\hline
+\end{tabular}
+\end{center}
+
+\subsection{M4 : tension batterie et identification}
+\begin{enumerate}[nosep]
+\item Lire et noter l'étiquette de chaque batterie (technologie, capacité, tension de charge, courant maximal).
+\item Avant de les relier, mesurer la tension à vide de chaque batterie au multimètre.
+\item Mesurer la tension du bus au repos avant l'aube (fin de nuit), puis à midi en charge, et pendant une marche de la pompe.
+\item Comparer chaque valeur à celle de l'INA260 (écart attendu inférieur à $0{,}05\U{V}$).
+\end{enumerate}
+
+\begin{center}
+\begin{tabular}{|p{5.2cm}|p{2.6cm}|p{2.6cm}|p{3.6cm}|}
+\hline
+\textbf{Situation} & \textbf{Multimètre (V)} & \textbf{INA260 (V)} & \textbf{Repère LiFePO4} \\
+\hline
+Technologie B1 / B2 (étiquette) & \multicolumn{2}{l|}{} & identiques ? \\[6pt]\hline
+B1 seule, à vide & & & 13,0 à 13,4 \\[6pt]\hline
+B2 seule, à vide & & & 13,0 à 13,4 \\[6pt]\hline
+Bus, fin de nuit (repos) & & & $\ge 13{,}0$ \\[6pt]\hline
+Bus, midi en charge & & & 13,8 à 14,6 \\[6pt]\hline
+Bus, pompe en marche & & & \\[6pt]\hline
+\end{tabular}
+\end{center}
+
+\subsection{M5 : débit des pompes doseuses}
+\begin{enumerate}[nosep]
+\item Plonger le tuyau d'aspiration dans de l'eau, placer la sortie dans l'éprouvette.
+\item Commander la pompe 30 s (\texttt{D 1 30000}) et lire le volume.
+\item Débit $Q = V / t$ ; refaire 3 fois et faire la moyenne.
+\end{enumerate}
+
+\begin{center}
+\begin{tabular}{|p{3.6cm}|p{2.4cm}|p{2.4cm}|p{2.4cm}|p{3cm}|}
+\hline
+\textbf{Pompe} & \textbf{Essai 1 (mL)} & \textbf{Essai 2 (mL)} & \textbf{Essai 3 (mL)} & \textbf{$Q$ moyen (mL/min)} \\
+\hline
+Engrais A & & & & \\[6pt]\hline
+Engrais B & & & & \\[6pt]\hline
+pH$-$ & & & & \\[6pt]\hline
+\end{tabular}
+\end{center}
+
+\subsection{Traitement : énergie par la méthode des trapèzes}
+
+\begin{demo}{méthode des trapèzes}
+L'énergie est l'intégrale de la puissance $p(t) = u(t)\,i(t)$. On ne connaît $p$ qu'aux instants de relevé $t_0, t_1, \dots, t_N$. Entre deux relevés, on remplace $p$ par le segment de droite qui joint $(t_k, p_k)$ et $(t_{k+1}, p_{k+1})$ :
+\[
+p(t) \approx p_k + \frac{p_{k+1} - p_k}{t_{k+1} - t_k} \, (t - t_k)
+\]
+On intègre cette droite sur $[t_k, t_{k+1}]$, en posant $h = t_{k+1} - t_k$ et $\tau = t - t_k$ :
+\[
+\int_{t_k}^{t_{k+1}} p(t)\,\mathrm{d}t \approx \int_{0}^{h} \left( p_k + \frac{p_{k+1} - p_k}{h} \, \tau \right) \mathrm{d}\tau
+\]
+\[
+= p_k \, h + \frac{p_{k+1} - p_k}{h} \cdot \frac{h^2}{2}
+\]
+\[
+= h \, \frac{p_k + p_{k+1}}{2}
+\]
+C'est l'aire d'un trapèze de bases $p_k$ et $p_{k+1}$ et de hauteur $h$. On additionne tous les intervalles :
+\[
+E \approx \sum_{k=0}^{N-1} (t_{k+1} - t_k) \, \frac{p_k + p_{k+1}}{2}
+\]
+Avec $t$ en heures et $p$ en watts, $E$ est en wattheures.
+\end{demo}
+
+Le script calcule ainsi l'énergie produite par le panneau $E_{PV}$ et l'énergie nette entrée dans la batterie $E_{\text{net}}$, puis la consommation journalière par le bilan :
+\[
+E_{\text{cons}} = k_{\text{MPPT}} \, E_{PV} - E_{\text{net}}
+\]
+(ce que le régulateur fournit, moins ce qui reste stocké dans la batterie). Il compare $E_{PV}$ à $354{,}5\U{Wh/j}$, $E_{\text{cons}}$ à $226{,}1\U{Wh/j}$ et chaque mesure ponctuelle à sa valeur théorique.
+
+\textbf{Résultat sur les données d'EXEMPLE (fictives, pour preuve de fonctionnement).}
+
+\begin{center}
+\small
+\begin{tabular}{l r r r}
+\toprule
+\textbf{Grandeur (EXEMPLE)} & \textbf{Calcul} & \textbf{Théorie} & \textbf{Écart} \\
+\midrule
+Énergie produite par le panneau & 350,5 Wh/j & 354,5 Wh/j & $-$1,1 \% \\
+Énergie nette entrée dans la batterie & 107,8 Wh/j & & \\
+Consommation déduite du bilan & 225,2 Wh/j & 226,1 Wh/j & $-$0,4 \% \\
+Courant de la pompe de circulation & 1,52 A & 1,48 A & $+$2,4 \% \\
+Courant de repos 12 V & 0,33 A & 0,314 A & $+$5,1 \% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\linewidth]{protocole/exemple_bilan_journee.png}
+\caption{Sortie du script sur les données d'EXEMPLE : puissances du panneau et de la batterie, tension batterie.}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\linewidth]{protocole/exemple_ecarts.png}
+\caption{Sortie du script sur les données d'EXEMPLE : écart entre mesures ponctuelles et théorie.}
+\end{figure}
+
+\textbf{Exploitation.} Si un écart dépasse $10\U{\%}$, remplacer l'hypothèse correspondante par la valeur mesurée dans \texttt{calculs.py}, relancer le calcul et mettre à jour le bilan de la partie~\ref{sec:conso}.
+
+\begin{resume}
+Cinq séries de mesures : courant de chaque pompe (M1), consommation au repos et rendement de l'UBEC (M2), bilan d'une journée enregistré par l'INA260 toutes les 5 min (M3), tensions et identification des batteries (M4), débit des doseuses (M5). Le script intègre les puissances par la méthode des trapèzes, déduit la consommation réelle et la compare à la théorie ; il a été vérifié sur des données d'exemple.
+\end{resume}
+
+%================ 8 SYNTHESE =================
+\section{Synthèse}
+
+\begin{center}
+\begin{tabular}{l c c}
+\toprule
+\textbf{Résultat} & \textbf{Version 1} & \textbf{Version 2} \\
+\midrule
+Consommation journalière & 281 Wh/j & 226,1 Wh/j \\
+Production théorique (120 Wc, $H = 4{,}2$) & 504 Wh/j & 504 Wh/j \\
+Production disponible pire mois & 336 Wh/j & 354,5 (LFP) / 317,2 (AGM) Wh/j \\
+Marge du panneau & $+20$ \% & $+57$ \% (LFP) / $+40$ \% (AGM) \\
+Énergie utilisable batteries (23 Ah) & & 235,5 (LFP) / 138,0 (AGM) Wh \\
+Part de la nuit dans l'énergie utilisable & & 38 \% (LFP) / 65 \% (AGM) \\
+Autonomie sans soleil & & 1,0 j (LFP) / 0,6 j (AGM) \\
+Fusibles & 10 / 5 / 15 / 7,5 A & 10 / 5 / 15 / 4 A + 2 A (UBEC) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{resume}
+Le panneau TE1250 de 120 Wc couvre le besoin du pire mois avec une marge confortable. Les batteries de 23 Ah couvrent la nuit sans difficulté mais seulement un à deux jours très couverts en LiFePO4 (un seul en AGM) : un mode sobriété basé sur la tension batterie est à programmer. Points à vérifier en priorité par l'étudiant : technologie réelle des deux batteries (étiquette), réglage du régulateur, négatif commun du régulateur, puis les mesures M1 à M5.
+\end{resume}
+
+\end{document}
