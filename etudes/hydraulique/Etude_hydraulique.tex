@@ -1,0 +1,698 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[french]{babel}
+\frenchsetup{StandardLists=true}
+\usepackage[margin=2.3cm,headheight=14pt]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{icomma}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs,array}
+\usepackage{enumitem}
+\usepackage{pdflscape}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,decorations.pathmorphing}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{bleuTitre}{HTML}{1C5CAB}
+\definecolor{bleuEau}{HTML}{2A78D6}
+\definecolor{orangeDose}{HTML}{EB6834}
+\definecolor{vertFeuille}{HTML}{1BAF7A}
+\definecolor{rougeSonde}{HTML}{C0392B}
+
+\titleformat{\section}{\Large\bfseries\color{bleuTitre}}{\thesection}{0.8em}{}
+\titleformat{\subsection}{\large\bfseries\color{bleuTitre}}{\thesubsection}{0.8em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{bleuTitre}}{\thesubsubsection}{0.8em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Étude hydraulique de la tour HydroTour}
+\fancyhead[R]{\small Enoaarii RAPARII}
+\fancyfoot[C]{\small Page \thepage}
+\fancypagestyle{plain}{\fancyhf{}\fancyhead[L]{\small Étude hydraulique de la tour HydroTour}\fancyhead[R]{\small Enoaarii RAPARII}\fancyfoot[C]{\small Page \thepage}}
+
+\newtcolorbox{calcul}[1]{enhanced,breakable,colback=blue!3,colframe=bleuTitre,
+  fonttitle=\bfseries,title={Calcul de #1},left=8pt,right=8pt,top=6pt,bottom=6pt,before skip=10pt,after skip=12pt}
+\newtcolorbox{resume}{enhanced,breakable,colback=green!4,colframe=vertFeuille!80!black,
+  fonttitle=\bfseries,title={Résumé},left=8pt,right=8pt,before skip=12pt}
+\newtcolorbox{hypo}{enhanced,breakable,colback=orange!5,colframe=orangeDose,
+  fonttitle=\bfseries,title={Hypothèse},left=8pt,right=8pt}
+
+\newcommand{\U}[1]{\,\mathrm{#1}}
+\setlength{\jot}{10pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist{itemsep=2pt}
+
+\begin{document}
+
+\begin{titlepage}
+\centering
+\vspace*{1.5cm}
+{\large Université de la Polynésie française\par}
+\vspace{0.3cm}
+{\large Licence 3 Sciences pour l'ingénieur\par}
+\vspace{0.3cm}
+{\large Projet tutoré 2026-2027\par}
+\vspace{3cm}
+{\color{bleuTitre}\rule{\linewidth}{1pt}\par}
+\vspace{0.6cm}
+{\Huge\bfseries\color{bleuTitre} Étude hydraulique\par}
+\vspace{0.4cm}
+{\LARGE Tour hydroponique verticale HydroTour\par}
+\vspace{0.4cm}
+{\large Circulation, bilan hydrique, dosage et protocole de mesure\par}
+\vspace{0.6cm}
+{\color{bleuTitre}\rule{\linewidth}{1pt}\par}
+\vspace{3cm}
+{\Large Enoaarii RAPARII\par}
+\vspace{0.3cm}
+{\large Équipe de 3 étudiants\par}
+\vfill
+{\large Novembre 2026\par}
+\end{titlepage}
+\setcounter{page}{2}
+
+\tableofcontents
+\newpage
+
+%=====================================================================
+\section{Objet de l'étude et données}
+%=====================================================================
+La tour HydroTour est un tuyau PVC vertical de 1 m portant 12 plants de laitue. Une pompe immergée dans un bac de 152 L envoie l'eau en haut de la tour, où un jet (effet douche) arrose les godets ; l'eau redescend par gravité dans le bac. Trois pompes péristaltiques ajoutent l'engrais A, l'engrais B et le correcteur pH-.
+
+Cette étude répond à cinq questions :
+\begin{enumerate}
+  \item comment l'eau et les solutions circulent (schéma hydraulique) ;
+  \item quel débit la pompe fournit réellement dans ce circuit (point de fonctionnement) ;
+  \item si ce débit suffit aux plants, et à quelle fréquence il faut refaire le plein du bac ;
+  \item quelle dose injecter et combien de temps attendre avant de mesurer à nouveau ;
+  \item comment vérifier tout cela par des mesures.
+\end{enumerate}
+
+\begin{center}
+\begin{tabular}{>{\raggedright}p{6.2cm}p{7.4cm}}
+\toprule
+\textbf{Donnée} & \textbf{Valeur retenue} \\
+\midrule
+Volume du bac & $V = 152\U{L}$ \\
+Pompe de circulation & $Q_{max} = 800\U{L/h}$, $H_{max} = 5\U{m}$, 12 V, 19 W \\
+Planning de la pompe & 6,75 h de marche par jour (15 min marche, 15 min arrêt le jour) \\
+Hauteur géométrique (surface du bac jusqu'au jet) & $H_g \approx 1{,}2\U{m}$ \\
+Nombre de plants & 12 laitues \\
+Pompes doseuses & 12 V, 0,30 A, débit en charge 80 mL/min (hypothèse commune à l'étude électrique) \\
+Cibles & pH 6,0 (5,5 à 6,5) ; EC 1,4 mS/cm (1,2 à 1,8) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Les données manquantes (diamètre du tuyau, pomme de douche, évaporation, solutions dosées) font l'objet d'hypothèses signalées dans des encadrés orange et regroupées dans le fichier \texttt{HYPOTHESES.md}.
+
+%=====================================================================
+\begin{landscape}
+\section{Schéma hydraulique}
+\begin{center}
+\input{schema.tex}
+\end{center}
+\end{landscape}
+
+\textbf{Lecture du schéma.}
+\begin{itemize}
+  \item La pompe est posée au fond du bac, loin du retour de la tour, pour aspirer une eau déjà mélangée.
+  \item La conduite de montée longe la tour et débouche dans une pomme percée sous le chapeau : l'eau retombe en pluie dans le tuyau PVC, coule le long des parois, mouille les racines des 12 godets puis tombe dans le bac.
+  \item Les tubes des trois pompes doseuses débouchent au-dessus de la zone de retour : la solution concentrée est immédiatement diluée et brassée par la chute d'eau, jamais injectée près des sondes.
+  \item Les sondes pH, EC et DS18B20 plongent dans une zone calme, à l'opposé du retour. L'eTape est placée dans un tube tranquilliseur (tube PVC percé en bas) pour que les vagues ne faussent pas le niveau.
+  \item Les mesures de pH et d'EC sont faites pompe arrêtée, après stabilisation.
+\end{itemize}
+
+\begin{resume}
+Circuit fermé : bac 152 L, pompe immergée, montée d'environ 1,8 m de tuyau, jet sous un chapeau, ruissellement dans la tour, retour par gravité. Les doses tombent dans la zone de retour (brassage fort), les sondes sont dans la zone calme opposée, l'eTape dans un tube tranquilliseur.
+\end{resume}
+
+%=====================================================================
+\newpage
+\section{Point de fonctionnement de la pompe}
+%=====================================================================
+\subsection{Courbe de la pompe}
+
+La fiche de la pompe ne donne que deux points : à débit nul, elle monte l'eau à $H_{max} = 5\U{m}$ ; sans hauteur à vaincre, elle débite $Q_{max} = 800\U{L/h}$.
+
+\begin{hypo}
+Faute de courbe constructeur, on relie ces deux points par une droite. Une vraie pompe centrifuge a une courbe bombée (au-dessus de la droite) : la droite donne donc une hauteur un peu trop faible pour un débit donné, ce qui \emph{sous-estime} le débit réel. C'est le choix prudent : si le débit calculé suffit, le débit réel suffira aussi. À titre de comparaison, une courbe parabolique passant par les mêmes deux points donnerait 596 L/h au lieu de 494 L/h.
+\end{hypo}
+
+\begin{calcul}{la courbe linéaire de la pompe}
+On cherche une droite $H_p(Q) = a\,Q + b$ passant par $(0\,;\,H_{max})$ et $(Q_{max}\,;\,0)$.
+
+Au point $Q = 0$ :
+\[ H_p(0) = b = H_{max} \]
+Au point $Q = Q_{max}$ :
+\[ 0 = a\,Q_{max} + H_{max} \]
+d'où
+\[ a = -\frac{H_{max}}{Q_{max}} \]
+En remplaçant :
+\[ H_p(Q) = H_{max}\left(1 - \frac{Q}{Q_{max}}\right) \]
+Débit maximal en unités SI :
+\[ Q_{max} = \frac{800\U{L/h}}{3600\U{s/h}} = 0{,}2222\U{L/s} = 2{,}222\times10^{-4}\U{m^3/s} \]
+\end{calcul}
+
+\subsection{Courbe du réseau}
+
+La courbe du réseau donne la hauteur que la pompe doit fournir pour faire passer un débit $Q$ dans le circuit.
+
+\begin{hypo}
+\begin{itemize}
+  \item Tuyau souple de diamètre intérieur $D = 13\U{mm}$ (tuyau 1/2 pouce, embout courant des pompes 800 L/h), lisse.
+  \item Longueur de montée $L = 1{,}8\U{m}$ : environ 0,4 m dans le bac, 1,0 m le long de la tour, 0,4 m de raccord en haut.
+  \item Pertes singulières : entrée dans la pompe et raccord $0{,}5$, deux coudes à 90° $2\times0{,}9$, entrée dans la pomme $0{,}5$, soit $K = 2{,}8$.
+  \item Pomme de douche : 12 trous de 3 mm, coefficient de contraction du jet $C_d = 0{,}62$ (trou à arête vive).
+  \item Eau à 25 °C : $\rho = 997\U{kg/m^3}$, viscosité cinématique $\nu = 0{,}893\times10^{-6}\U{m^2/s}$, $g = 9{,}81\U{m/s^2}$.
+\end{itemize}
+\end{hypo}
+
+\begin{calcul}{la hauteur demandée par le réseau (conservation de l'énergie)}
+Pour une tranche d'eau de masse $m$ et de volume $m/\rho$, l'énergie mécanique se compose de l'énergie de pression $p\,m/\rho$, de l'énergie cinétique $\tfrac12 m v^2$ et de l'énergie potentielle $m g z$. En divisant par le poids $m g$, on obtient une énergie par unité de poids, homogène à une hauteur (en mètres) :
+\[ e = \frac{p}{\rho g} + \frac{v^2}{2g} + z \]
+Entre la surface du bac (point 1) et la sortie du jet (point 2), la pompe apporte la hauteur $H$ et les frottements dissipent la hauteur $\Delta H$. Le bilan d'énergie s'écrit :
+\[ \frac{p_1}{\rho g} + \frac{v_1^2}{2g} + z_1 + H = \frac{p_2}{\rho g} + \frac{v_2^2}{2g} + z_2 + \Delta H \]
+Au point 1, l'eau est à la pression atmosphérique et quasi immobile (grande surface) : $p_1 = p_{atm}$, $v_1 \approx 0$.
+
+Au point 2, le jet est à l'air libre : $p_2 = p_{atm}$, et sa vitesse est $v_j$.
+
+Les pressions atmosphériques s'annulent ; on note $H_g = z_2 - z_1$ :
+\[ H = H_g + \frac{v_j^2}{2g} + \Delta H \]
+Les pertes se décomposent en pertes régulières $h_r$ (frottement le long du tuyau) et singulières $h_s$ (coudes, raccords) :
+\[ \Delta H = h_r + h_s \]
+\end{calcul}
+
+\begin{calcul}{la perte de charge régulière}
+On isole un tronçon de tuyau de longueur $L$ et de diamètre $D$, où l'écoulement est établi (vitesse moyenne $v$ constante). La quantité de mouvement ne varie pas, donc les forces s'équilibrent : la différence de pression sur les deux sections pousse l'eau, la contrainte de frottement $\tau_p$ sur la paroi la retient.
+\[ \Delta p \cdot \frac{\pi D^2}{4} = \tau_p \cdot \pi D L \]
+d'où
+\[ \Delta p = \frac{4\,\tau_p\,L}{D} \]
+La contrainte de paroi dépend de $\rho$, $v$, $D$ et de la viscosité. La seule grandeur homogène à une pression construite avec $\rho$ et $v$ est $\rho v^2$ ; le rapport $\tau_p/(\rho v^2)$ est donc un nombre sans dimension, qui ne peut dépendre que du seul autre nombre sans dimension du problème, le nombre de Reynolds $Re = vD/\nu$. On l'écrit, par convention :
+\[ \tau_p = \frac{\lambda}{8}\,\rho v^2 \]
+En remplaçant :
+\[ \Delta p = \lambda\,\frac{L}{D}\,\frac{\rho v^2}{2} \]
+En hauteur d'eau ($h_r = \Delta p/(\rho g)$) :
+\[ h_r = \lambda\,\frac{L}{D}\,\frac{v^2}{2g} \]
+Pour un tuyau lisse en régime turbulent ($4000 < Re < 10^5$), la loi expérimentale admise est :
+\[ \lambda = 0{,}316\,Re^{-1/4} \]
+\end{calcul}
+
+\begin{calcul}{la perte singulière et de la vitesse du jet}
+Chaque coude ou raccord dissipe une fraction de l'énergie cinétique, proportionnelle à $v^2/(2g)$ par un coefficient $K_i$ propre à la pièce. En sommant :
+\[ h_s = \Big(\sum K_i\Big)\frac{v^2}{2g} = K\,\frac{v^2}{2g} \]
+La vitesse dans le tuyau vient de la conservation du débit volumique ($Q$ identique dans toute section) :
+\[ v = \frac{Q}{A}, \qquad A = \frac{\pi D^2}{4} \]
+À la sortie des $n$ trous de diamètre $d$, le jet se contracte à la section $C_d\,\pi d^2/4$ ; la section utile totale est :
+\[ a = n\,C_d\,\frac{\pi d^2}{4} \]
+et la vitesse du jet :
+\[ v_j = \frac{Q}{a} \]
+La courbe du réseau s'écrit finalement :
+\[ H_r(Q) = H_g + \left(\lambda\frac{L}{D} + K\right)\frac{Q^2}{2gA^2} + \frac{Q^2}{2g\,a^2} \]
+\end{calcul}
+
+\begin{calcul}{des sections}
+\[ A = \frac{\pi \times (0{,}013\U{m})^2}{4} = 1{,}327\times10^{-4}\U{m^2} \]
+\[ a = 12 \times 0{,}62 \times \frac{\pi \times (0{,}003\U{m})^2}{4} = 5{,}26\times10^{-5}\U{m^2} \]
+La section utile de la pomme est 2,5 fois plus petite que celle du tuyau : c'est elle qui accélère l'eau et forme le jet.
+\end{calcul}
+
+\subsection{Intersection et débit réel}
+
+Le débit réel est celui pour lequel la hauteur fournie par la pompe égale la hauteur demandée par le réseau : $H_p(Q) = H_r(Q)$. Comme $\lambda$ dépend de $Q$, l'équation est résolue numériquement (script \texttt{calculs.py}). On vérifie ci-dessous le résultat terme par terme.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/point_fonctionnement.pdf}
+\caption{Courbe de la pompe, courbe du réseau et point de fonctionnement.}
+\end{figure}
+
+\begin{calcul}{la vérification du point de fonctionnement}
+Débit trouvé :
+\[ Q = 1{,}372\times10^{-4}\U{m^3/s} = 1{,}372\times10^{-4} \times 3{,}6\times10^{6}\U{L/h} = 494\U{L/h} \]
+Vitesse dans le tuyau :
+\[ v = \frac{1{,}372\times10^{-4}\U{m^3/s}}{1{,}327\times10^{-4}\U{m^2}} = 1{,}03\U{m/s} \]
+Nombre de Reynolds :
+\[ Re = \frac{1{,}03\U{m/s} \times 0{,}013\U{m}}{0{,}893\times10^{-6}\U{m^2/s}} = 15\,000 \]
+$Re > 4000$ : l'écoulement est turbulent, la loi de $\lambda$ s'applique.
+\[ \lambda = 0{,}316 \times 15\,000^{-1/4} = \frac{0{,}316}{11{,}07} = 0{,}0285 \]
+Énergie cinétique dans le tuyau :
+\[ \frac{v^2}{2g} = \frac{(1{,}03\U{m/s})^2}{2\times9{,}81\U{m/s^2}} = 0{,}0544\U{m} \]
+Pertes régulières :
+\[ h_r = 0{,}0285 \times \frac{1{,}8\U{m}}{0{,}013\U{m}} \times 0{,}0544\U{m} = 3{,}95 \times 0{,}0544\U{m} = 0{,}215\U{m} \]
+Pertes singulières :
+\[ h_s = 2{,}8 \times 0{,}0544\U{m} = 0{,}152\U{m} \]
+Vitesse du jet :
+\[ v_j = \frac{1{,}372\times10^{-4}\U{m^3/s}}{5{,}26\times10^{-5}\U{m^2}} = 2{,}61\U{m/s} \]
+Énergie cinétique du jet :
+\[ \frac{v_j^2}{2g} = \frac{(2{,}61\U{m/s})^2}{2\times9{,}81\U{m/s^2}} = 0{,}347\U{m} \]
+Hauteur demandée par le réseau :
+\[ H_r = 1{,}2\U{m} + 0{,}215\U{m} + 0{,}152\U{m} + 0{,}347\U{m} = 1{,}914\U{m} \]
+Hauteur fournie par la pompe :
+\[ H_p = 5\U{m} \times \left(1 - \frac{494\U{L/h}}{800\U{L/h}}\right) = 5\U{m}\times 0{,}383 = 1{,}914\U{m} \]
+Les deux hauteurs sont égales : le point est vérifié.
+\end{calcul}
+
+\begin{calcul}{la pression en amont de la pomme et de la hauteur du jet}
+Entre le tuyau juste avant la pomme (vitesse $v$, pression $p$) et le jet (vitesse $v_j$, pression atmosphérique), à la même altitude et sans perte (déjà comptée dans $C_d$), la conservation de l'énergie donne :
+\[ \frac{p - p_{atm}}{\rho g} + \frac{v^2}{2g} = \frac{v_j^2}{2g} \]
+d'où la surpression :
+\[ p - p_{atm} = \frac{\rho}{2}\left(v_j^2 - v^2\right) \]
+\[ p - p_{atm} = \frac{997\U{kg/m^3}}{2}\times\left((2{,}61\U{m/s})^2 - (1{,}03\U{m/s})^2\right) = 2860\U{Pa} \]
+soit 0,029 bar, ou 0,29 m de colonne d'eau.
+
+Si le jet était dirigé vers le haut (chapeau retiré), il monterait, sans frottement de l'air, jusqu'à ce que toute son énergie cinétique soit devenue potentielle :
+\[ \tfrac12 m v_j^2 = m g h_{jet} \]
+\[ h_{jet} = \frac{v_j^2}{2g} = 0{,}347\U{m} \approx 35\U{cm} \]
+Cette hauteur se mesure facilement (partie 6) et permet de vérifier le débit.
+\end{calcul}
+
+\begin{calcul}{la puissance hydraulique}
+La pompe élève chaque seconde un volume $Q$, soit un poids $\rho g Q$, d'une hauteur $H$ :
+\[ P_h = \rho\,g\,Q\,H \]
+\[ P_h = 997\U{kg/m^3} \times 9{,}81\U{m/s^2} \times 1{,}372\times10^{-4}\U{m^3/s} \times 1{,}914\U{m} = 2{,}57\U{W} \]
+Comparée aux 19 W électriques de la pompe, le rendement global est :
+\[ \eta = \frac{2{,}57\U{W}}{19\U{W}} = 0{,}135 \]
+Ce rendement faible est normal pour une petite pompe utilisée loin de sa hauteur maximale ; il ne change pas la consommation électrique retenue (19 W).
+\end{calcul}
+
+\subsection{Sensibilité au diamètre du tuyau}
+
+Le diamètre réel n'étant pas encore mesuré, le tableau donne le point de fonctionnement pour d'autres tuyaux courants (même pomme, même longueur).
+
+\begin{center}
+\begin{tabular}{ccccc}
+\toprule
+$D$ (mm) & $Q$ avec pomme (L/h) & $v$ (m/s) & $H$ (m) & $Q$ tuyau ouvert (L/h) \\
+\midrule
+10 & 424 & 1,50 & 2,35 & 437 \\
+\textbf{13} & \textbf{494} & \textbf{1,03} & \textbf{1,91} & \textbf{531} \\
+16 & 520 & 0,72 & 1,75 & 572 \\
+19 & 531 & 0,52 & 1,68 & 590 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.72\linewidth]{figures/sensibilite_diametre.pdf}
+\caption{Courbe du réseau pour quatre diamètres de tuyau.}
+\end{figure}
+
+Le débit reste compris entre 420 et 530 L/h : l'étude ne dépend pas fortement du diamètre. Le tuyau de 10 mm est à éviter (vitesse 1,5 m/s, bruit et pertes plus forts).
+
+\begin{resume}
+\begin{itemize}
+  \item Pompe modélisée par $H_p = 5\U{m}\times(1 - Q/800\U{L/h})$ (hypothèse prudente).
+  \item Réseau : $H_g = 1{,}2\U{m}$ + pertes régulières 0,22 m + singulières 0,15 m + énergie du jet 0,35 m.
+  \item Point de fonctionnement : $Q \approx 494\U{L/h}$, $H \approx 1{,}91\U{m}$, $v = 1{,}03\U{m/s}$ dans le tuyau de 13 mm, jet à 2,6 m/s, surpression avant la pomme 0,029 bar, jet vertical d'environ 35 cm.
+  \item Puissance hydraulique 2,6 W pour 19 W électriques.
+\end{itemize}
+\end{resume}
+
+%=====================================================================
+\newpage
+\section{Débit par plant, renouvellement et bilan hydrique}
+%=====================================================================
+\subsection{Débit par plant}
+
+\begin{calcul}{du débit par plant}
+\[ q_{plant} = \frac{Q}{n} = \frac{494\U{L/h}}{12} = 41\U{L/h} = 0{,}69\U{L/min} \]
+\end{calcul}
+
+\begin{hypo}
+Pour une tour à ruissellement, on retient un besoin minimal de 2 L/h par godet pendant la marche, pour que la paroi et les racines restent mouillées sur toute la hauteur. Le vrai critère est visuel : toutes les racines doivent être mouillées pendant la marche.
+\end{hypo}
+
+Le débit disponible est 20 fois supérieur au besoin minimal. Même si seul un quart de l'eau touche réellement les racines (le reste ruisselle au centre), chaque plant reçoit environ 10 L/h. Le débit est donc largement suffisant ; aucune vanne de réglage n'est nécessaire. Pendant les 15 min d'arrêt, les racines restent humides grâce au film d'eau et à l'humidité de la tour fermée.
+
+L'eau absorbée par un plant est négligeable devant le débit qui le traverse :
+\[ \frac{0{,}3\U{L/j}}{41\U{L/h}\times6{,}75\U{h/j}} = \frac{0{,}3\U{L/j}}{277\U{L/j}} = 0{,}1\,\% \]
+La composition de l'eau ne varie donc pas entre le haut et le bas de la tour.
+
+\subsection{Temps de renouvellement du bac}
+
+\begin{calcul}{du temps de renouvellement}
+Le temps de renouvellement est la durée pour que la pompe fasse passer dans la tour un volume égal à celui du bac :
+\[ \tau = \frac{V}{Q} \]
+\[ \tau = \frac{152\U{L}}{494\U{L/h}} = 0{,}308\U{h} = 0{,}308\U{h}\times60\U{min/h} = 18{,}5\U{min} \]
+Nombre de passages du volume du bac par jour :
+\[ N_j = \frac{Q\,t_{marche}}{V} = \frac{494\U{L/h}\times6{,}75\U{h/j}}{152\U{L}} = \frac{3335\U{L/j}}{152\U{L}} = 21{,}9\U{/j} \]
+\end{calcul}
+
+Une période de marche de 15 min fait passer environ 80 \% du volume du bac dans la tour (15 min / 18,5 min).
+
+\subsection{Bilan hydrique}
+
+L'eau quitte le bac de deux façons : absorbée par les plants (transpirée par les feuilles), et évaporée par les surfaces mouillées en contact avec l'air.
+
+\begin{hypo}
+\begin{itemize}
+  \item Consommation de pointe : 0,30 L/j par laitue adulte en climat tropical, les 10 derniers jours avant récolte.
+  \item Consommation moyenne sur le cycle : 0,15 L/j par plant. Une laitue passe la première moitié de son cycle avec peu de feuilles (consommation de 0,05 à 0,10 L/j), puis la consommation croît avec la surface des feuilles jusqu'à la pointe ; la moyenne vaut environ la moitié de la pointe.
+  \item Évaporation : surface d'eau libre en contact avec l'air $S_e = 0{,}10\U{m^2}$ (ouvertures du couvercle, entrée des godets, parois mouillées vues par l'air) et 5 mm/j d'évaporation (eau tiède, air chaud et humide).
+  \item Hauteur d'eau dans le bac plein : 0,40 m, d'où une surface du bac $S_{bac} = 0{,}152\U{m^3}/0{,}40\U{m} = 0{,}38\U{m^2}$.
+\end{itemize}
+\end{hypo}
+
+\begin{calcul}{de l'évaporation}
+Une lame d'eau de 1 mm sur 1 m$^2$ représente :
+\[ 10^{-3}\U{m}\times1\U{m^2} = 10^{-3}\U{m^3} = 1\U{L} \]
+donc :
+\[ E = 0{,}10\U{m^2}\times5\U{mm/j}\times1\U{L/(mm\cdot m^2)} = 0{,}5\U{L/j} \]
+\end{calcul}
+
+\begin{calcul}{de la consommation journalière}
+\[ C = n\,c + E \]
+En pointe :
+\[ C_{pic} = 12\times0{,}30\U{L/j} + 0{,}5\U{L/j} = 3{,}6\U{L/j} + 0{,}5\U{L/j} = 4{,}1\U{L/j} \]
+En moyenne sur le cycle :
+\[ C_{moy} = 12\times0{,}15\U{L/j} + 0{,}5\U{L/j} = 1{,}8\U{L/j} + 0{,}5\U{L/j} = 2{,}3\U{L/j} \]
+Baisse du niveau en pointe :
+\[ \Delta h = \frac{C_{pic}}{S_{bac}} = \frac{4{,}1\times10^{-3}\U{m^3/j}}{0{,}38\U{m^2}} = 0{,}0108\U{m/j} = 1{,}1\U{cm/j} \]
+\end{calcul}
+
+\begin{calcul}{de la fréquence d'appoint}
+La baisse tolérée est 10 \% du volume :
+\[ V_{tol} = 0{,}10\times152\U{L} = 15{,}2\U{L} \]
+ce qui correspond à une baisse de niveau de :
+\[ \frac{15{,}2\times10^{-3}\U{m^3}}{0{,}38\U{m^2}} = 0{,}040\U{m} = 4{,}0\U{cm} \]
+Le volume baisse linéairement : $V(t) = V - C\,t$. L'appoint est nécessaire quand $C\,t = V_{tol}$ :
+\[ T = \frac{V_{tol}}{C} \]
+En pointe :
+\[ T_{pic} = \frac{15{,}2\U{L}}{4{,}1\U{L/j}} = 3{,}7\U{j} \]
+En moyenne :
+\[ T_{moy} = \frac{15{,}2\U{L}}{2{,}3\U{L/j}} = 6{,}6\U{j} \]
+\end{calcul}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.78\linewidth]{figures/bilan_hydrique.pdf}
+\caption{Volume du bac sans appoint, en pointe et en moyenne de cycle.}
+\end{figure}
+
+\begin{calcul}{d'une absence de 2 semaines}
+Volume consommé en 14 jours :
+\[ V_{14} = 14\U{j}\times4{,}1\U{L/j} = 57{,}4\U{L} \quad\text{(pointe)} \]
+\[ V_{14} = 14\U{j}\times2{,}3\U{L/j} = 32{,}2\U{L} \quad\text{(moyenne)} \]
+En pointe, le bac descend à $152\U{L} - 57{,}4\U{L} = 94{,}6\U{L}$ (38 \% de baisse, soit 15 cm de niveau). Dans le pire cas où les plants boivent l'eau sans prélever d'engrais, les sels se concentrent dans le volume restant (même quantité de sels dans moins d'eau) :
+\[ EC_{14} = EC_0\times\frac{V}{V - V_{14}} = 1{,}4\U{mS/cm}\times\frac{152\U{L}}{94{,}6\U{L}} = 2{,}25\U{mS/cm} \]
+\end{calcul}
+
+Une absence de 2 semaines sans appoint dépasse donc la tolérance de 10 \% : elle n'est acceptable qu'en début de cycle (jeunes plants) ou en remplissant le bac au maximum avant le départ et en réglant le seuil de niveau bas de l'Arduino au-dessus de l'aspiration de la pompe. En pointe de consommation, il faut un passage pour l'appoint au moins tous les 3 à 4 jours.
+
+\begin{resume}
+\begin{itemize}
+  \item Débit par plant : 41 L/h, environ 20 fois le besoin minimal retenu (2 L/h).
+  \item Temps de renouvellement du bac : 18,5 min ; le bac passe environ 22 fois par jour dans la tour.
+  \item Consommation : 4,1 L/j en pointe, 2,3 L/j en moyenne (dont 0,5 L/j d'évaporation).
+  \item Appoint manuel (baisse de 10 \% = 15,2 L = 4 cm) : tous les 3,7 jours en pointe, 6,6 jours en moyenne.
+  \item Absence de 2 semaines : 32 à 57 L consommés, tolérance dépassée ; prévoir un appoint intermédiaire en fin de cycle.
+\end{itemize}
+\end{resume}
+
+%=====================================================================
+\newpage
+\section{Dosage des engrais et du pH-}
+%=====================================================================
+\subsection{Débit des pompes doseuses et volume par dose}
+
+\begin{hypo}
+Débit des pompes péristaltiques en charge : $q_d = 80\U{mL/min}$ (valeur commune avec l'étude électrique, à mesurer, partie 6). Le volume injecté est proportionnel à la durée de marche, car chaque tour du rotor pousse le même volume de tuyau écrasé.
+\end{hypo}
+
+\begin{calcul}{de la durée de commande pour un volume donné}
+\[ v_{dose} = q_d\,t \]
+d'où
+\[ t = \frac{v_{dose}}{q_d} \]
+Pour 10 mL d'engrais :
+\[ t = \frac{10\U{mL}}{80\U{mL/min}} = 0{,}125\U{min} = 0{,}125\U{min}\times60\,000\U{ms/min} = 7500\U{ms} \]
+Pour 4 mL de pH- :
+\[ t = \frac{4\U{mL}}{80\U{mL/min}} = 0{,}05\U{min} = 3000\U{ms} \]
+Ces durées respectent la limite de 30 000 ms par commande de l'Arduino (soit 40 mL au maximum).
+\end{calcul}
+
+\subsection{Effet d'une dose sur l'EC}
+
+\begin{hypo}
+Solutions mères A et B : 1 mL de A + 1 mL de B par litre d'eau augmentent l'EC de $\beta = 0{,}56\U{mS/cm}$ (valeur commune avec l'étude électrique, à mesurer). La cible 1,4 mS/cm correspond donc à $1{,}4/0{,}56 = 2{,}5\U{mL/L}$ de chaque solution, soit 380 mL de A et 380 mL de B pour remplir le bac. L'eau d'appoint a une EC négligeable.
+\end{hypo}
+
+\begin{calcul}{de l'effet d'une dose (modèle de dilution)}
+On note $c$ la quantité de solution A par litre de bac (en mL/L). Avant la dose, le bac contient $c\,V$ millilitres de A. On ajoute $v_A$ millilitres. La quantité de A se conserve et le volume devient $V + v_A$ :
+\[ c' = \frac{c\,V + v_A}{V + v_A} \]
+La dose (10 mL) est négligeable devant 152 L, donc $V + v_A \approx V$ :
+\[ c' - c = \frac{v_A}{V} \]
+Pour une solution diluée, l'EC est proportionnelle à la quantité de sels dissous :
+\[ EC = \beta\,c \]
+d'où l'augmentation après mélange complet :
+\[ \Delta EC = \beta\,\frac{v_A}{V} \]
+Avec 10 mL de A et 10 mL de B :
+\[ \Delta EC = 0{,}56\U{\frac{mS/cm}{mL/L}}\times\frac{10\U{mL}}{152\U{L}} = 0{,}56\U{\frac{mS/cm}{mL/L}}\times0{,}0658\U{mL/L} = 0{,}037\U{mS/cm} \]
+\end{calcul}
+
+\begin{calcul}{de l'effet d'un appoint d'eau claire}
+On remplace 15,2 L consommés par 15,2 L d'eau claire ; la quantité de sels du bac ne change pas mais elle se dilue dans le volume total. Si les sels sont restés dans les 136,8 L avant appoint :
+\[ EC' = EC\times\frac{136{,}8\U{L}}{152\U{L}} = 0{,}9\,EC \]
+Pour $EC = 1{,}4\U{mS/cm}$, la baisse est $0{,}14\U{mS/cm}$, compensée par :
+\[ \frac{0{,}14\U{mS/cm}}{0{,}037\U{mS/cm}} = 3{,}8 \;\to\; 4\ \text{doses} \]
+\end{calcul}
+
+\subsection{Effet d'une dose de pH- sur le pH}
+
+\begin{hypo}
+\begin{itemize}
+  \item Le bac doseur pH- contient une solution acide diluée apportant $c_{acide} = 0{,}5\U{mol/L}$ d'ions H$^+$ (à préparer en diluant le pH- du commerce, voir \texttt{HYPOTHESES.md}).
+  \item Le pH de la solution nutritive est tamponné par les phosphates de l'engrais : 1,6 mmol/L de phosphore, couple H$_2$PO$_4^-$/HPO$_4^{2-}$ de p$K_a$ = 7,2. Les autres tampons (carbonates de l'eau du robinet) sont ignorés : l'effet calculé d'une dose est donc un \emph{majorant}, ce qui est prudent.
+\end{itemize}
+\end{hypo}
+
+\begin{calcul}{du pouvoir tampon}
+Pour le couple acide/base, la définition du p$K_a$ donne :
+\[ \mathrm{pH} = \mathrm{p}K_a + \log\frac{[\mathrm{HPO_4^{2-}}]}{[\mathrm{H_2PO_4^-}]} \]
+On note $C_P$ la concentration totale et $\alpha$ la fraction sous forme basique HPO$_4^{2-}$ :
+\[ [\mathrm{HPO_4^{2-}}] = \alpha\,C_P, \qquad [\mathrm{H_2PO_4^-}] = (1-\alpha)\,C_P \]
+d'où
+\[ \frac{\alpha}{1-\alpha} = 10^{\,\mathrm{pH}-\mathrm{p}K_a} \]
+\[ \alpha = \frac{1}{1 + 10^{\,\mathrm{p}K_a - \mathrm{pH}}} \]
+L'acide ajouté (concentration $c_a$ dans le bac) transforme HPO$_4^{2-}$ en H$_2$PO$_4^-$ :
+\[ \mathrm{d}c_a = -C_P\,\mathrm{d}\alpha \]
+En dérivant $\ln\frac{\alpha}{1-\alpha} = \ln10\,(\mathrm{pH}-\mathrm{p}K_a)$ :
+\[ \frac{\mathrm{d}\alpha}{\alpha(1-\alpha)} = \ln10\;\mathrm{d}\mathrm{pH} \]
+On appelle pouvoir tampon la quantité d'acide qui fait baisser le pH d'une unité :
+\[ \beta_P = -\frac{\mathrm{d}c_a}{\mathrm{d}\mathrm{pH}} = \ln10\;C_P\;\alpha(1-\alpha) \]
+Pour une petite dose, la baisse de pH est donc :
+\[ \Delta\mathrm{pH} = -\frac{c_a}{\beta_P} \]
+\end{calcul}
+
+\begin{calcul}{de l'effet d'une dose de 4 mL de pH-}
+Fraction basique à pH 6,0 :
+\[ \alpha = \frac{1}{1+10^{7{,}2-6{,}0}} = \frac{1}{1+15{,}85} = 0{,}0594 \]
+Pouvoir tampon :
+\[ \beta_P = 2{,}303\times1{,}6\U{mmol/L}\times0{,}0594\times0{,}9406 = 0{,}206\U{mmol/L} \text{ par unité de pH} \]
+Acide apporté dans le bac (dilution de 4 mL dans 152 L) :
+\[ c_a = \frac{0{,}5\U{mol/L}\times4\U{mL}}{152\U{L}} = \frac{2\U{mmol}}{152\U{L}} = 0{,}0132\U{mmol/L} \]
+Baisse de pH :
+\[ \Delta\mathrm{pH} = -\frac{0{,}0132\U{mmol/L}}{0{,}206\U{mmol/L}} = -0{,}064 \]
+\end{calcul}
+
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+pH du bac & $\alpha$ & $\beta_P$ (mmol/L par pH) & baisse pour 4 mL \\
+\midrule
+6,5 & 0,166 & 0,511 & 0,026 \\
+6,3 & 0,112 & 0,366 & 0,036 \\
+6,0 & 0,059 & 0,206 & 0,064 \\
+5,5 & 0,020 & 0,071 & 0,186 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Plus le pH descend, moins la solution est tamponnée et plus une même dose a d'effet : il ne faut jamais doser de pH- sous 6,0, faute de pH+ pour corriger une erreur.
+
+\subsection{Durée de mélange}
+
+\begin{calcul}{du taux de mélange}
+La dose tombe dans la zone de retour. On considère comme \og mélangée\fg{} toute eau passée au moins une fois par la pompe et la tour. On note $f(t)$ la fraction du bac jamais passée par la pompe. Le bac étant brassé, la pompe aspire chaque instant de l'eau dont une fraction $f$ n'est pas encore passée ; pendant $\mathrm{d}t$ elle en prélève $Q\,f\,\mathrm{d}t$ :
+\[ V\,\mathrm{d}f = -Q\,f\,\mathrm{d}t \]
+\[ \frac{\mathrm{d}f}{f} = -\frac{\mathrm{d}t}{\tau}, \qquad \tau = \frac{V}{Q} \]
+En intégrant avec $f(0) = 1$ :
+\[ f(t) = e^{-t/\tau} \]
+La fraction mélangée vaut $1 - e^{-t/\tau}$, avec $t$ le temps de pompage (les arrêts ne comptent pas). Après $N$ renouvellements ($t = N\tau$) :
+\[ 1 - e^{-1} = 63\,\%, \qquad 1 - e^{-2} = 86\,\%, \qquad 1 - e^{-3} = 95\,\% \]
+95 \% du bac est mélangé après :
+\[ 3\tau = 3\times18{,}5\U{min} = 55\U{min} \text{ de pompage} \]
+soit 4 périodes de marche de 15 min (60 min de pompage), c'est-à-dire 2 h de jour.
+\end{calcul}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\linewidth]{figures/melange.pdf}
+\caption{Fraction du bac brassée en fonction du temps de pompage après une dose.}
+\end{figure}
+
+\subsection{Réglages conseillés pour le cerveau}
+
+Les réglages ci-dessous respectent la SPEC (section 3) : mesures pompe à l'arrêt, doses petites et progressives, A et B à volumes égaux, pas de pH+.
+
+\begin{center}
+\begin{tabular}{>{\raggedright}p{5.3cm}p{8.3cm}}
+\toprule
+\textbf{Réglage} & \textbf{Valeur conseillée} \\
+\midrule
+Moment de la mesure & 5 min après l'arrêt de la pompe (hh:20 et hh:50), de 6 h à 18 h \\
+Moment de l'injection & 1 min après le démarrage de la période de marche suivante (hh:31 ou hh:01) \\
+Seuil de dose engrais & EC à 25 °C $< 1{,}30\U{mS/cm}$ \\
+Dose engrais & \texttt{D 1 7500} (10 mL de A), puis 60 s plus tard \texttt{D 2 7500} (10 mL de B) ; effet $+0{,}037\U{mS/cm}$ \\
+Seuil de dose pH- & pH $> 6{,}3$ \\
+Dose pH- & \texttt{D 3 3000} (4 mL) ; effet $-0{,}03$ à $-0{,}06$ ; au moins 5 min après les engrais \\
+Ordre & corriger l'EC d'abord, le pH ensuite (les engrais modifient le pH) \\
+Délai entre deux doses du même type & 2 h de jour (4 périodes de marche, 95 \% du bac mélangé) \\
+Maximum par jour & 4 doses d'engrais (40 mL de A et 40 mL de B, $+0{,}15\U{mS/cm}$) ; 4 doses de pH- (16 mL) \\
+Nuit & aucune dose (pompe trop peu en marche pour mélanger) \\
+Blocages & pas de dose si niveau bas, T eau $> 28$ °C, ou mesure incohérente \\
+Alarmes & EC $> 1{,}8$ (diluer à l'eau claire, à la main) ; pH $< 5{,}5$ (aucun pH+ disponible) ; maximum journalier atteint \\
+Étalonnage & durée (ms) $= v_{dose}$ (mL) $\times 60\,000 / q_d$ mesuré (mL/min) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{calcul}{de la cohérence avec la consommation d'engrais}
+Si les plants prélèvent les sels dans la même proportion que l'eau, ils consomment par jour :
+\[ C\times2{,}5\U{mL/L} \]
+\[ 4{,}1\U{L/j}\times2{,}5\U{mL/L} = 10{,}3\U{mL/j} \quad\text{(pointe)} \]
+\[ 2{,}3\U{L/j}\times2{,}5\U{mL/L} = 5{,}8\U{mL/j} \quad\text{(moyenne)} \]
+de A (et autant de B), soit une ou deux doses par jour. Le maximum de 4 doses par jour (40 mL) laisse une marge d'un facteur 4 tout en limitant l'effet d'une erreur de capteur à $+0{,}15\U{mS/cm}$ par jour.
+\end{calcul}
+
+\begin{resume}
+\begin{itemize}
+  \item Doseuses à 80 mL/min : 10 mL d'engrais = 7500 ms ; 4 mL de pH- = 3000 ms.
+  \item Une dose de 10 mL A + 10 mL B élève l'EC de 0,037 mS/cm ; un appoint de 15,2 L la fait baisser de 0,14 mS/cm (4 doses).
+  \item 4 mL de pH- (0,5 mol/L) font baisser le pH de 0,03 à 0,06 entre 6,5 et 6,0, mais de 0,19 à pH 5,5.
+  \item Mélange à 95 \% après 3 renouvellements (55 min de pompage), soit 2 h de jour : délai minimal entre deux doses.
+  \item Seuils : engrais si EC $< 1{,}30$ ; pH- si pH $> 6{,}3$ ; 4 doses par jour au maximum ; rien la nuit.
+\end{itemize}
+\end{resume}
+
+%=====================================================================
+\newpage
+\section{Protocole de mesure}
+%=====================================================================
+Ces mesures valident les hypothèses de l'étude. Les relevés sont saisis dans les fichiers CSV du dossier \texttt{mesures/} (séparateur point-virgule), puis traités par \texttt{traitement\_mesures.py}, qui compare chaque mesure à la valeur théorique et trace les figures dans \texttt{resultats\_mesure/}. La commande \texttt{python3 traitement\_mesures.py -{}-exemple} fait tourner le script sur des données fictives clairement marquées EXEMPLE.
+
+\textbf{Matériel commun :} seau gradué de 10 L (ou seau + balance), chronomètre (téléphone), mètre ruban et règle graduée, éprouvette graduée de 50 mL (ou seringue de 20 mL), sonde EC étalonnée, accès au dashboard ou à la console série du Pi.
+
+\subsection{Débit réel de la pompe}
+\begin{enumerate}
+  \item Débrancher le tuyau de montée au niveau de la pomme et le diriger dans le seau, en gardant sa sortie à la hauteur de la pomme (environ 1,2 m au-dessus de l'eau du bac).
+  \item Remettre la pomme sur l'extrémité du tuyau si possible (le débit dépend de la pomme), la tenir au-dessus du seau.
+  \item Démarrer la pompe (\texttt{D 0 90000}), attendre 10 s que le débit se stabilise.
+  \item Placer le seau sous le jet et lancer le chronomètre ; l'arrêter quand le seau atteint 10 L.
+  \item Reverser l'eau dans le bac. Recommencer 5 fois.
+\end{enumerate}
+Débit : $Q = 3600\,V_s/t$ (L/h, avec $V_s$ en L et $t$ en s). Valeur attendue : 494 L/h.
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+Essai & Volume (L) & Temps (s) & Débit (L/h) \\ \hline
+1 & & & \\ \hline 2 & & & \\ \hline 3 & & & \\ \hline 4 & & & \\ \hline 5 & & & \\ \hline
+\end{tabular}
+\qquad Fichier : \texttt{mesure\_debit.csv}
+\end{center}
+
+\subsection{Hauteur du jet}
+\begin{enumerate}
+  \item Retirer le chapeau, orienter la pomme vers le haut, tuyau monté normalement.
+  \item Fixer verticalement le mètre ruban contre la tour, zéro au niveau des trous de la pomme.
+  \item Démarrer la pompe ; photographier le jet devant le mètre (5 photos).
+  \item Relever sur chaque photo la hauteur maximale du jet principal.
+\end{enumerate}
+Valeur attendue sans frottement de l'air : 35 cm (le frottement réduit un peu la hauteur réelle). Vitesse de sortie déduite : $v_j = \sqrt{2 g h}$.
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+Photo & 1 & 2 & 3 & 4 & 5 \\ \hline
+Hauteur (cm) & & & & & \\ \hline
+\end{tabular}
+\qquad Fichier : \texttt{mesure\_jet.csv}
+\end{center}
+
+\subsection{Consommation d'eau journalière}
+\begin{enumerate}
+  \item Coller une règle graduée verticale dans le bac (ou dans le tube tranquilliseur), zéro au fond.
+  \item Chaque jour à 7 h (pompe arrêtée depuis plus de 5 min), relever la hauteur d'eau à la règle et la tension de l'eTape (dashboard, champ niveau).
+  \item Noter tout appoint d'eau (en litres) dans la colonne \og appoint\fg{}, mesuré au seau gradué.
+  \item Continuer au moins 7 jours, idéalement un cycle complet.
+\end{enumerate}
+Le script retire les appoints, ajuste une droite et en déduit la consommation (L/j), l'intervalle d'appoint et l'étalonnage de l'eTape (mV en fonction des cm). Valeurs attendues : 2,3 L/j en moyenne, 4,1 L/j en pointe.
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+Date & Heure & Niveau règle (cm) & eTape (mV) & Appoint (L) \\ \hline
+& & & & \\ \hline & & & & \\ \hline & & & & \\ \hline & & & & \\ \hline & & & & \\ \hline & & & & \\ \hline & & & & \\ \hline
+\end{tabular}
+
+Fichier : \texttt{mesure\_niveau.csv}
+\end{center}
+
+\subsection{Débit des pompes doseuses}
+\begin{enumerate}
+  \item Mettre le tube de sortie de la doseuse dans l'éprouvette vide (le bac doseur rempli d'eau claire et à sa place, pour garder la même hauteur d'aspiration).
+  \item Amorcer la pompe (remplir le tube) puis vider l'éprouvette.
+  \item Envoyer \texttt{D 1 7500}, lire le volume ; recommencer avec 15 000 ms puis 30 000 ms.
+  \item Refaire pour les pompes 2 (B) et 3 (pH-).
+\end{enumerate}
+Débit : pente de la droite volume = $q_d\times$durée. Valeur attendue : 80 mL/min. Le script donne la durée à programmer pour 10 mL.
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|}
+\hline
+Pompe & Durée (ms) & Volume (mL) & Débit (mL/min) \\ \hline
+A & 7500 & & \\ \hline A & 15000 & & \\ \hline A & 30000 & & \\ \hline
+B & 7500 & & \\ \hline B & 15000 & & \\ \hline B & 30000 & & \\ \hline
+pH- & 7500 & & \\ \hline pH- & 15000 & & \\ \hline pH- & 30000 & & \\ \hline
+\end{tabular}
+\qquad Fichier : \texttt{mesure\_doseuse.csv}
+\end{center}
+
+\subsection{Temps de mélange et effet d'une dose}
+\begin{enumerate}
+  \item Bac au volume normal, pompe arrêtée depuis 10 min : relever l'EC (temps de pompage 0).
+  \item Démarrer la pompe ; 1 min après, injecter 10 mL de A puis 10 mL de B (\texttt{D 1 7500}, \texttt{D 2 7500}).
+  \item Relever l'EC (sonde dans la zone calme) après 2, 5, 10, 15, 20, 30, 45 et 60 min de pompage cumulé. Pour les relevés pendant la marche, noter l'EC directement ; pour vérifier, couper la pompe 1 min avant la lecture.
+  \item Noter le temps de pompage cumulé (les arrêts ne comptent pas).
+\end{enumerate}
+Le script calcule la hausse finale d'EC (attendue : 0,037 mS/cm, donc le coefficient $\beta$ réel) et la constante de mélange (attendue : 18,5 min).
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
+\hline
+$t$ pompage (min) & 0 & 2 & 5 & 10 & 15 & 20 & 30 & 45 & 60 \\ \hline
+EC (mS/cm) & & & & & & & & & \\ \hline
+\end{tabular}
+
+Fichier : \texttt{mesure\_melange.csv}
+\end{center}
+
+\begin{resume}
+Cinq mesures simples : débit au seau (attendu 494 L/h), hauteur du jet (35 cm), consommation journalière à la règle et à l'eTape (2,3 à 4,1 L/j), débit des doseuses à l'éprouvette (80 mL/min), effet et mélange d'une dose à l'EC-mètre (+0,037 mS/cm, constante 18,5 min). Le script \texttt{traitement\_mesures.py} compare chaque résultat à la théorie et donne les réglages corrigés (durées de dose, intervalle d'appoint).
+\end{resume}
+
+%=====================================================================
+\section{Conclusion}
+%=====================================================================
+La pompe de 800 L/h, dans le circuit de la tour, débite environ 494 L/h sous 1,9 m : c'est 20 fois le besoin minimal des plants, et le bac de 152 L est brassé en 18,5 min. Le bac doit recevoir un appoint manuel d'environ 15 L tous les 4 jours en pointe de consommation (7 jours en moyenne) ; une absence de 2 semaines impose un appoint intermédiaire en fin de cycle. Le dosage par petites doses (10 mL d'engrais, 4 mL de pH-) espacées de 2 h corrige l'EC et le pH sans dépassement. Les mesures de la partie 6 permettront de remplacer les hypothèses (diamètre du tuyau, pomme, débit des doseuses, concentration des solutions) par des valeurs réelles.
+
+\end{document}
