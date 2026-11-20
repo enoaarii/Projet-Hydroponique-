@@ -16,15 +16,13 @@
 | Décision | Choix retenu |
 |---|---|
 | Rôle du Raspberry Pi 3 B | Cerveau : planning, décisions, base SQLite, dashboard |
-| Rôle de l'Arduino Uno R3 | Actionneur : lecture brute des capteurs, pompes, sécurités matérielles |
-| Liaison | USB série, 115200 bauds, protocole ASCII |
-| Commande de la circulation | Bail renouvelé (D 0 90000 toutes les 60 s environ) |
-| Mode secours | Pi muet plus de 5 min : circulation 15 min sur 30, aucune doseuse |
-| Dashboard | Flask, port 5000, authentification Basic, SQLite en UTC, affichage en heure de Tahiti |
+| Rôle de l'Arduino Uno R3 | Carte d'entrées/sorties (Firmata) : lecture des capteurs, pompes, mesure de l'EC ; coupe les pompes si le Pi se tait 30 s |
+| Liaison | USB, 115200 bauds, protocole Firmata |
+| Dashboard | Flask, SQLite en UTC, affichage en heure de Tahiti, connexion par identifiant, mot de passe et captcha |
 | Accès distant | Tailscale (machine hydro-info), Raspberry Pi Connect |
 | Alimentation du Pi | Chargeur USB d'allume-cigare (le UBEC 12 V vers 5 V n'est pas retenu) |
 | Sonde EC | Sonde maison à deux fils de graphite à la place de la DFR0300 commerciale |
-| Mesure EC | Onde carrée de moyenne nulle, environ 2,36 kHz, résistance de référence 330 ohms |
+| Mesure EC | Courant alterné de moyenne nulle, 64 allers-retours de 20 µs d'attente, environ 3,8 kHz, résistance R1 = 340 ohms ; l'Arduino renvoie deux sommes S1 et S2, le Pi calcule |
 | Dosage | Boucle fermée, petites doses, engrais A et B à volumes égaux, pH- seul |
 | Pas de pH+ | Le pH ne fait que monter dans ce système |
 | Aucun agent IA dans le programme de la tour | Décision ferme |
@@ -56,7 +54,7 @@
 |---|---|
 | 20 septembre 2026 | Début du travail quotidien sur le projet |
 | 27 octobre 2026 | Semis des laitues |
-| 31 octobre 2026 | État du code : .ino compile, nouveau dashboard écrit, cerveau.py compile |
+| 31 octobre 2026 | État du code : première version (cerveau.py), rangée depuis dans `archive_premiere_version/` |
 | 12 novembre 2026 | Montage de la tour à l'UPF |
 | 18 novembre 2026 | Commande Adafruit passée |
 

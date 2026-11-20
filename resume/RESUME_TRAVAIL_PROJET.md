@@ -8,9 +8,9 @@ Tour hydroponique verticale autonome (projet tutoré L3 SPI, UPF) : 12 plants de
 
 ## 2. Architecture en une page
 
-- Raspberry Pi 3 B : cerveau (planning, décisions, base SQLite, dashboard Flask).
-- Arduino Uno R3 : actionneur avec sécurités matérielles (chien de garde 8 s, durées maximales, niveau bas, chute, mode secours).
-- Liaison USB série 115200 bauds.
+- Raspberry Pi 3 B : cerveau (mesures, décisions, base SQLite, dashboard Flask).
+- Arduino Uno R3 : carte d'entrées/sorties (Firmata), coupe les pompes si le Pi se tait 30 s.
+- Liaison USB 115200 bauds, protocole Firmata.
 - Matériel principal : panneau 120 Wc, MPPT 20 A, batteries 23 Ah, pompe 800 L/h 19 W, doseuses, carte pompes Adafruit 6318.
 
 ## 3. Résultats clés
@@ -31,9 +31,8 @@ Tour hydroponique verticale autonome (projet tutoré L3 SPI, UPF) : 12 plants de
 ## 4. Avancement
 
 - Études électrique, hydraulique et sonde EC : rédigées.
-- Arduino : compile, non testé sur la carte.
-- Dashboard : nouvelle version écrite, installation à faire sur le Pi.
-- Cerveau Pi : compile, relecture et tests à faire.
+- Code du Pi (Firmata, server.py, pilote.py, arduino.py) : en service. Sonde EC graphite ajoutée dans le code (`HYDROCODE/`), à compiler et essayer sur la carte.
+- Première version (cerveau.py) : rangée dans `archive_premiere_version/`.
 - Matériel : tour montée le 12 novembre 2026, commande Adafruit en attente.
 
 ## 5. Points ouverts
@@ -47,5 +46,5 @@ Mesures réelles, incohérence de broche DS18B20 (D2 contre D8), champ EC en ohm
 | `RESUME_ETUDE_ELECTRIQUE.md` | Étude électrique complète |
 | `RESUME_ETUDE_HYDRAULIQUE.md` | Étude hydraulique complète |
 | `RESUME_ETUDE_SONDE_EC.md` | Étude de la sonde de conductivité |
-| `RESUME_CODE.md` | Protocole série, sécurités, brochage, dashboard, cerveau, reste à faire |
+| `RESUME_CODE.md` | Code installé sur le Pi : fichiers, bus I2C, sonde EC, réglages, routes, points ouverts |
 | `RESUME_DECISIONS_ET_MATERIEL.md` | Décisions, matériel, organisation, points ouverts |

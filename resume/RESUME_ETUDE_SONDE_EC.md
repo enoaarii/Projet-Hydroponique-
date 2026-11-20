@@ -163,6 +163,8 @@ Exemple : 1,413 mS/cm à 25 °C et 1,555 mS/cm à 30 °C donnent α = 0,020 par 
 
 ## 9. Programme
 
+Note : cette section décrit la première version (l'Arduino renvoie la résistance apparente en ohms, protocole à lignes de texte). Dans le code installé sur le Pi, l'Arduino renvoie deux sommes S1 et S2 et le Pi calcule la résistance de l'eau (voir `RESUME_CODE.md`, partie 4).
+
 L'Arduino reste actionneur : il mesure la résistance apparente et l'envoie. Le Pi fait les conversions.
 
 Fonction Arduino `lireECohm()` (remplace `lireECmV()`) : broches D5 et D6 en sortie, 200 cycles (D5 haut et D6 bas, 100 µs, lecture de A0, inversion, 212 µs), puis retour en haute impédance, renvoie $R_{\mathrm{REF}}\,N/(1024 - N)$ ou NAN si N supérieur ou égal à 1020 ou inférieur ou égal à 3. Durée de mesure 85 ms, très inférieure au chien de garde de 8 s.
