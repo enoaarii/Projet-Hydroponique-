@@ -1,0 +1,91 @@
+% Schema hydraulique HydroTour (inclus dans Etude_hydraulique.tex, page paysage)
+\begin{tikzpicture}[scale=1.0, every node/.style={font=\footnotesize},
+  eau/.style={line width=2.2pt, draw=bleuEau, -{Stealth[length=3mm]}},
+  dose/.style={line width=1pt, draw=orangeDose},
+  fil/.style={line width=0.6pt, draw=gray!70, dashed}]
+% ---------- Bac ----------
+\fill[bleuEau!12] (0,0) rectangle (9.6,3.0);
+\draw[line width=1.2pt] (0,3.7) -- (0,0) -- (9.6,0) -- (9.6,3.7);
+\draw[line width=1pt] (-0.2,3.7) -- (9.8,3.7);
+\draw[bleuEau, line width=0.8pt, decorate, decoration={snake, amplitude=0.6pt, segment length=6pt}] (0,3.0) -- (9.6,3.0);
+\node[anchor=west] at (0.15,0.35) {\textbf{Bac principal 152 L} (couvercle opaque)};
+\node[anchor=west, bleuEau!70!black] at (2.6,2.7) {niveau d'eau};
+% ---------- Pompe de circulation ----------
+\draw[fill=gray!25, line width=0.8pt, rounded corners=2pt] (0.6,0.8) rectangle (2.1,1.8);
+\node[align=center] at (1.35,1.3) {Pompe\\immergée};
+\node[align=left, anchor=west] at (2.2,1.35) {800 L/h, $H_{max}=5$ m\\canaux 0 et 1};
+% ---------- Conduite de montee ----------
+\draw[eau] (1.35,1.8) -- (1.35,13.1) -- (4.75,13.1) -- (4.75,12.55);
+\node[align=left, anchor=east] at (1.2,8.6) {\textbf{Conduite de montée}\\$D=13$ mm (hypothèse)\\$L\approx1{,}8$ m\\2 coudes à 90°};
+% ---------- Tour ----------
+\draw[line width=1.2pt, fill=gray!8] (4.25,3.7) rectangle (5.25,12.2);
+\draw[line width=1.2pt, fill=gray!30] (4.1,12.2) rectangle (5.4,12.55);
+\node[anchor=west] at (5.5,12.4) {chapeau (déflecteur)};
+% pomme de douche
+\draw[line width=1pt, fill=bleuEau!40] (4.45,11.85) rectangle (5.05,12.05);
+\foreach \x in {4.5,4.65,4.8,4.95}{\draw[bleuEau, -{Stealth[length=1.6mm]}] (\x,11.8) -- (\x,11.25);}
+\node[anchor=west, align=left] at (6.3,11.7) {\textbf{Jet en haut de la tour}\\pomme : 12 trous de 3 mm (hypothèse)};
+% godets
+\foreach \y in {4.7,5.95,7.2,8.45,9.7,10.95}{
+  \draw[fill=white, line width=0.7pt] (4.25,\y) -- (3.65,\y+0.45) -- (3.45,\y+0.2) -- (4.25,\y-0.35) -- cycle;
+  \fill[vertFeuille] (3.5,\y+0.45) circle (0.17);
+  \draw[fill=white, line width=0.7pt] (5.25,\y) -- (5.85,\y+0.45) -- (6.05,\y+0.2) -- (5.25,\y-0.35) -- cycle;
+  \fill[vertFeuille] (6.0,\y+0.45) circle (0.17);
+}
+\node[anchor=west, align=left] at (6.4,9.0) {\textbf{12 godets}\\(6 niveaux $\times$ 2)};
+% ecoulement dans la tour
+\foreach \y in {10.3,8.0,5.6}{\draw[bleuEau, line width=0.9pt, -{Stealth[length=2mm]}, decorate, decoration={snake, amplitude=0.8pt, segment length=5pt, post length=2mm}] (4.75,\y) -- (4.75,\y-1.0);}
+\node[rotate=90, font=\scriptsize] at (4.45,7.2) {tuyau PVC 1 m};
+% retour
+\draw[bleuEau, line width=1.4pt, -{Stealth[length=2.5mm]}] (4.75,3.7) -- (4.75,3.05);
+\node[anchor=west, align=left] at (4.05,2.25) {\textbf{retour gravitaire}};
+% ---------- Cote Hg ----------
+\draw[<->, line width=0.6pt] (-3.4,3.0) -- (-3.4,11.8);
+\draw[gray, dotted] (-3.6,3.0) -- (0,3.0);
+\draw[gray, dotted] (-3.6,11.8) -- (4.45,11.8);
+\node[rotate=90, fill=white] at (-3.4,7.4) {$H_g\approx1{,}2$ m (non à l'échelle)};
+% ---------- Sondes ----------
+\foreach \x/\n/\c in {7.0/pH/rougeSonde, 7.6/EC/rougeSonde, 8.2/DS18B20/rougeSonde}{
+  \draw[line width=1.6pt, \c] (\x,3.7) -- (\x,1.5);
+  \fill[\c] (\x,1.5) circle (0.1);
+  \node[rotate=90, anchor=east, font=\scriptsize] at (\x+0.22,1.4) {\n};
+}
+\draw[line width=0.8pt, fill=white] (8.8,0.15) rectangle (9.3,3.7);
+\draw[line width=2pt, rougeSonde] (9.05,0.3) -- (9.05,3.6);
+\node[rotate=90, font=\scriptsize, fill=white, inner sep=1pt] at (9.05,1.0) {eTape 30 cm};
+\node[align=center, font=\scriptsize] at (7.4,-0.45) {zone calme, loin du retour};
+\node[align=center, font=\scriptsize] at (9.6,-0.85) {tube tranquilliseur};
+% fils capteurs
+\draw[fil] (7.0,3.7) -- (7.0,4.0) -- (10.6,4.0);
+\draw[fil] (7.6,3.7) -- (7.6,4.0);
+\draw[fil] (8.2,3.7) -- (8.2,4.0);
+\draw[fil] (9.05,3.7) -- (9.05,4.0);
+\draw[fil] (10.6,4.0) -- (10.6,2.7);
+% ---------- Boitier electronique ----------
+\draw[line width=1pt, fill=gray!10, rounded corners=3pt] (10.3,0.2) rectangle (17.6,2.7);
+\node[align=left, anchor=north west] at (10.45,2.6) {\textbf{Boîtier électronique IP67}\\Raspberry Pi 3 : cerveau (décisions, dosage)\\Arduino Uno : actionneur + sécurités\\carte MOSFET 6318 (I2C 0x20), ADS1115\\canal 0-1 : circulation ; 2 : A ; 3 : B ; 4 : pH-};
+% ---------- Bacs doseurs ----------
+\foreach \x/\n/\k in {11.4/A/2, 13.6/B/3, 15.8/pH-/4}{
+  \draw[line width=0.9pt, fill=orangeDose!12, rounded corners=2pt] (\x,7.0) rectangle (\x+1.3,9.2);
+  \node[align=center] at (\x+0.65,8.1) {\textbf{\n}\\bac\\doseur};
+  \draw[dose] (\x+0.65,7.0) -- (\x+0.65,6.25);
+  \draw[line width=0.9pt, fill=white] (\x+0.65,5.8) circle (0.45);
+  \draw[line width=0.6pt] (\x+0.65,5.8) circle (0.2);
+  \foreach \a in {0,120,240}{\fill ([shift={(\x+0.65,5.8)}]\a:0.32) circle (0.05);}
+  \node[anchor=west, font=\scriptsize] at (\x+1.1,5.8) {canal \k};
+  \draw[fil] (\x+0.65,5.35) -- (\x+0.65,4.9) -- (17.3,4.9) -- (17.3,2.7);
+}
+\node[align=center] at (14.5,10.1) {\textbf{Pompes péristaltiques 12 V} (débit nominal hypothèse $\approx80$ mL/min en charge)};
+% tubes doseurs vers la zone de retour
+\draw[dose, -{Stealth[length=2mm]}] (11.6,5.8) -- (11.6,4.6) -- (5.65,4.6) -- (5.65,3.25);
+\draw[dose, -{Stealth[length=2mm]}] (13.8,5.8) -- (13.8,4.4) -- (5.95,4.4) -- (5.95,3.25);
+\draw[dose, -{Stealth[length=2mm]}] (16.0,5.8) -- (16.0,4.2) -- (6.25,4.2) -- (6.25,3.25);
+\node[anchor=south west, font=\scriptsize] at (6.4,4.97) {tubes doseurs : sortie au-dessus de la zone de retour};
+% ---------- Legende ----------
+\begin{scope}[shift={(11.0,13.3)}]
+  \draw[eau] (0,0) -- (0.9,0); \node[anchor=west] at (1.0,0) {eau (circulation)};
+  \draw[dose] (0,-0.5) -- (0.9,-0.5); \node[anchor=west] at (1.0,-0.5) {solutions dosées};
+  \draw[fil] (0,-1.0) -- (0.9,-1.0); \node[anchor=west] at (1.0,-1.0) {câbles (capteurs, commandes)};
+  \draw[line width=1.6pt, rougeSonde] (0,-1.5) -- (0.9,-1.5); \node[anchor=west] at (1.0,-1.5) {sondes};
+\end{scope}
+\end{tikzpicture}
