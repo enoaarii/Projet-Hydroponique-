@@ -72,6 +72,7 @@ ONEWIRE_DATA, OW_CONFIG, OW_READ_REPLY = 0x73, 0x41, 0x43
 EC_COMMANDE = 0x0E  # « mesure EC » : commande ajoutée dans HydroTour_Firmata.ino (même numéro des deux côtés)
 OW_RESET, OW_SKIP, OW_READ, OW_WRITE = 0x01, 0x02, 0x08, 0x20
 REPORT_FIRMWARE = 0x79
+STRING_DATA = 0x71  # message texte envoyé par l'Arduino (deux octets de 7 bits par caractère)
 
 
 def _7bits(valeurs):
@@ -147,6 +148,7 @@ class Arduino:
         self._i2c = {}       # (adresse, registre) -> octets reçus
         self._attente = {}   # (adresse, registre) -> Event de la lecture en cours
         self._absent = {}    # adresse -> heure du prochain essai (module qui ne répond pas)
+        self._textes = {}    # messages texte de l'Arduino -> nombre de fois reçus
         self._ec = None      # dernière réponse de la commande « mesure EC » : (S1, S2)
         self._ec_attente = threading.Event()
         self._ow = {}        # numéro de requête OneWire -> octets reçus
@@ -155,6 +157,10 @@ class Arduino:
         self.board.add_cmd_handler(I2C_REPLY, self._reponse_i2c)
         self.board.add_cmd_handler(ONEWIRE_DATA, self._reponse_onewire)
         self.board.add_cmd_handler(EC_COMMANDE, self._reponse_ec)
+        # Indispensable : sans gestionnaire, pyfirmata2 abandonne un message texte en plein milieu
+        # sans aller jusqu'à sa fin, et lit la suite de ce message comme si c'étaient de nouvelles
+        # commandes. Le flux se décale et les réponses qui suivent (I2C, OneWire, EC) sont perdues.
+        self.board.add_cmd_handler(STRING_DATA, self._reponse_texte)
         self.board.send_sysex(I2C_CONFIG, [0, 0])  # active le bus I2C (A4/A5)
         self.board.send_sysex(ONEWIRE_DATA, [OW_CONFIG, PIN_DS18B20, 1])
         self._sorties = 1 << SONDE_PH  # bit n = sortie n de la carte 8 MOSFET ; seule la sonde pH allumée
@@ -259,6 +265,15 @@ class Arduino:
             valeurs.append(_s16(r[0], r[1]) * 0.1875)
         return sorted(valeurs)[n // 2]
 
+    def _reponse_texte(self, *data):
+        """Message texte de l'Arduino (erreur I2C, avertissement...). Chaque caractère arrive en deux
+        octets de 7 bits. On n'écrit que les trois premières fois, pour ne pas remplir le journal."""
+        texte = "".join(chr(data[i] | data[i + 1] << 7) for i in range(0, len(data) - 1, 2)).strip("\x00")
+        n = self._textes.get(texte, 0) + 1
+        self._textes[texte] = n
+        if n <= 3:
+            print("Arduino :", texte, flush=True)
+
     def _reponse_ec(self, *data):
         """Réponse de l'Arduino à la commande « mesure EC » : S1 et S2, chacune en 3 octets de 7 bits
         (poids faible d'abord). Exemple : S = d0 | d1 << 7 | d2 << 14."""
@@ -279,6 +294,15 @@ class Arduino:
             return None
         return self._ec
 
+    def mesurer_ec_sur(self, essais=2):
+        """Comme mesurer_ec, mais réessaie : une réponse peut être perdue si le flux série s'est
+        décalé juste avant (message texte de l'Arduino, par exemple)."""
+        for _ in range(essais):
+            r = self.mesurer_ec()
+            if r is not None:
+                return r
+        return None
+
     def lire_ph_ec(self, avec_ec=True):
         """(pH en mV, (S1, S2) de l'EC) : la carte de la sonde pH est coupée pendant la mesure de l'EC,
         et le pH n'est pas lu dans les ATTENTE_PH s qui suivent. None si pas de lecture."""
@@ -291,7 +315,7 @@ class Arduino:
         if avec_ec:
             try:
                 self._sortie(SONDE_PH, False)  # carte pH coupée pendant la mesure
-                ec = self.mesurer_ec()
+                ec = self.mesurer_ec_sur()
             finally:
                 self._sortie(SONDE_PH, True)
                 self._ec_eteinte = time.monotonic()
