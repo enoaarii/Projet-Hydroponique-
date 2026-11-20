@@ -595,12 +595,14 @@ input:focus{outline:0;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,t
         <p id="pilot-warn" class="cap"></p>
         <p id="pilot-msg" class="cap" role="status"></p>
         <h3 style="margin-top:18px">Étalonnage des sondes</h3>
-        <p>Plonge la sonde pH dans la solution tampon (ou vide puis remplis le réservoir), attends une minute que la mesure se stabilise, puis appuie sur le bouton correspondant.</p>
+        <p>Plonge la sonde pH dans la solution tampon (ou vide puis remplis le réservoir), attends une minute que la mesure se stabilise, puis appuie sur le bouton correspondant. Pour l'EC : sonde dans la solution à 1,413 mS/cm, une minute, bouton 1,413 ; puis rinçage, solution à 12,88 mS/cm, une minute, bouton 12,88.</p>
         <div class="row">
           <button class="btn" type="button" data-etal="ph=7">pH 7,00</button>
           <button class="btn" type="button" data-etal="ph=4">pH 4,00</button>
           <button class="btn" type="button" data-etal="niveau=vide">Réservoir vide</button>
           <button class="btn" type="button" data-etal="niveau=plein">Réservoir plein</button>
+          <button class="btn" type="button" data-etal="ec=1">EC 1,413 mS/cm</button>
+          <button class="btn" type="button" data-etal="ec=2">EC 12,88 mS/cm</button>
         </div>
         <p id="etal-msg" class="cap" role="status"></p>
       </div>
@@ -1427,7 +1429,9 @@ $('#pilot-form').addEventListener('submit',async e=>{
 document.querySelectorAll('[data-etal]').forEach(b=>b.addEventListener('click',async()=>{
   try{
     const r=await fetch(`${apiBase}/api/etalonner?${b.dataset.etal}`,{method:'POST'}),j=await r.json();
-    $('#etal-msg').textContent=r.ok?`Enregistré : ${b.textContent} = ${fmt(Object.values(j)[0],0)} ${b.dataset.etal.startsWith('ph')?'mV':'ohms'}.`:j.erreur;
+    $('#etal-msg').textContent=!r.ok?j.erreur:b.dataset.etal.startsWith('ec')
+      ?`Enregistré : ${b.textContent}`+(j.ec_p?` ; sonde étalonnée : P = ${j.ec_p} ohms, K = ${j.ec_cellule} cm-1.`:'. Fais maintenant l\'autre solution.')
+      :`Enregistré : ${b.textContent} = ${fmt(Object.values(j)[0],0)} ${b.dataset.etal.startsWith('ph')?'mV':'ohms'}.`;
   }catch(err){$('#etal-msg').textContent='Serveur injoignable.';}
 }));
 

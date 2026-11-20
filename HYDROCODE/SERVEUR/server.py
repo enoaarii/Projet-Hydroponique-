@@ -12,7 +12,9 @@ Pompes :   POST /api/pompe?pompe=principale&on=1   (passe en manuel)
            POST /api/pompe?pompe=ph&secondes=3     (dose à la main, 30 s au plus)
 Réglages : /api/pilotage   (automatique, cycle, seuils de batterie)
 Légume :   /api/culture?crop=tomate&date=2026-10-20
-Étalonner: POST /api/etalonner?ph=7  (ou ph=4, niveau=vide, niveau=plein)
+Étalonner: POST /api/etalonner?ph=7  (ou ph=4, niveau=vide, niveau=plein, ec=1, ec=2)
+  EC : sonde dans la solution à 1,413 mS/cm puis ec=1, sonde dans la solution à 12,88 mS/cm puis ec=2,
+  chaque fois après au moins une minute (la mesure de l'EC a lieu une fois par minute), à 25 °C si possible.
 """
 import atexit
 import json
@@ -270,9 +272,13 @@ def mesurer(n):
     if an["ph_mv"] is not None:
         print(f"[pH] tension = {an['ph_mv']:.0f} mV")
         row["ph"] = round(pl.ph_depuis_mv(an["ph_mv"], r), 2)
-    if an["ec_mv"] is not None:
-        print(f"[EC] tension = {an['ec_mv']:.0f} mV")
-        dernier_ec = (round(pl.ec_depuis_mv(an["ec_mv"], temp, r)), time.monotonic())
+    if an["ec_s1"] is not None:
+        x = pl.rapport_ec(an["ec_s1"], an["ec_s2"])
+        print(f"[EC] S1 = {an['ec_s1']}, S2 = {an['ec_s2']}" + ("" if x is None else f", x = {x:.3f}"))
+        brut["ec_x"] = x  # gardé pour l'étalonnage (/api/etalonner?ec=1 ou ec=2)
+        ec = pl.ec_depuis_sommes(an["ec_s1"], an["ec_s2"], temp, r)
+        if ec is not None:
+            dernier_ec = (round(ec), time.monotonic())
     if dernier_ec and time.monotonic() - dernier_ec[1] < 150:
         row["ec"] = dernier_ec[0]
     if an["etape_ohm"] is not None:
@@ -434,6 +440,28 @@ def route_culture():
     return jsonify({**cu, "cible": pl.cibles(PLANTES, cu, maintenant().astimezone().date())})
 
 
+def etalonner_ec(numero):
+    """Étalonnage de l'EC en deux points : garde x1 (solution 1,413 mS/cm) puis x2 (12,88 mS/cm),
+    et dès qu'on a les deux calcule P et K (formules de pilote.etalonnage_ec)."""
+    x = brut.get("ec_x")
+    if x is None:
+        return jsonify({"erreur": "pas de mesure d'EC utilisable pour l'instant"}), 503
+    regler(**{"ec_x" + numero: round(x, 4)})
+    r = reglages()
+    print(f"Étalonnage EC : x{numero} =", round(x, 4))
+    rep = {"ec_x" + numero: round(x, 4)}
+    if r.get("ec_x1") is not None and r.get("ec_x2") is not None:
+        res = pl.etalonnage_ec(r["ec_x1"], r["ec_x2"], r1=r["ec_r1"])
+        if res is None:
+            rep["erreur"] = "étalonnage incohérent (P ou K négatif) : refaire les deux mesures"
+            return jsonify(rep), 422
+        p, k = res
+        regler(ec_p=round(p, 2), ec_cellule=round(k, 4))
+        print(f"Étalonnage EC : P = {p:.1f} ohms, K = {k:.4f} cm-1")
+        rep.update({"ec_p": round(p, 2), "ec_cellule": round(k, 4)})
+    return jsonify(rep)
+
+
 @app.route("/api/etalonner", methods=["POST"])
 def etalonner():
     src = params()
@@ -441,6 +469,8 @@ def etalonner():
         cle, v = "ph_v" + src["ph"], brut["ph_mv"]
     elif src.get("niveau") in ("vide", "plein") and brut.get("etape_ohm") is not None:
         cle, v = "etape_" + src["niveau"], brut["etape_ohm"]
+    elif src.get("ec") in ("1", "2"):
+        return etalonner_ec(src["ec"])
     else:
         return jsonify({"erreur": "pas de mesure de ce capteur pour l'instant"}), 503
     regler(**{cle: round(v, 1)})

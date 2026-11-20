@@ -55,13 +55,16 @@ def capteurs(c, r):
     note("Température eau (DS18B20)", t is not None and -5 < t < 50, "—" if t is None else f"{t:.1f} °C",
          "sonde sur D2, résistance 4,7 k entre D2 et 5 V, programme HydroTour_Firmata téléversé")
     an = c.lire_analogiques(avec_ec=True)
-    ph, ec, ohm = an["ph_mv"], an["ec_mv"], an["etape_ohm"]
+    ph, s1, s2, ohm = an["ph_mv"], an["ec_s1"], an["ec_s2"], an["etape_ohm"]
     note("Sonde pH (ADS A0)", ph is not None and 200 < ph < 3000,
          "—" if ph is None else f"{ph:.0f} mV soit pH {pl.ph_depuis_mv(ph, r):.2f} (non étalonné)",
          "signal de la carte pH sur A0 de l'ADS1115, masse de la carte sur la sortie 4")
-    note("Sonde EC (ADS A1)", ec is not None and 0 <= ec < 3400,
-         "—" if ec is None else f"{ec:.0f} mV soit {pl.ec_depuis_mv(ec, t, r):.0f} µS/cm",
-         "signal sur A1 de l'ADS1115, masse de la carte EC sur la sortie 5 ; ~0 mV dans l'air, c'est normal")
+    x = None if s1 is None else pl.rapport_ec(s1, s2)
+    ec = None if x is None else pl.ec_depuis_sommes(s1, s2, t, r)
+    note("Sonde EC (graphite, A0 de l'Arduino)", x is not None,
+         "—" if s1 is None else f"S1 = {s1}, S2 = {s2}" + ("" if x is None else f", x = {x:.3f}, soit {ec:.0f} µS/cm (non étalonné)"),
+         "D5 -> R1 340 ohms -> point J (A0) -> sonde -> D6, programme HydroTour_Firmata avec la commande EC téléversé ; "
+         "dans l'air : S1 proche de 1023 x 64, pas de valeur utilisable, c'est normal")
     note("Ruban eTape (ADS A2)", ohm is not None and 100 < ohm < 4000,
          "—" if ohm is None else f"{ohm:.0f} ohms soit {pl.niveau_depuis_ohm(ohm, r):.0f} % (non étalonné)",
          "5 V -> 560 ohms -> A2 -> ruban -> GND")
@@ -84,17 +87,15 @@ def capteurs(c, r):
 def interference(c, r):
     print("\n3. Alternance des sondes pH / EC (sondes dans l'eau du réservoir)")
     seul, _ = c.lire_ph_ec(avec_ec=False)
-    c._sortie(A.SONDE_EC, True)  # exprès : les deux sondes allumées
-    time.sleep(A.ATTENTE_EC)
+    c.mesurer_ec()  # exprès : mesure de l'EC avec la carte pH restée allumée
     ensemble = c._ads_mv(A.ADS_PH)
-    c._sortie(A.SONDE_EC, False)
     c._ec_eteinte = time.monotonic()
     if seul is None or ensemble is None:
         note("Alternance pH / EC", None, "pas de lecture du pH")
         return
     ecart = abs(pl.ph_depuis_mv(ensemble, r) - pl.ph_depuis_mv(seul, r))
-    note("Alternance pH / EC", True, f"pH {pl.ph_depuis_mv(seul, r):.2f} sonde EC éteinte, "
-         f"{pl.ph_depuis_mv(ensemble, r):.2f} allumée (écart {ecart:.2f})"
+    note("Alternance pH / EC", True, f"pH {pl.ph_depuis_mv(seul, r):.2f} sans mesure EC, "
+         f"{pl.ph_depuis_mv(ensemble, r):.2f} juste après une mesure EC (écart {ecart:.2f})"
          + (" : l'alternance est bien utile" if ecart > 0.1 else ""))
     seul2, _ = c.lire_ph_ec(avec_ec=False)
     if seul2 is not None:

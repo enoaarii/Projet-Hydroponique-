@@ -14,9 +14,9 @@ Câblage (Arduino Uno + Sensor Kit) :
   Bus I2C : SDA = A4, SCL = A5 (ou les ports I2C du Sensor Kit), modules en 5 V, GND commun.
     0x20  carte 8 MOSFET Adafruit 6318 (MCP23017). V+ = 12 V de la batterie (après le fusible).
           Sortie 0 = pompe principale, 1 = engrais A, 2 = engrais B, 3 = pH-,
-          4 = masse (GND) de la carte de la sonde pH, 5 = masse (GND) de la carte de la sonde EC.
-          Le + des cartes des sondes va au 5 V de l'Arduino, JAMAIS au + (12 V) de la carte MOSFET.
-    0x48  convertisseur ADS1115, alimenté en 5 V : A0 = sonde pH, A1 = sonde EC, A2 = ruban eTape.
+          4 = masse (GND) de la carte de la sonde pH (la sortie 5 n'est plus utilisée).
+          Le + de la carte de la sonde pH va au 5 V de l'Arduino, JAMAIS au + (12 V) de la carte MOSFET.
+    0x48  convertisseur ADS1115, alimenté en 5 V : A0 = sonde pH, A2 = ruban eTape (la voie A1 est libre).
           Sans ADS1115, la carte de la sonde pH peut aller directement sur A1 de l'Arduino.
           eTape : 5 V -> résistance 560 ohms (fournie) -> A2 -> eTape -> GND.
     0x40  INA260 de la batterie. VIN+ côté contrôleur de charge, VIN- côté batterie
@@ -27,10 +27,11 @@ Câblage (Arduino Uno + Sensor Kit) :
     0x3C  écran OLED 128 x 64 du Sensor Kit
   D2 : sonde DS18B20 de l'eau, résistance 4,7 kohms (fournie) entre D2 et 5 V.
   A3 : capteur de lumière du Sensor Kit.
-  Les sondes pH et EC dans la même eau se perturbent : la sonde EC envoie un courant dans
-  l'eau tant qu'elle est alimentée. On ne les allume donc jamais en même temps (lire_ph_ec) :
-  le pH se lit sonde EC éteinte depuis ATTENTE_PH s ; pour l'EC, on éteint le pH, on allume
-  l'EC, on attend ATTENTE_EC s, on lit, puis on revient au pH.
+  Sonde EC en graphite (rapport, partie 7.6) : D5 -> R1 (340 ohms) -> point J -> sonde -> D6,
+  le point J est lu sur A0 de l'Arduino (pas sur l'ADS1115). La mesure se fait dans l'Arduino
+  (commande SysEx 0x0E du programme HydroTour_Firmata) : il renvoie deux sommes S1 et S2.
+  Les sondes pH et EC dans la même eau se perturbent : pendant la mesure de l'EC, la carte de
+  la sonde pH est coupée (sortie 4) et le pH n'est pas lu dans les ATTENTE_PH s qui suivent.
 """
 import os
 import threading
@@ -47,9 +48,9 @@ PIN_DS18B20 = 2   # sonde de température de l'eau sur D2
 PIN_PH_DIRECT = 1  # sans ADS1115 : carte de la sonde pH branchée directement sur A1
 
 POMPES = ["principale", "engrais_a", "engrais_b", "ph"]  # sorties 0, 1, 2, 3 de la carte 8 MOSFET
-SONDE_PH, SONDE_EC = 4, 5  # sorties qui alimentent les sondes
-ATTENTE_EC = 2   # s entre l'allumage de la sonde EC et sa lecture
-ATTENTE_PH = 5   # s entre l'extinction de la sonde EC et la lecture du pH
+SONDE_PH = 4     # sortie de la carte 8 MOSFET qui alimente la sonde pH
+ATTENTE_PH = 5   # s entre la fin de la mesure de l'EC et la lecture du pH
+SONDE_EC = 5     # ancienne sortie de la carte DFR0300 (plus utilisée, gardée pour essai_materiel.py)
 
 MCP_ADDR = 0x20  # carte 8 MOSFET
 ADS_ADDR = 0x48  # ADS1115
@@ -59,7 +60,7 @@ RTC_ADDR = 0x68  # adresse I2C commune au DS3231 et au DS1307
 DHT_ADDR = 0x38
 BMP_ADDR = 0x77
 OLED_ADDR = 0x3C
-ADS_PH, ADS_EC, ADS_ETAPE = 0, 1, 2
+ADS_PH, ADS_ETAPE = 0, 2
 R_ETAPE = 560.0  # résistance fournie avec l'eTape, en série côté 5 V
 VCC_MV = 5000.0
 
@@ -68,6 +69,7 @@ I2C_REQUEST, I2C_REPLY, I2C_CONFIG = 0x76, 0x77, 0x78
 I2C_WRITE, I2C_READ_ONCE = 0x00, 0x08
 SANS_REGISTRE = 0  # registre renvoyé par ConfigurableFirmata 3.x pour une lecture I2C sans registre
 ONEWIRE_DATA, OW_CONFIG, OW_READ_REPLY = 0x73, 0x41, 0x43
+EC_COMMANDE = 0x0E  # « mesure EC » : commande ajoutée dans HydroTour_Firmata.ino (même numéro des deux côtés)
 OW_RESET, OW_SKIP, OW_READ, OW_WRITE = 0x01, 0x02, 0x08, 0x20
 REPORT_FIRMWARE = 0x79
 
@@ -145,11 +147,14 @@ class Arduino:
         self._i2c = {}       # (adresse, registre) -> octets reçus
         self._attente = {}   # (adresse, registre) -> Event de la lecture en cours
         self._absent = {}    # adresse -> heure du prochain essai (module qui ne répond pas)
+        self._ec = None      # dernière réponse de la commande « mesure EC » : (S1, S2)
+        self._ec_attente = threading.Event()
         self._ow = {}        # numéro de requête OneWire -> octets reçus
         self._ow_attente = {}
         self._ow_n = 0
         self.board.add_cmd_handler(I2C_REPLY, self._reponse_i2c)
         self.board.add_cmd_handler(ONEWIRE_DATA, self._reponse_onewire)
+        self.board.add_cmd_handler(EC_COMMANDE, self._reponse_ec)
         self.board.send_sysex(I2C_CONFIG, [0, 0])  # active le bus I2C (A4/A5)
         self.board.send_sysex(ONEWIRE_DATA, [OW_CONFIG, PIN_DS18B20, 1])
         self._sorties = 1 << SONDE_PH  # bit n = sortie n de la carte 8 MOSFET ; seule la sonde pH allumée
@@ -254,9 +259,29 @@ class Arduino:
             valeurs.append(_s16(r[0], r[1]) * 0.1875)
         return sorted(valeurs)[n // 2]
 
+    def _reponse_ec(self, *data):
+        """Réponse de l'Arduino à la commande « mesure EC » : S1 et S2, chacune en 3 octets de 7 bits
+        (poids faible d'abord). Exemple : S = d0 | d1 << 7 | d2 << 14."""
+        if len(data) >= 6:
+            s1 = data[0] | data[1] << 7 | data[2] << 14
+            s2 = data[3] | data[4] << 7 | data[5] << 14
+            self._ec = (s1, s2)
+            self._ec_attente.set()
+
+    def mesurer_ec(self):
+        """(S1, S2) : sommes des 64 lectures de A0 dans chaque sens du courant, ou None si l'Arduino
+        ne répond pas. Chaque somme est un entier de 0 à 65 472. La mesure dure environ 17 ms."""
+        with self._lock:
+            self._ec = None
+            self._ec_attente.clear()
+            self.board.send_sysex(EC_COMMANDE, [])
+        if not self._ec_attente.wait(1):  # un seul tour de câble : la réponse arrive en quelques ms
+            return None
+        return self._ec
+
     def lire_ph_ec(self, avec_ec=True):
-        """(pH en mV, EC en mV) en alternance : jamais les deux sondes allumées en même temps.
-        avec_ec=False : seulement le pH (la sonde EC reste éteinte). None si pas de lecture."""
+        """(pH en mV, (S1, S2) de l'EC) : la carte de la sonde pH est coupée pendant la mesure de l'EC,
+        et le pH n'est pas lu dans les ATTENTE_PH s qui suivent. None si pas de lecture."""
         attente = ATTENTE_PH - (time.monotonic() - self._ec_eteinte)
         if attente > 0:
             time.sleep(attente)
@@ -265,24 +290,22 @@ class Arduino:
             ph = sorted(self._ph_a1)[len(self._ph_a1) // 2] * VCC_MV
         if avec_ec:
             try:
-                self._sortie(SONDE_PH, False)
-                self._sortie(SONDE_EC, True)
-                time.sleep(ATTENTE_EC)
-                ec = self._ads_mv(ADS_EC)
+                self._sortie(SONDE_PH, False)  # carte pH coupée pendant la mesure
+                ec = self.mesurer_ec()
             finally:
-                self._sortie(SONDE_EC, False)
                 self._sortie(SONDE_PH, True)
                 self._ec_eteinte = time.monotonic()
         return ph, ec
 
     def lire_analogiques(self, avec_ec=True):
-        """{"ph_mv", "ec_mv", "etape_ohm"} ; une valeur est None si le capteur ne répond pas."""
+        """{"ph_mv", "ec_s1", "ec_s2", "etape_ohm"} ; une valeur est None si le capteur ne répond pas."""
         ph, ec = self.lire_ph_ec(avec_ec)
         et = self._ads_mv(ADS_ETAPE)
         ohm = None
         if et is not None and 1 < et < VCC_MV - 1:
             ohm = R_ETAPE * et / (VCC_MV - et)
-        return {"ph_mv": ph, "ec_mv": ec, "etape_ohm": ohm}
+        s1, s2 = ec if ec else (None, None)
+        return {"ph_mv": ph, "ec_s1": s1, "ec_s2": s2, "etape_ohm": ohm}
 
     def lire_temp_eau(self):
         """Température de l'eau (°C) de la DS18B20, ou None."""
