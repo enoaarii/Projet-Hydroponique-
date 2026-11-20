@@ -73,6 +73,17 @@ with db() as c:
     c.execute("CREATE TABLE IF NOT EXISTS reglages (cle TEXT PRIMARY KEY, valeur REAL)")
     # Légume cultivé et date de plantation, envoyés par le dashboard.
     c.execute("CREATE TABLE IF NOT EXISTS culture (cle TEXT PRIMARY KEY, valeur TEXT)")
+    # L'étalonnage du pH se faisait sur deux tampons figés (ph_v7 et ph_v4). Il se fait maintenant
+    # sur deux tampons au choix (ph_ref1/ph_mv1 et ph_ref2/ph_mv2) : on reprend l'ancien étalonnage
+    # une seule fois, pour ne pas avoir à refaire les mesures.
+    anciens = {r["cle"]: r["valeur"] for r in c.execute(
+        "SELECT * FROM reglages WHERE cle IN ('ph_v7', 'ph_v4', 'ph_mv1', 'ph_mv2')")}
+    if "ph_mv1" not in anciens and "ph_v7" in anciens:
+        c.execute("INSERT OR REPLACE INTO reglages VALUES ('ph_ref1', 7.0)")
+        c.execute("INSERT OR REPLACE INTO reglages VALUES ('ph_mv1', ?)", (anciens["ph_v7"],))
+    if "ph_mv2" not in anciens and "ph_v4" in anciens:
+        c.execute("INSERT OR REPLACE INTO reglages VALUES ('ph_ref2', 4.0)")
+        c.execute("INSERT OR REPLACE INTO reglages VALUES ('ph_mv2', ?)", (anciens["ph_v4"],))
 
 
 def num(v):
@@ -265,7 +276,9 @@ dernier_ec = None  # (µS/cm, heure de la lecture)
 def mesurer(n):
     global dernier_ec
     r, row = reglages(), {}
-    temp = carte.lire_temp_eau()
+    temp_brute = carte.lire_temp_eau()
+    brut["temp_eau_brut"] = temp_brute
+    temp = pl.temperature_corrigee(temp_brute, r)  # écart réglé par l'étalonnage de température
     row["temp_eau"] = temp
     an = carte.lire_analogiques(avec_ec=n % EC_TOUTES == 0)
     brut.update({k: v for k, v in an.items() if v is not None})
@@ -440,18 +453,21 @@ def route_culture():
     return jsonify({**cu, "cible": pl.cibles(PLANTES, cu, maintenant().astimezone().date())})
 
 
-def etalonner_ec(numero):
-    """Étalonnage de l'EC en deux points : garde x1 (solution 1,413 mS/cm) puis x2 (12,88 mS/cm),
-    et dès qu'on a les deux calcule P et K (formules de pilote.etalonnage_ec)."""
+def etalonner_ec(numero, valeur):
+    """Étalonnage de l'EC en deux points. Garde le rapport x mesuré et la conductivité de la solution
+    utilisée (en µS/cm, saisie dans le dashboard), puis, dès que les deux points sont connus, calcule
+    P et K par les formules de pilote.etalonnage_ec."""
     x = brut.get("ec_x")
     if x is None:
         return jsonify({"erreur": "pas de mesure d'EC utilisable pour l'instant"}), 503
-    regler(**{"ec_x" + numero: round(x, 4)})
+    if valeur is None or not 1 <= valeur <= 200000:
+        return jsonify({"erreur": "conductivité de la solution attendue, en µS/cm"}), 400
+    regler(**{"ec_x" + numero: round(x, 4), "ec_ref" + numero: valeur})
     r = reglages()
-    print(f"Étalonnage EC : x{numero} =", round(x, 4))
-    rep = {"ec_x" + numero: round(x, 4)}
+    print(f"Étalonnage EC : point {numero}, solution {valeur:.0f} µS/cm, x =", round(x, 4))
+    rep = {"ec_x" + numero: round(x, 4), "ec_ref" + numero: valeur}
     if r.get("ec_x1") is not None and r.get("ec_x2") is not None:
-        res = pl.etalonnage_ec(r["ec_x1"], r["ec_x2"], r1=r["ec_r1"])
+        res = pl.etalonnage_ec(r["ec_x1"], r["ec_x2"], r["ec_ref1"], r["ec_ref2"], r["ec_r1"])
         if res is None:
             rep["erreur"] = "étalonnage incohérent (P ou K négatif) : refaire les deux mesures"
             return jsonify(rep), 422
@@ -464,18 +480,45 @@ def etalonner_ec(numero):
 
 @app.route("/api/etalonner", methods=["POST"])
 def etalonner():
+    """Quatre formes, une par sous-section du dashboard :
+      ph=1|2 & valeur=<pH du tampon>          garde le pH du tampon et la tension mesurée dedans
+      ec=1|2 & valeur=<µS/cm de la solution>  garde la conductivité et le rapport x mesuré
+      niveau=vide|plein                       garde les ohms du ruban
+      temperature=<°C du thermomètre>         garde l'écart entre la référence et la sonde
+    """
     src = params()
-    if src.get("ph") in ("7", "4") and brut.get("ph_mv") is not None:
-        cle, v = "ph_v" + src["ph"], brut["ph_mv"]
-    elif src.get("niveau") in ("vide", "plein") and brut.get("etape_ohm") is not None:
-        cle, v = "etape_" + src["niveau"], brut["etape_ohm"]
-    elif src.get("ec") in ("1", "2"):
-        return etalonner_ec(src["ec"])
-    else:
-        return jsonify({"erreur": "pas de mesure de ce capteur pour l'instant"}), 503
-    regler(**{cle: round(v, 1)})
-    print("Étalonnage :", cle, "=", round(v, 1))
-    return jsonify({cle: round(v, 1)})
+    valeur = num(src.get("valeur"))
+    if src.get("ec") in ("1", "2"):
+        return etalonner_ec(src["ec"], valeur)
+    if src.get("ph") in ("1", "2"):
+        if brut.get("ph_mv") is None:
+            return jsonify({"erreur": "pas de mesure de pH pour l'instant"}), 503
+        if valeur is None or not 0 <= valeur <= 14:
+            return jsonify({"erreur": "pH du tampon attendu, entre 0 et 14"}), 400
+        n = src["ph"]
+        mv = round(brut["ph_mv"], 1)
+        regler(**{"ph_ref" + n: valeur, "ph_mv" + n: mv})
+        print(f"Étalonnage pH : point {n}, tampon {valeur}, {mv:.0f} mV")
+        return jsonify({"ph_ref" + n: valeur, "ph_mv" + n: mv})
+    if src.get("temperature") is not None:
+        reference = num(src.get("temperature"))
+        if brut.get("temp_eau_brut") is None:
+            return jsonify({"erreur": "pas de mesure de température d'eau pour l'instant"}), 503
+        if reference is None or not -5 <= reference <= 60:
+            return jsonify({"erreur": "température de référence attendue, entre -5 et 60 °C"}), 400
+        ecart = round(reference - brut["temp_eau_brut"], 2)
+        regler(temp_eau_offset=ecart)
+        print(f"Étalonnage température : référence {reference} °C, sonde "
+              f"{brut['temp_eau_brut']} °C, écart {ecart:+.2f} °C")
+        return jsonify({"temp_eau_offset": ecart, "temp_eau_brut": brut["temp_eau_brut"]})
+    if src.get("niveau") in ("vide", "plein"):
+        if brut.get("etape_ohm") is None:
+            return jsonify({"erreur": "pas de mesure du ruban pour l'instant"}), 503
+        cle, v = "etape_" + src["niveau"], round(brut["etape_ohm"], 1)
+        regler(**{cle: v})
+        print("Étalonnage :", cle, "=", v)
+        return jsonify({cle: v})
+    return jsonify({"erreur": "capteur inconnu"}), 400
 
 
 @app.route("/api/stock", methods=["GET", "POST"])
@@ -518,7 +561,19 @@ def latest():
         d["pompes"].update(carte.pompes())
         d["alertes"] = pilote.alertes
         d["evenements"] = list(pilote.evenements)
-    d["auto"] = bool(reglages()["auto"])
+    r = reglages()
+    d["auto"] = bool(r["auto"])
+    # Valeurs brutes des capteurs et réglages d'étalonnage : affichés dans Paramètres, pour voir
+    # ce qui sera enregistré avant d'appuyer sur un bouton d'étalonnage.
+    d["brut"] = {
+        "ph_mv": brut.get("ph_mv"),
+        "ec_x": brut.get("ec_x"),
+        "etape_ohm": brut.get("etape_ohm"),
+        "temp_eau_brut": brut.get("temp_eau_brut"),
+    }
+    d["etalonnage"] = {k: r[k] for k in (
+        "ph_ref1", "ph_mv1", "ph_ref2", "ph_mv2", "ec_ref1", "ec_ref2", "ec_p", "ec_cellule",
+        "ec_r1", "etape_vide", "etape_plein", "temp_eau_offset") if k in r}
     return jsonify(d)
 
 
