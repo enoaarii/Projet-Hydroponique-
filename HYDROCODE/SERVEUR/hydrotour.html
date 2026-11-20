@@ -330,6 +330,8 @@ html:has(.sheet[open]){overflow:hidden}
 
 .cap{margin:6px 0 0;color:var(--muted);font-size:12.5px}
 /* Étalonnage : un point par ligne, les champs de saisie alignés entre eux. */
+.etal-proto{margin:6px 0 0;padding-left:20px;color:var(--muted);font-size:12.5px}
+.etal-proto li{margin:2px 0}
 .etal-points{display:grid;gap:8px;justify-items:start;margin-top:8px}
 .etal-points .row{align-items:center}
 .etal-points label{display:inline-flex;align-items:center;gap:8px;font-size:14px}
@@ -599,10 +601,16 @@ input:focus{outline:0;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,t
         <p id="pilot-warn" class="cap"></p>
         <p id="pilot-msg" class="cap" role="status"></p>
         <h3 style="margin-top:18px">Étalonnage des sondes</h3>
-        <p>Chaque sonde s'étalonne séparément. Dans tous les cas : plonge la sonde, attends qu'une nouvelle mesure arrive et que la valeur brute se stabilise, puis enregistre. L'EC n'est mesurée qu'une fois par minute, les autres toutes les 10 s.</p>
+        <p>Chaque sonde s'étalonne séparément, en suivant le protocole de sa sous-section. Les mesures arrivent toutes les 10 s, sauf l'EC, mesurée une fois par minute.</p>
 
         <h4 style="margin:16px 0 2px">pH</h4>
-        <p class="cap">Deux solutions tampons, de pH au choix : rince la sonde entre les deux.</p>
+        <ol class="etal-proto">
+          <li>Rince la sonde à l'eau claire, puis secoue-la sans l'essuyer.</li>
+          <li>Plonge-la dans le premier tampon, sans toucher le fond du flacon.</li>
+          <li>Attends que la tension ci-dessous soit stable, au moins une minute.</li>
+          <li>Saisis le pH du tampon dans « Tampon 1 », puis appuie sur Enregistrer.</li>
+          <li>Recommence de l'étape 1 avec le second tampon, dans « Tampon 2 ».</li>
+        </ol>
         <p class="cap">Tension lue en ce moment : <b id="etal-ph-brut">—</b>. En mémoire : <span id="etal-ph-cal">—</span>.</p>
         <div class="etal-points">
           <div class="row"><label>Tampon 1 <input id="etal-ph1" type="number" step="0.01" min="0" max="14" value="7.00" inputmode="decimal" style="width:80px"></label>
@@ -613,7 +621,13 @@ input:focus{outline:0;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,t
         <p id="etal-ph-msg" class="cap" role="status"></p>
 
         <h4 style="margin:16px 0 2px">Conductivité (EC)</h4>
-        <p class="cap">Deux solutions étalons, de conductivité au choix, en µS/cm : rince la sonde entre les deux.</p>
+        <ol class="etal-proto">
+          <li>Rince la sonde à l'eau claire, puis secoue-la.</li>
+          <li>Plonge les deux mines de graphite dans la première solution étalon.</li>
+          <li>Attends deux minutes, soit deux mesures, et vérifie que le rapport x ne bouge plus.</li>
+          <li>Saisis la conductivité de la solution, en µS/cm, puis appuie sur Enregistrer.</li>
+          <li>Recommence de l'étape 1 avec la seconde solution. P et K sont calculés dès ce second point.</li>
+        </ol>
         <p class="cap">Rapport x mesuré en ce moment : <b id="etal-ec-brut">—</b>. En mémoire : <span id="etal-ec-cal">—</span>.</p>
         <div class="etal-points">
           <div class="row"><label>Solution 1 <span><input id="etal-ec1" type="number" step="1" min="1" max="200000" value="1413" inputmode="numeric" style="width:90px"> µS/cm</span></label>
@@ -624,7 +638,12 @@ input:focus{outline:0;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,t
         <p id="etal-ec-msg" class="cap" role="status"></p>
 
         <h4 style="margin:16px 0 2px">Niveau d'eau</h4>
-        <p class="cap">Réservoir vide, puis réservoir plein : le ruban change de résistance quand l'eau monte.</p>
+        <ol class="etal-proto">
+          <li>Vide le réservoir, pompe à l'arrêt.</li>
+          <li>Attends que la résistance ci-dessous soit stable, puis appuie sur « Réservoir vide ».</li>
+          <li>Remplis le réservoir jusqu'au niveau de service.</li>
+          <li>Attends de nouveau, puis appuie sur « Réservoir plein ».</li>
+        </ol>
         <p class="cap">Résistance lue en ce moment : <b id="etal-niv-brut">—</b>. En mémoire : <span id="etal-niv-cal">—</span>.</p>
         <div class="row">
           <button class="btn" type="button" data-etal="niveau=vide" data-msg="#etal-niv-msg" data-type="niveau">Réservoir vide</button>
@@ -633,7 +652,12 @@ input:focus{outline:0;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,t
         <p id="etal-niv-msg" class="cap" role="status"></p>
 
         <h4 style="margin:16px 0 2px">Température de l'eau</h4>
-        <p class="cap">Plonge un thermomètre de référence à côté de la sonde, attends qu'ils soient tous deux stables, puis saisis la température du thermomètre. L'écart sera ajouté à toutes les mesures suivantes.</p>
+        <ol class="etal-proto">
+          <li>Plonge un thermomètre de référence juste à côté de la sonde DS18B20.</li>
+          <li>Attends au moins cinq minutes, que les deux affichent une valeur stable.</li>
+          <li>Saisis la température du thermomètre, puis appuie sur Enregistrer.</li>
+          <li>L'écart entre les deux est enregistré, et ajouté à toutes les mesures suivantes.</li>
+        </ol>
         <p class="cap">Sonde en ce moment : <b id="etal-temp-brut">—</b>. En mémoire : <span id="etal-temp-cal">—</span>.</p>
         <div class="row">
           <label>Thermomètre <span><input id="etal-temp" type="number" step="0.1" min="-5" max="60" inputmode="decimal" style="width:80px"> °C</span></label>
