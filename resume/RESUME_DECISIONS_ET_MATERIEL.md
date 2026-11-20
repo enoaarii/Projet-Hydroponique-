@@ -66,7 +66,7 @@
 - Étude hydraulique : point de fonctionnement, bilan d'eau, dosage, mélange, protocole de mesures.
 - Étude de la sonde de conductivité et son schéma.
 - Code : Arduino, Raspberry Pi, dashboard.
-- Étude informatique : absente du dossier du projet, à ajouter.
+- Étude informatique : version 2.4 rédigée, absente du dossier de contexte du projet (le PDF est dans `documents/`).
 - Nomenclature (Bill of Materials 4) et PDF des études électriques dans le dossier du projet.
 
 ## 6. Points ouverts

@@ -38,7 +38,7 @@ Tour hydroponique verticale autonome (projet tutoré L3 SPI, UPF) : 12 plants de
 
 ## 5. Points ouverts
 
-Mesures réelles, incohérence de broche DS18B20 (D2 contre D8), champ EC en ohms, reste du code, étude informatique absente, technologie des batteries à confirmer. Détail dans `RESUME_DECISIONS_ET_MATERIEL.md`.
+Mesures réelles, incohérence de broche DS18B20 (D2 contre D8), champ EC en ohms, reste du code, technologie des batteries à confirmer. Détail dans `RESUME_DECISIONS_ET_MATERIEL.md`.
 
 ## 6. Autres fichiers
 

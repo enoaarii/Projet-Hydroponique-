@@ -10,7 +10,8 @@ Projet tutoré de L3 SPI à l'Université de la Polynésie française : tour hyd
   - `RESUME_CODE.md` : protocole série, sécurités, brochage, dashboard, cerveau.
   - `RESUME_DECISIONS_ET_MATERIEL.md` : décisions, matériel, organisation, points ouverts.
 - `code/` : programmes de la tour (Arduino actionneur, cerveau Raspberry Pi, dashboard Flask).
-- `etudes/` : études LaTeX, scripts de calcul et mesures.
+- `etudes/` : études LaTeX, scripts de calcul et mesures. Voir `etudes/COMPILER.md` : les figures sont produites par les scripts avant la compilation.
+- `documents/` : PDF compilés des études, schémas, étude informatique et nomenclature.
 
 ## Architecture en bref
 
