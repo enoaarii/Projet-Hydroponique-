@@ -1,0 +1,8 @@
+grandeur,instrument,valeur,unite,theorique,unite_theorique,remarque
+courant_circulation,multimetre,,A,1.484,A,
+courant_engrais_A,multimetre,,A,0.30,A,
+courant_engrais_B,multimetre,,A,0.30,A,
+courant_pH_moins,multimetre,,A,0.30,A,
+courant_repos_12V,INA260,,A,0.314,A,pompes arretees nuit
+tension_UBEC,multimetre,,V,5.0,V,
+debit_doseuse_A,eprouvette,,mL/min,80,mL/min,
