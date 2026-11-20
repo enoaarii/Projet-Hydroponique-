@@ -1,0 +1,1600 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[french]{babel}
+\frenchsetup{StandardLists=true}
+\usepackage[margin=2.2cm,top=2.3cm,bottom=2.4cm,headheight=14pt,headsep=0.9cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{icomma}
+\usepackage{booktabs,array,tabularx}
+\usepackage{colortbl}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{tocloft}
+\usepackage[european,straightvoltages]{circuitikz}
+\usetikzlibrary{arrows.meta,calc,patterns,decorations.pathmorphing,babel}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+
+% ---------------- Couleurs du format ENO ----------------
+\definecolor{bleuENO}{HTML}{1B5A96}
+\definecolor{fonddemo}{HTML}{F5F7FA}
+\definecolor{vertENO}{HTML}{2E7D4F}
+\definecolor{fondvert}{HTML}{EEF7F1}
+\definecolor{orangeENO}{HTML}{C46A00}
+\definecolor{fondorange}{HTML}{FDF3E6}
+\definecolor{fondtitre}{HTML}{F7F9FB}
+\definecolor{grisENO}{HTML}{6B6B6B}
+\definecolor{filetENO}{HTML}{BFBFBF}
+\definecolor{ligneENO}{HTML}{E3E3E3}
+\definecolor{fondcode}{HTML}{F7F7F7}
+\colorlet{bleutitre}{bleuENO}
+
+\linespread{1.12}
+\setlength{\parskip}{6pt}
+\setlength{\parindent}{0pt}
+\renewcommand{\arraystretch}{1.45}
+\setlength{\abovedisplayskip}{10pt}
+\setlength{\belowdisplayskip}{10pt}
+
+% ---------------- Titres : parties en noir, sous-parties en bleu ----------------
+\titleformat{\section}{\LARGE\bfseries\color{black}}{\thesection}{0.9em}{}
+\titlespacing*{\section}{0pt}{0pt}{16pt}
+\titleformat{\subsection}{\Large\bfseries\color{bleuENO}}{\thesubsection}{0.8em}{}
+\titlespacing*{\subsection}{0pt}{16pt}{8pt}
+\titleformat{\subsubsection}{\large\bfseries\color{bleuENO}}{\thesubsubsection}{0.8em}{}
+
+% ---------------- Sommaire ----------------
+\addto\captionsfrench{\renewcommand{\contentsname}{Sommaire}}
+\renewcommand{\cfttoctitlefont}{\LARGE\bfseries}
+\renewcommand{\cftaftertoctitle}{\vspace{-4pt}}
+\renewcommand{\cftsecfont}{\bfseries}
+\renewcommand{\cftsecpagefont}{\bfseries}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cftsubsecfont}{\color{bleuENO}}
+\renewcommand{\cftsubsecpagefont}{\color{black}}
+\renewcommand{\cftdot}{\textcolor{grisENO}{.}}
+\renewcommand{\cftdotsep}{1.5}
+\setlength{\cftbeforesecskip}{5pt}
+\setlength{\cftsecnumwidth}{2.2em}
+\setlength{\cftsubsecindent}{2.2em}
+\setlength{\cftsubsecnumwidth}{2.8em}
+
+% ---------------- En-tête et pied de page ----------------
+\newcommand{\entete}{{\fontfamily{ptm}\selectfont\small\color{grisENO}Projet tutoré -- Étude de la sonde de conductivité}}
+\newcommand{\auteur}{{\fontfamily{ptm}\selectfont\small\color{grisENO}Enoaarii RAPARII}}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\entete}
+\fancyhead[R]{\auteur}
+\fancyfoot[R]{\small\thepage/\pageref{LastPage}}
+\renewcommand{\headrule}{{\color{filetENO}\hrule height 0.4pt}}
+\fancypagestyle{plain}{\fancyhf{}\fancyhead[L]{\entete}\fancyhead[R]{\auteur}\fancyfoot[R]{\small\thepage/\pageref{LastPage}}}
+\fancypagestyle{garde}{\fancyhf{}\fancyhead[L]{\entete}\fancyhead[R]{\auteur}}
+
+% ---------------- Encadrés du format ENO ----------------
+\tcbset{enobox/.style={breakable,enhanced,sharp corners,boxrule=0pt,frame hidden,
+  left=10pt,right=10pt,top=8pt,bottom=8pt,before skip=12pt,after skip=12pt}}
+\newcommand{\resultat}[1]{\begin{center}{\large\color{bleuENO}$\displaystyle #1$}\end{center}}
+\newenvironment{demo}[2]{\par\medskip\noindent\textbf{Détail des calculs : #1}\par\nopagebreak\resultat{#2}}{\par\medskip}
+\newtcolorbox{retenir}[1][]{enobox,colback=fondvert,
+  borderline west={3.5pt}{0pt}{vertENO},
+  before upper={{\color{vertENO}\bfseries À retenir\ifx&#1&\else{} : #1\fi}\par\smallskip}}
+\newtcolorbox{alerte}[1]{enobox,colback=fondorange,
+  borderline west={3.5pt}{0pt}{orangeENO},
+  before upper={{\color{orangeENO}\bfseries #1}\par\smallskip}}
+\newcommand{\calcul}[2]{\par\medskip\noindent\textbf{Détail des calculs : #1}\par\nopagebreak\resultat{#2}}
+
+% ---------------- Listes numérotées : pastilles bleues ----------------
+\newcommand{\pastille}[1]{\tikz[baseline=(p.base)]\node[circle,fill=bleuENO,text=white,inner sep=0pt,minimum size=14pt,font=\scriptsize\bfseries](p){#1};}
+\setlist[enumerate,1]{label=\protect\pastille{\arabic*},leftmargin=2.2em,itemsep=3pt}
+\setlist[itemize,1]{itemsep=2pt}
+
+% ---------------- Tableaux et légendes ----------------
+\newcommand{\ligne}{\arrayrulecolor{ligneENO}\specialrule{0.4pt}{0pt}{0pt}\arrayrulecolor{black}}
+\captionsetup{font=small,labelfont={bf,color=black},textfont={color=grisENO},labelsep=endash,justification=centering}
+\captionsetup[figure]{name=Figure}
+
+% ---------------- Page en paysage ----------------
+\newlength{\svtw}\newlength{\svth}\newlength{\svosm}\newlength{\svtm}
+\newcommand{\debutpaysage}{\clearpage
+  \setlength{\svtw}{\textwidth}\setlength{\svth}{\textheight}%
+  \setlength{\svosm}{\oddsidemargin}\setlength{\svtm}{\topmargin}%
+  \setlength{\paperwidth}{297mm}\setlength{\paperheight}{210mm}%
+  \pdfpagewidth=297mm \pdfpageheight=210mm
+  \setlength{\textwidth}{253mm}\setlength{\columnwidth}{253mm}%
+  \setlength{\linewidth}{253mm}\setlength{\hsize}{253mm}%
+  \setlength{\textheight}{163mm}\global\vsize=163mm\global\csname @colht\endcsname=163mm\global\csname @colroom\endcsname=163mm%
+  \setlength{\oddsidemargin}{\dimexpr22mm-1in\relax}\setlength{\evensidemargin}{\oddsidemargin}%
+  \setlength{\topmargin}{\dimexpr12mm-1in\relax}%
+  \setlength{\headwidth}{\textwidth}}
+\newcommand{\finpaysage}{\clearpage
+  \setlength{\paperwidth}{210mm}\setlength{\paperheight}{297mm}%
+  \pdfpagewidth=210mm \pdfpageheight=297mm
+  \setlength{\textwidth}{\svtw}\setlength{\columnwidth}{\svtw}%
+  \setlength{\linewidth}{\svtw}\setlength{\hsize}{\svtw}%
+  \setlength{\textheight}{\svth}\global\vsize=\svth\global\csname @colht\endcsname=\svth\global\csname @colroom\endcsname=\svth%
+  \setlength{\oddsidemargin}{\svosm}\setlength{\evensidemargin}{\svosm}%
+  \setlength{\topmargin}{\svtm}%
+  \setlength{\headwidth}{\textwidth}}
+
+\lstset{basicstyle=\ttfamily\footnotesize,backgroundcolor=\color{fondcode},frame=single,
+  rulecolor=\color{black!20},breaklines=true,columns=fullflexible,keepspaces=true,
+  literate={é}{{\'e}}1 {è}{{\`e}}1 {à}{{\`a}}1 {ê}{{\^e}}1 {ç}{{\c c}}1 {É}{{\'E}}1 {°}{{\textdegree}}1}
+
+\newcommand{\U}[1]{\,\mathrm{#1}}
+
+\begin{document}
+
+%================ PAGE DE GARDE =================
+\thispagestyle{garde}
+\begin{center}
+\vspace*{1.2cm}
+\includegraphics[width=6.2cm]{logo_upf.png}
+
+\vspace{2.4cm}
+Licence « Sciences pour l'ingénieur »\\[3pt]
+\textbf{Projet tutoré -- Tour hydroponique autonome}
+
+\vspace{2.2cm}
+\begin{tcolorbox}[enhanced,sharp corners,colback=fondtitre,boxrule=0pt,frame hidden,
+  borderline north={0.6pt}{0pt}{bleuENO},borderline south={0.6pt}{0pt}{bleuENO},
+  borderline west={0.6pt}{0pt}{bleuENO},borderline east={0.6pt}{0pt}{bleuENO},top=12pt,bottom=12pt]
+\centering
+{\large\color{grisENO}Projet tutoré}\\[10pt]
+{\Huge\bfseries Étude de conception\\[6pt] d'une sonde de conductivité\par}
+\end{tcolorbox}
+
+\vspace{2.6cm}
+\textbf{Enoaarii RAPARII}\\[3pt]
+{\color{orangeENO}enoaarii.raparii@etudiant.upf.pf}
+
+\vspace{1.4cm}
+Version 1.0 -- novembre 2026
+\end{center}
+\newpage
+
+%================ REMERCIEMENTS =================
+\thispagestyle{garde}
+\begin{center}
+{\LARGE\bfseries Remerciements}
+\end{center}
+\vspace{4pt}
+
+Je tiens à remercier tout particulièrement mon tuteur, \textbf{Monsieur Anthony Utahia}, qui ne refuse jamais de prendre le temps de répondre à mes questions, et qui me conseille et m'oriente tout au long de ce projet. Sa disponibilité et ses conseils guident les choix présentés dans ce document, du câblage des capteurs jusqu'à la façon dont la tour décide seule de ce qu'elle doit faire.
+
+Je mène ce projet seul depuis septembre 2026. Depuis trois mois, je prends en charge chaque étape : choisir et câbler le matériel, comprendre le fonctionnement de chaque capteur, écrire les programmes de l'Arduino et du Raspberry Pi, construire le dashboard, préparer les essais et rédiger les rapports. Ce délai court m'apprend à m'organiser : fixer des priorités, avancer par étapes et vérifier chaque élément avant de passer au suivant.
+
+J'aborde ce projet comme un vrai défi, et c'est justement ce qui le rend si formateur. Travailler seul me pousse à chercher l'information par moi-même, à lire des fiches techniques, à comprendre pourquoi un montage ne se comporte pas comme prévu et à trouver la bonne solution. Quand une difficulté se présente, comme la perturbation de la sonde pH par la sonde EC, je dois la comprendre jusqu'au bout avant de décider de la réponse à y apporter.
+
+Ce projet me permet d'acquérir des compétences concrètes et complémentaires :
+\begin{itemize}
+\item \textbf{en électronique} : capteurs analogiques, commande de puissance par MOSFET, bus I2C, conversion analogique-numérique et câblage ;
+\item \textbf{en programmation} : Python, Arduino, serveur web, base de données et interface web ;
+\item \textbf{en gestion de projet} : organisation du travail, respect des délais, essais et documentation ;
+\item \textbf{en autonomie} : rechercher l'information, analyser un problème et le résoudre par moi-même.
+\end{itemize}
+
+Ces compétences sont directement utiles à mon ambition : devenir ingénieur en électronique. La tour hydroponique réunit, à petite échelle, le travail d'un ingénieur : concevoir un système complet, faire dialoguer le matériel et le logiciel, et le rendre fiable. Ce projet me rend plus autonome, plus rigoureux et encore plus motivé pour la suite de mes études.
+
+\begin{flushright}
+\textit{Enoaarii RAPARII}
+\end{flushright}
+\newpage
+
+%================ SOMMAIRE =================
+\setcounter{page}{1}
+\tableofcontents
+\newpage
+
+%================ 1 =================
+\section{Objectif et cahier des charges}
+
+La tour doit doser seule ses engrais. Pour cela, elle doit savoir à tout moment combien d'engrais contient l'eau du bac. La sonde de conductivité est l'instrument qui donne cette information. Avant de la concevoir, je fixe ce qu'elle doit mesurer, dans quelles conditions, et avec quelles contraintes de matériel.
+
+Cette partie explique d'abord le rôle de la sonde dans la tour, puis rassemble les exigences dans un tableau, et se termine par la démarche suivie dans la suite de l'étude.
+
+
+\subsection{Rôle de la sonde dans la tour}
+
+La solution nutritive de la tour contient des sels minéraux dissous (nitrates, phosphates, potassium, calcium, magnésium...). Ces sels se dissocient en ions, et ce sont ces ions qui rendent l'eau conductrice. Plus la solution est concentrée en engrais, plus elle conduit le courant. La \textbf{conductivité électrique} (notée $\sigma$, ou EC) est donc une image simple et continue de la quantité d'engrais présente dans le bac.
+
+Le Raspberry Pi utilise cette mesure pour décider quand lancer les pompes doseuses d'engrais A et B. Une mesure fausse conduit soit à affamer les laitues, soit à les brûler par excès de sels : la sonde est un élément central de la boucle de régulation.
+
+L'étude électrique version 2 prévoyait une sonde du commerce. Cette étude remplace cette sonde par une \textbf{sonde que je fabrique moi-même}, lue directement par l'Arduino Uno R3, sans carte d'interface.
+
+\subsection{Exigences}
+
+Pour juger plus tard si la sonde est réussie, j'ai besoin de critères précis. Je les regroupe dans un tableau qui sert de cahier des charges : chaque choix des parties suivantes doit respecter l'une de ces lignes.
+
+
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{4.6cm} >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Exigence} & \textbf{Valeur ou contrainte retenue} \\
+\midrule
+Grandeur mesurée & Conductivité ramenée à $25\U{{}^{\circ}C}$, en $\mathrm{mS \cdot cm^{-1}}$ \\ \ligne
+Plage de mesure & $0{,}5$ à $3{,}0\U{mS \cdot cm^{-1}}$ (hypothèse) \\ \ligne
+Point de fonctionnement & $1{,}5\U{mS \cdot cm^{-1}}$, milieu de la plage visée pour la laitue de $1{,}2$ à $1{,}8\U{mS \cdot cm^{-1}}$ (hypothèse à valider) \\ \ligne
+Électronique & Arduino Uno R3 seul, avec une résistance et deux électrodes, aucune carte d'interface \\ \ligne
+Courant par broche & Inférieur à $20\U{mA}$ \\ \ligne
+Mise en place & Sonde entièrement immergée dans le bac de $152\U{L}$ \\ \ligne
+Électrodes & Matériau inerte, sans libération d'ions métalliques dans la solution \\ \ligne
+Mesure & Pompe de circulation à l'arrêt, sonde pH non perturbée \\ \ligne
+Température de l'eau & Environ $25$ à $32\U{{}^{\circ}C}$, compensée grâce à la sonde de température d'eau (DS18B20) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\subsection{Démarche de l'étude}
+
+L'étude suit l'ordre logique de la conception :
+\begin{enumerate}[nosep]
+\item comprendre ce que l'on mesure et pourquoi la géométrie de la sonde intervient (partie~\ref{sec:principe}) ;
+\item choisir les matériaux (partie~\ref{sec:materiaux}) ;
+\item comprendre pourquoi il faut alimenter en alternatif, et comment le faire avec l'Arduino (partie~\ref{sec:alternatif}) ;
+\item dimensionner la sonde (partie~\ref{sec:dimension}), puis le circuit de mesure (partie~\ref{sec:circuit}) ;
+\item évaluer les erreurs et les corriger (partie~\ref{sec:erreurs}), puis étalonner (partie~\ref{sec:etalonnage}) ;
+\item écrire le programme (partie~\ref{sec:programme}) et définir les essais (partie~\ref{sec:protocole}).
+\end{enumerate}
+
+%================ 2 =================
+\newpage
+\section{Principe physique de la mesure}
+\label{sec:principe}
+
+Avant de choisir un matériau ou une résistance, je dois comprendre ce que mesure réellement une sonde de conductivité. Une erreur sur le principe fausserait tout le dimensionnement qui suit.
+
+Cette partie explique d'abord comment l'eau conduit le courant, puis relie la résistance mesurée à la conductivité par la constante de cellule. Elle se termine en montrant que la taille de la sonde ne change pas la conductivité mesurée, ce qui justifie l'immersion totale.
+
+
+\subsection{Conduction ionique}
+
+Dans un métal, le courant est porté par des électrons. Dans une solution, il est porté par les \textbf{ions} : les cations se déplacent dans le sens du champ électrique, les anions dans le sens opposé. On plonge deux électrodes dans la solution et on applique une tension entre elles : un courant s'établit, d'autant plus grand que la solution contient d'ions mobiles.
+
+On ne mesure jamais directement la conductivité : on mesure une \textbf{résistance} entre deux électrodes. Il faut donc relier cette résistance à la conductivité, ce qui fait apparaître la géométrie de la sonde.
+
+\subsection{Résistance d'une cellule et constante de cellule}
+
+La sonde me donne une résistance, alors que le Raspberry Pi a besoin d'une conductivité. Je cherche donc la relation entre les deux, en partant du cas le plus simple : deux plaques parallèles. Cette relation fait apparaître une grandeur qui ne dépend que de la forme de la sonde, la constante de cellule.
+
+
+\begin{demo}{relation entre résistance et conductivité}{\sigma\,[\mathrm{S \cdot m^{-1}}] = \dfrac{K\,[\mathrm{m^{-1}}]}{R\,[\Omega]}}
+Dans un milieu conducteur, la densité de courant $\vec{j}$ est proportionnelle au champ électrique $\vec{E}$ (loi d'Ohm locale) :
+\[
+\vec{j} = \sigma \, \vec{E}
+\]
+On considère deux plaques parallèles de surface $S$, séparées de la distance $d$, avec un champ uniforme entre elles.
+
+Le courant total est le flux de $\vec{j}$ à travers la surface $S$ :
+\[
+I = j \, S
+\]
+On remplace $j$ par $\sigma E$ :
+\[
+I = \sigma \, E \, S
+\]
+Dans un champ uniforme, la tension entre les plaques est le produit du champ par la distance :
+\[
+U = E \, d
+\]
+La résistance est le rapport de la tension au courant :
+\[
+R = \frac{U}{I}
+\]
+On remplace $U$ et $I$ :
+\[
+R = \frac{E \, d}{\sigma \, E \, S}
+\]
+Le champ $E$ se simplifie :
+\[
+R = \frac{1}{\sigma} \cdot \frac{d}{S}
+\]
+Le rapport $d/S$ ne dépend que de la géométrie. On l'appelle constante de cellule :
+\[
+K = \frac{d}{S}
+\]
+Il vient :
+\[
+R = \frac{K}{\sigma}
+\]
+On isole la conductivité :
+\[
+\sigma = \frac{K}{R}
+\]
+\end{demo}
+
+\begin{retenir}[mesure de la conductivité]
+La conductivité se déduit de la résistance mesurée entre les électrodes et de la constante de cellule $K$ (en $\mathrm{cm^{-1}}$) :
+\[
+\sigma = \frac{K}{R}
+\]
+Pour une géométrie quelconque (tiges, pointes...), cette relation reste vraie, mais $K$ ne se calcule plus aussi simplement : il se détermine par étalonnage dans une solution de conductivité connue.
+\end{retenir}
+
+\subsection{La conductivité ne dépend pas de la taille de la sonde}
+
+Une idée intuitive serait qu'une sonde plus grande \og capte plus de conductivité \fg. C'est faux : $\sigma$ est une propriété de la solution, pas de la sonde.
+
+\begin{demo}{indépendance de $\sigma$ vis-à-vis de la surface}{\sigma' = \dfrac{K/n}{R/n} = \sigma}
+On multiplie la surface active des électrodes par un facteur $n$, sans changer l'écartement $d$.
+
+La nouvelle constante de cellule vaut :
+\[
+K' = \frac{d}{n \, S}
+\]
+\[
+K' = \frac{K}{n}
+\]
+La nouvelle résistance vaut :
+\[
+R' = \frac{1}{\sigma} \cdot \frac{d}{n \, S}
+\]
+\[
+R' = \frac{R}{n}
+\]
+La conductivité calculée vaut donc :
+\[
+\sigma' = \frac{K'}{R'}
+\]
+\[
+\sigma' = \frac{K / n}{R / n}
+\]
+\[
+\sigma' = \frac{K}{R} = \sigma
+\]
+\end{demo}
+
+Augmenter la surface baisse seulement la résistance mesurée. Ce qui compte, c'est que la surface active reste \textbf{constante} : si elle varie (niveau d'eau qui monte ou descend le long des électrodes), $K$ varie et la mesure devient fausse. C'est pour cette raison que la sonde sera entièrement immergée, avec une longueur d'électrode exposée fixée par le support (partie~\ref{sec:dimension}).
+
+%================ 3 =================
+\newpage
+\section{Choix des matériaux}
+\label{sec:materiaux}
+
+La sonde reste plongée en permanence dans une solution chargée en sels, à une température proche de 30 °C. Les matériaux doivent donc résister à la corrosion, ne rien libérer de toxique pour les laitues, et rester étanches pendant toute la culture.
+
+Cette partie compare d'abord les matériaux possibles pour les électrodes, puis décrit le support et la façon de rendre l'ensemble étanche.
+
+
+\subsection{Électrodes}
+
+Les électrodes sont la seule partie de la sonde en contact électrique avec l'eau. Leur matériau décide de la durée de vie de la sonde et de ce qu'elle rejette dans le bac. Je compare les trois matériaux faciles à trouver en Polynésie.
+
+
+\begin{center}
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}p{2.6cm} >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{Matériau} & \textbf{Avantages} & \textbf{Inconvénients} \\
+\midrule
+Cuivre & Très bon conducteur, facile à souder & S'oxyde, libère des ions $\mathrm{Cu^{2+}}$ toxiques pour les racines ; rejeté \\ \ligne
+Inox 316 & Solide, se soude ou se sertit & Peut se corroder lentement à l'anode, s'encrasse \\ \ligne
+Graphite (mines de crayon) & Chimiquement inerte, ne rouille pas, aucun ion métallique libéré, très bon marché & Fragile, ne se soude pas, la mine contient un liant (argile) \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\textbf{Choix retenu : graphite}, sous forme de mines de crayon.
+\begin{itemize}[nosep]
+\item \textbf{Diamètre de 2 mm} (mines de porte-mine) : une mine de $0{,}5\U{mm}$ casse au moindre choc.
+\item \textbf{Dureté B à 4B} : une mine tendre contient plus de graphite et moins d'argile, donc conduit mieux et s'effrite moins en surface qu'une mine dure (H).
+\item Pas de mine de couleur ni de mine \og polymère \fg\ sans graphite.
+\end{itemize}
+
+\subsection{Support et étanchéité}
+
+Le support tient les deux mines à un écartement fixe et protège les connexions. Comme la sonde est entièrement immergée, la moindre infiltration d'eau au niveau des fils fausserait la mesure. Je liste ici les choix qui garantissent la rigidité et l'étanchéité.
+
+
+\begin{itemize}[nosep]
+\item \textbf{Support imprimé en 3D en PETG} (ou ASA), pas en PLA : le PLA se dégrade en immersion prolongée, surtout dans une eau tiède comme celle du bac.
+\item Une pièce imprimée n'est \textbf{pas étanche} entre ses couches : la surface immergée reçoit une couche d'époxy.
+\item On ne peut pas souder sur du graphite : chaque mine est serrée par une \textbf{vis M2} qui plaque une cosse (ou le fil dénudé) contre la mine, dans un logement prévu dans la tête du support.
+\item La sonde étant entièrement immergée, la tête (vis, cosses, fils) est \textbf{noyée dans l'époxy} après les premiers essais. Si l'eau atteignait le contact mine/fil, elle créerait un chemin de courant parasite et corroderait la cosse.
+\item Le câble sort par un \textbf{presse-étoupe}, lui aussi noyé dans l'époxy. Le connecteur démontable (bornier ou JST-XH 2 broches) est placé côté boîtier électronique, jamais sous l'eau.
+\end{itemize}
+
+%================ 4 =================
+\newpage
+\section{Polarisation et électrolyse : pourquoi l'alternatif}
+\label{sec:alternatif}
+
+Une fois le principe compris, la première idée serait d'appliquer une tension continue entre les électrodes et de mesurer le courant. En étudiant ce qui se passe à la surface des mines, je comprends que cette solution ne marche pas.
+
+
+Si l'on applique une tension continue entre les électrodes, deux phénomènes faussent la mesure et abîment la sonde :
+\begin{itemize}[nosep]
+\item \textbf{la polarisation} : les ions s'accumulent contre chaque électrode et forment une couche qui s'oppose au courant ; la résistance apparente augmente au cours du temps ;
+\item \textbf{l'électrolyse} : au-delà d'une certaine tension, l'eau se décompose. À la cathode se dégage du dihydrogène, sans dommage pour le graphite. À l'anode se dégage du dioxygène, qui oxyde le carbone en $\mathrm{CO_2}$ : la mine s'érode et son liant s'effrite. Les chlorures de la solution peuvent aussi donner un peu de dichlore.
+\end{itemize}
+
+Cette partie calcule d'abord la tension à partir de laquelle l'eau se décompose, puis montre comment l'Arduino peut produire un courant alternatif avec deux broches, et vérifie enfin le temps pendant lequel la sonde est réellement alimentée.
+
+\subsection{Seuil de décomposition de l'eau}
+
+Pour savoir si l'électrolyse menace vraiment la sonde, je calcule la tension minimale à partir de laquelle l'eau se décompose, puis je la compare à la tension que verra la sonde dans le montage.
+
+
+\begin{demo}{tension minimale d'électrolyse de l'eau}{E^\circ\,[\mathrm{V}] = \dfrac{\Delta_r G^\circ\,[\mathrm{J \cdot mol^{-1}}]}{n \; F\,[\mathrm{C \cdot mol^{-1}}]}}
+La réaction globale de décomposition de l'eau est :
+\[
+\mathrm{H_2O_{(l)}} \longrightarrow \mathrm{H_{2(g)}} + \tfrac{1}{2} \, \mathrm{O_{2(g)}}
+\]
+Les deux demi-réactions montrent que $n = 2$ électrons sont échangés par molécule d'eau. À la cathode :
+\[
+2 \, \mathrm{H^+} + 2 \, e^- \longrightarrow \mathrm{H_2}
+\]
+À l'anode :
+\[
+\mathrm{H_2O} \longrightarrow \tfrac{1}{2} \, \mathrm{O_2} + 2 \, \mathrm{H^+} + 2 \, e^-
+\]
+Pour faire avancer la réaction d'une mole, le générateur doit faire passer la charge $n F$ sous la tension $E$. Le travail électrique fourni vaut :
+\[
+W = n \, F \, E
+\]
+Ce travail doit au minimum compenser l'enthalpie libre de la réaction :
+\[
+n \, F \, E = \Delta_r G^\circ
+\]
+On isole la tension :
+\[
+E^\circ = \frac{\Delta_r G^\circ}{n \, F}
+\]
+\end{demo}
+
+\calcul{tension seuil d'électrolyse}{E^\circ \approx 1{,}23\,\mathrm{V}}
+Avec $\Delta_r G^\circ = 237{,}1\U{kJ \cdot mol^{-1}}$ et $F = 96\,485\U{C \cdot mol^{-1}}$ :
+\[
+E^\circ = \frac{237{,}1 \times 10^{3}\U{J \cdot mol^{-1}}}{2 \times 96\,485\U{C \cdot mol^{-1}}}
+\]
+\[
+E^\circ = \frac{237{,}1 \times 10^{3}\U{J \cdot mol^{-1}}}{192\,970\U{C \cdot mol^{-1}}}
+\]
+\[
+E^\circ \approx 1{,}23\U{J \cdot C^{-1}} = 1{,}23\U{V}
+\]
+
+La partie~\ref{sec:circuit} montre que la sonde voit environ $2{,}5\U{V}$ au point de fonctionnement. On a $2{,}5\U{V} > 1{,}23\U{V}$ : \textbf{en continu, l'électrolyse aurait bien lieu.} Il faut donc inverser régulièrement le sens du courant.
+
+\subsection{Signal carré à moyenne nulle avec deux broches}
+
+L'Arduino ne fournit pas de tension négative. On obtient pourtant un courant alternatif en branchant la sonde (en série avec la résistance de référence) \textbf{entre deux broches numériques}, que l'on fait basculer en opposition. C'est le principe d'un pont en H, réalisé par le programme.
+
+\begin{center}
+\begin{tabular}{l c c c l}
+\toprule
+\textbf{Phase} & \textbf{Broche D5} & \textbf{Broche D6} & \textbf{$U = V_{D5} - V_{D6}$} & \textbf{Action} \\
+\midrule
+1 : mesure & $5\U{V}$ & $0\U{V}$ & $+5\U{V}$ & lecture de A0 \\ \ligne
+2 : inversion & $0\U{V}$ & $5\U{V}$ & $-5\U{V}$ & aucune lecture \\ \ligne
+Repos & haute impédance & haute impédance & aucune & aucun courant \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{demo}{condition de moyenne nulle}{\langle U \rangle = 0\,\mathrm{V} \iff t_1 = t_2}
+La tension appliquée au circuit est la différence des tensions des deux broches :
+\[
+U = V_{D5} - V_{D6}
+\]
+En phase 1, de durée $t_1$ :
+\[
+U_1 = 5\U{V} - 0\U{V} = +5\U{V}
+\]
+En phase 2, de durée $t_2$ :
+\[
+U_2 = 0\U{V} - 5\U{V} = -5\U{V}
+\]
+La valeur moyenne sur une période $T = t_1 + t_2$ est :
+\[
+\langle U \rangle = \frac{1}{T} \int_0^T U(t) \, \mathrm{d}t
+\]
+La tension étant constante sur chaque phase, l'intégrale se découpe en deux rectangles :
+\[
+\langle U \rangle = \frac{U_1 \, t_1 + U_2 \, t_2}{t_1 + t_2}
+\]
+On remplace $U_1$ et $U_2$ :
+\[
+\langle U \rangle = \frac{(+5\U{V}) \, t_1 + (-5\U{V}) \, t_2}{t_1 + t_2}
+\]
+\[
+\langle U \rangle = 5\U{V} \cdot \frac{t_1 - t_2}{t_1 + t_2}
+\]
+Cette moyenne est nulle si et seulement si :
+\[
+t_1 = t_2
+\]
+Le circuit étant résistif, le courant suit la tension : sa moyenne est nulle dans les mêmes conditions. La charge qui traverse la sonde dans un sens pendant la phase 1 est entièrement reprise pendant la phase 2 : il n'y a ni accumulation d'ions, ni produit d'électrolyse qui s'accumule.
+\end{demo}
+
+\calcul{fréquence du signal}{f \approx 2{,}36 \times 10^{3}\,\mathrm{Hz}}
+En phase 1, le programme attend $100\U{\mu s}$ (stabilisation) puis lit A0, ce qui prend environ $112\U{\mu s}$ sur l'Uno (hypothèse, à mesurer avec \texttt{micros()}) :
+\[
+t_1 = 100\U{\mu s} + 112\U{\mu s}
+\]
+\[
+t_1 = 212\U{\mu s}
+\]
+La phase 2 est réglée à la même durée :
+\[
+t_2 = 212\U{\mu s}
+\]
+La période vaut :
+\[
+T = t_1 + t_2 = 424\U{\mu s} = 4{,}24 \times 10^{-4}\U{s}
+\]
+La fréquence vaut :
+\[
+f = \frac{1}{T}
+\]
+\[
+f = \frac{1}{4{,}24 \times 10^{-4}\U{s}}
+\]
+\[
+f \approx 2{,}36 \times 10^{3}\U{Hz} = 2{,}36\U{kHz}
+\]
+À cette fréquence, une demi-période ne dure que $212\U{\mu s}$ : la couche d'ions n'a pas le temps de se former, et le peu qui se forme est défait à la demi-période suivante.
+
+\subsection{Temps passé sous tension}
+
+L'alternance protège la sonde pendant la mesure. Je vérifie aussi combien de temps la sonde reste alimentée au total, car c'est ce temps qui fixe son usure sur toute la culture.
+
+
+\calcul{fraction du temps où la sonde est alimentée}{t_{\text{mes}} = 8{,}48 \times 10^{-2}\,\mathrm{s} \qquad \dfrac{t_{\text{mes}}}{900\,\mathrm{s}} \approx 9{,}4 \times 10^{-5}}
+Une mesure comporte 200 périodes :
+\[
+t_{\text{mes}} = 200 \times 424 \times 10^{-6}\U{s}
+\]
+\[
+t_{\text{mes}} = 8{,}48 \times 10^{-2}\U{s}
+\]
+La mesure est faite lors des arrêts de la pompe de circulation. Pour une mesure toutes les 15 minutes, soit $900\U{s}$ :
+\[
+\frac{t_{\text{mes}}}{900\U{s}} = \frac{8{,}48 \times 10^{-2}\U{s}}{900\U{s}}
+\]
+\[
+\frac{t_{\text{mes}}}{900\U{s}} \approx 9{,}4 \times 10^{-5}
+\]
+La sonde est sous tension environ $0{,}01\U{\%}$ du temps.
+
+\begin{retenir}[protection des électrodes]
+En continu, les électrodes en graphite subiraient l'électrolyse (la sonde voit environ $2{,}5\U{V}$, au-dessus du seuil de $1{,}23\U{V}$). Avec un signal carré de moyenne nulle à environ $2{,}4\U{kHz}$, produit par deux broches en opposition, et une sonde alimentée $0{,}01\U{\%}$ du temps, l'usure devient négligeable. Après chaque mesure, les deux broches repassent en haute impédance : aucun courant ne circule entre deux mesures.
+\end{retenir}
+
+%================ 5 =================
+\newpage
+\section{Dimensionnement de la sonde}
+\label{sec:dimension}
+
+Je connais maintenant le principe, les matériaux et le mode d'alimentation. Il reste à fixer les cotes de la sonde : diamètre des mines, écartement et longueur exposée. Ces cotes déterminent la résistance que l'Arduino devra mesurer.
+
+
+La sonde est formée de deux mines parallèles de rayon $a$, d'entraxe $D$, dont seule une longueur $L$ dépasse du support. On calcule la constante de cellule de cette géométrie pour prévoir la résistance mesurée, et donc choisir le circuit.
+
+Cette partie établit d'abord la constante de cellule de deux tiges parallèles, puis l'applique aux cotes retenues, et se termine par le plan de la sonde.
+
+\subsection{Constante de cellule de deux tiges parallèles}
+
+Mes électrodes ne sont pas des plaques mais des mines cylindriques. La formule des plaques ne s'applique donc pas directement. Je calcule la constante de cellule de deux tiges parallèles, pour pouvoir prévoir la résistance de la sonde avant de la fabriquer.
+
+
+\begin{demo}{résistance entre deux tiges parallèles}{K\,[\mathrm{m^{-1}}] = \dfrac{\ln(D/a)}{\pi \, L\,[\mathrm{m}]}}
+\textbf{Hypothèses.} Les tiges sont longues devant leur entraxe pour le calcul du champ (on néglige les effets d'extrémité), et l'entraxe est grand devant le rayon : $D \gg a$.
+
+\textbf{Courant issu d'une seule tige.} La tige 1 injecte un courant $I$ dans la solution. Par symétrie, ce courant s'éloigne radialement. À la distance $r$ de l'axe, il traverse un cylindre de rayon $r$ et de hauteur $L$, de surface $2 \pi r L$ :
+\[
+j(r) = \frac{I}{2 \pi r L}
+\]
+Loi d'Ohm locale :
+\[
+E(r) = \frac{j(r)}{\sigma}
+\]
+\[
+E(r) = \frac{I}{2 \pi \sigma L \, r}
+\]
+Le champ dérive du potentiel : $E = -\dfrac{\mathrm{d}V}{\mathrm{d}r}$. On intègre :
+\[
+V_1(r) = -\frac{I}{2 \pi \sigma L} \ln r + C_1
+\]
+\textbf{Tige 2.} Elle récupère le courant $I$ : elle se comporte comme une source de courant $-I$. Son potentiel, à la distance $r'$ de son axe, vaut :
+\[
+V_2(r') = +\frac{I}{2 \pi \sigma L} \ln r' + C_2
+\]
+\textbf{Superposition.} Les équations sont linéaires, on additionne les deux potentiels :
+\[
+V(r, r') = \frac{I}{2 \pi \sigma L} \ln \frac{r'}{r} + C
+\]
+\textbf{Potentiel de chaque tige.} Sur la surface de la tige 1 : $r = a$ et $r' \approx D - a$ :
+\[
+V_A = \frac{I}{2 \pi \sigma L} \ln \frac{D - a}{a} + C
+\]
+Sur la surface de la tige 2 : $r \approx D - a$ et $r' = a$ :
+\[
+V_B = \frac{I}{2 \pi \sigma L} \ln \frac{a}{D - a} + C
+\]
+\[
+V_B = -\frac{I}{2 \pi \sigma L} \ln \frac{D - a}{a} + C
+\]
+\textbf{Tension entre les tiges.}
+\[
+U = V_A - V_B
+\]
+\[
+U = \frac{2 \, I}{2 \pi \sigma L} \ln \frac{D - a}{a}
+\]
+\[
+U = \frac{I}{\pi \sigma L} \ln \frac{D - a}{a}
+\]
+\textbf{Résistance.}
+\[
+R = \frac{U}{I} = \frac{1}{\sigma} \cdot \frac{1}{\pi L} \ln \frac{D - a}{a}
+\]
+Avec $D \gg a$, $D - a \approx D$ :
+\[
+R = \frac{1}{\sigma} \cdot \frac{\ln(D / a)}{\pi L}
+\]
+En comparant avec $R = K / \sigma$, on identifie la constante de cellule :
+\[
+K = \frac{\ln(D / a)}{\pi L}
+\]
+\end{demo}
+
+Cette formule montre comment chaque cote agit :
+\begin{itemize}[nosep]
+\item $K$ est inversement proportionnel à $L$ : une longueur exposée plus grande baisse la résistance ;
+\item $K$ ne dépend de l'entraxe et du rayon qu'à travers un logarithme : un petit défaut d'entraxe change peu $K$, mais l'entraxe doit rester \textbf{fixe}, d'où le support rigide.
+\end{itemize}
+Les extrémités des mines, le fond du bac et les parois modifient légèrement les lignes de courant : la valeur calculée sert à dimensionner, la valeur réelle de $K$ sera obtenue par étalonnage (partie~\ref{sec:etalonnage}).
+
+\subsection{Application}
+
+J'applique la formule obtenue aux cotes que je retiens pour la sonde, puis j'en déduis la résistance attendue sur toute la plage de conductivité de la laitue.
+
+
+\calcul{constante de cellule de la sonde}{K \approx 48{,}9\,\mathrm{m^{-1}}}
+Cotes retenues : mines de $2\U{mm}$ de diamètre, donc $a = 1\U{mm} = 0{,}1\U{cm}$ ; entraxe $D = 10\U{mm} = 1{,}0\U{cm}$ ; longueur exposée $L = 15\U{mm} = 1{,}5\U{cm}$.
+\[
+\frac{D}{a} = \frac{1{,}0\U{cm}}{0{,}1\U{cm}} = 10
+\]
+\[
+\ln\!\left(\frac{D}{a}\right) = \ln 10 \approx 2{,}303
+\]
+\[
+\pi L = \pi \times 1{,}5\U{cm} \approx 4{,}712\U{cm}
+\]
+\[
+K = \frac{2{,}303}{4{,}712\U{cm}}
+\]
+\[
+K \approx 0{,}489\U{cm^{-1}}
+\]
+Contrôle : la formule exacte pour deux cylindres, $K = \operatorname{argch}\!\big(D/(2a)\big) / (\pi L)$, donne $0{,}486\U{cm^{-1}}$. L'écart est de $0{,}6\U{\%}$ : l'approximation $D \gg a$ suffit largement.
+
+\calcul{résistance attendue sur la plage de mesure}{R_w \approx 326\,\Omega \ \text{pour}\ \sigma = 0{,}15\,\mathrm{S \cdot m^{-1}} \qquad (977\,\Omega \ \text{à}\ 163\,\Omega \ \text{de}\ 0{,}05\ \text{à}\ 0{,}30\,\mathrm{S \cdot m^{-1}})}
+D'après $R = K / \sigma$, au point de fonctionnement $\sigma = 1{,}5\U{mS \cdot cm^{-1}}$ :
+\[
+R_w = \frac{0{,}489\U{cm^{-1}}}{1{,}5 \times 10^{-3}\U{S \cdot cm^{-1}}}
+\]
+\[
+R_w \approx 326\U{S^{-1}} = 326\U{\Omega}
+\]
+En bas de plage, $\sigma = 0{,}5\U{mS \cdot cm^{-1}}$ :
+\[
+R_w = \frac{0{,}489\U{cm^{-1}}}{0{,}5 \times 10^{-3}\U{S \cdot cm^{-1}}} \approx 977\U{\Omega}
+\]
+En haut de plage, $\sigma = 3{,}0\U{mS \cdot cm^{-1}}$ :
+\[
+R_w = \frac{0{,}489\U{cm^{-1}}}{3{,}0 \times 10^{-3}\U{S \cdot cm^{-1}}} \approx 163\U{\Omega}
+\]
+
+\subsection{Plan de la sonde}
+
+Pour fabriquer la sonde et dessiner le support en 3D, je rassemble toutes les cotes et tous les éléments sur un plan en coupe.
+
+
+\begin{center}
+\begin{tikzpicture}[scale=0.85, font=\small]
+  % eau
+  \fill[blue!6] (-1.6,-0.6) rectangle (5.6,11.6);
+  \draw[blue!50, decorate, decoration={snake, amplitude=0.6mm, segment length=4mm}] (-1.6,11.6) -- (5.6,11.6);
+  \node[blue!60!black, anchor=west] at (-1.5,10.9) {eau du bac};
+  % corps PETG
+  \draw[line width=0.9pt, fill=gray!15] (0,2) rectangle (2.4,9);
+  % tete epoxy
+  \fill[pattern=north east lines, pattern color=orange!70!black] (0,7) rectangle (2.4,9);
+  \draw[line width=0.9pt] (0,7) -- (2.4,7);
+  % mines dans le corps
+  \draw[dashed] (0.6,2) -- (0.6,7.6); \draw[dashed] (0.8,2) -- (0.8,7.6);
+  \draw[dashed] (1.6,2) -- (1.6,7.6); \draw[dashed] (1.8,2) -- (1.8,7.6);
+  % mines exposees
+  \fill[black!75] (0.6,0.5) rectangle (0.8,2);
+  \fill[black!75] (1.6,0.5) rectangle (1.8,2);
+  % vis
+  \draw[line width=1.2pt] (0,7.4) -- (0.6,7.4);
+  \draw[line width=1.2pt] (1.8,7.4) -- (2.4,7.4);
+  % presse-etoupe et cable
+  \draw[line width=0.9pt, fill=gray!40] (0.8,9) rectangle (1.6,9.6);
+  \draw[line width=2pt] (1.2,9.6) -- (1.2,12.4);
+  \draw (0.7,7.4) -- (1.0,8.4) -- (1.2,9.0);
+  \draw (1.7,7.4) -- (1.4,8.4) -- (1.2,9.0);
+  % cotes
+  \draw[{Latex[length=2mm]}-{Latex[length=2mm]}] (-0.4,0.5) -- node[left]{$L = 15\U{mm}$} (-0.4,2);
+  \draw[{Latex[length=2mm]}-{Latex[length=2mm]}] (0.7,-0.2) -- node[below]{$D = 10\U{mm}$} (1.7,-0.2);
+  \draw[dotted] (0.7,0.5) -- (0.7,-0.3); \draw[dotted] (1.7,0.5) -- (1.7,-0.3);
+  % legendes
+  \draw[gray] (2.4,8.0) -- (3.2,8.0) node[right, black]{tête noyée dans l'époxy};
+  \draw[gray] (2.4,7.4) -- (3.2,7.0) node[right, black]{vis M2 + cosse};
+  \draw[gray] (1.6,9.3) -- (3.2,9.6) node[right, black]{presse-étoupe};
+  \draw[gray] (1.2,11.0) -- (3.2,10.6) node[right, black]{câble 2 conducteurs};
+  \draw[gray] (2.4,4.5) -- (3.2,4.5) node[right, black, align=left]{corps PETG,\\ surface époxyée};
+  \draw[gray] (1.8,1.2) -- (3.2,1.2) node[right, black, align=left]{mines graphite\\ $\varnothing\, 2\U{mm}$, B à 4B};
+\end{tikzpicture}
+\captionof{figure}{Plan de la sonde : deux mines de graphite dans un corps en PETG entièrement immergé, longueur exposée $L$ et entraxe $D$ fixés par le support.}
+\end{center}
+
+\begin{retenir}[géométrie retenue]
+Deux mines de graphite de $2\U{mm}$, entraxe $D = 10\U{mm}$, longueur exposée $L = 15\U{mm}$, dans un corps en PETG entièrement immergé. Constante de cellule prévue : $K \approx 0{,}489\U{cm^{-1}}$. Résistance attendue : environ $977\U{\Omega}$ à $0{,}5\U{mS \cdot cm^{-1}}$, $326\U{\Omega}$ à $1{,}5\U{mS \cdot cm^{-1}}$ et $163\U{\Omega}$ à $3{,}0\U{mS \cdot cm^{-1}}$. La sonde doit rester à au moins 2 à 3 cm des parois, de la sonde pH et de la pompe.
+\end{retenir}
+
+%================ 6 =================
+\newpage
+\section{Circuit de mesure}
+\label{sec:circuit}
+
+La sonde se comporte comme une résistance dont la valeur dépend de l'engrais présent dans l'eau. L'Arduino ne sait pas mesurer une résistance : il ne mesure qu'une tension. Je dois donc construire un circuit qui transforme la résistance de l'eau en tension, avec le moins de composants possible.
+
+Cette partie présente le pont diviseur et la formule de mesure, puis montre que la mesure ne dépend pas de la tension USB. Elle justifie ensuite le choix de la résistance de référence, vérifie les courants et la résolution, et se termine par le brochage et le schéma électrique complet.
+
+
+\subsection{Pont diviseur et résistance de l'eau}
+
+La sonde est placée en série avec une résistance connue $R_{\text{ref}}$. On mesure la tension au point commun : c'est un pont diviseur.
+
+\begin{center}
+\begin{circuitikz}[font=\small, line width=0.7pt]
+  \draw[draw=bleutitre, line width=1pt, rounded corners=2pt] (-3.2,-0.7) rectangle (-0.6,3.7);
+  \node[align=center, font=\bfseries] at (-1.9,4.15) {Arduino Uno R3};
+  \node[anchor=east] at (-0.7,3) {D5};
+  \node[anchor=east] at (-0.7,1.5) {A0};
+  \node[anchor=east] at (-0.7,0) {D6};
+  \draw (-0.6,3) to[R, l={$R_{\text{ref}} = 330\U{\Omega}$}] (3.2,3) node[circ] (J) {};
+  \draw (J) to[R, l={$R_w$ (sonde dans l'eau)}] (7.2,3) -- (7.2,0) -- (-0.6,0);
+  \draw (-0.6,1.5) -- (3.2,1.5) -- (J);
+  \node[anchor=north east] at (3.15,2.9) {$J$};
+  \node[anchor=west, font=\footnotesize] at (7.3,1.5) {électrodes E1, E2};
+\end{circuitikz}
+\captionof{figure}{Pont diviseur : la sonde $R_w$ en série avec la résistance de référence, tension lue au point $J$ par l'entrée A0.}
+\end{center}
+
+\begin{demo}{résistance de l'eau à partir de la tension lue}{R_w\,[\Omega] = R_{\text{ref}}\,[\Omega] \; \dfrac{V\,[\mathrm{V}]}{V_{cc}\,[\mathrm{V}] - V\,[\mathrm{V}]}}
+En phase de mesure, D5 est à $V_{cc}$ et D6 à $0\U{V}$. L'entrée analogique A0 a une très grande impédance : elle ne prélève pas de courant. Le même courant $I$ traverse donc $R_{\text{ref}}$ et $R_w$, qui sont en série :
+\[
+I = \frac{V_{cc}}{R_{\text{ref}} + R_w}
+\]
+La tension lue en $J$ est la tension aux bornes de la sonde (loi d'Ohm) :
+\[
+V = R_w \, I
+\]
+On remplace $I$ :
+\[
+V = V_{cc} \, \frac{R_w}{R_{\text{ref}} + R_w}
+\]
+On multiplie les deux membres par $(R_{\text{ref}} + R_w)$ :
+\[
+V \, R_{\text{ref}} + V \, R_w = V_{cc} \, R_w
+\]
+On regroupe les termes en $R_w$ :
+\[
+V \, R_{\text{ref}} = V_{cc} \, R_w - V \, R_w
+\]
+\[
+V \, R_{\text{ref}} = R_w \, (V_{cc} - V)
+\]
+On isole $R_w$ :
+\[
+R_w = R_{\text{ref}} \, \frac{V}{V_{cc} - V}
+\]
+\end{demo}
+
+\subsection{Indépendance vis-à-vis de la tension d'alimentation}
+
+L'Arduino est alimenté par l'USB du Raspberry Pi : $V_{cc}$ n'est pas exactement $5{,}00\U{V}$ et peut varier. Ce n'est pas gênant, car le convertisseur analogique-numérique prend $V_{cc}$ comme référence.
+
+\begin{demo}{mesure ratiométrique}{R_w\,[\Omega] = R_{\text{ref}}\,[\Omega] \; \dfrac{N}{1024 - N}}
+Le convertisseur 10 bits de l'Uno, avec la référence par défaut $V_{\text{ref}} = V_{cc}$, renvoie l'entier :
+\[
+N = 1024 \, \frac{V}{V_{cc}}
+\]
+On en déduit la tension :
+\[
+V = \frac{N \, V_{cc}}{1024}
+\]
+On calcule le rapport qui intervient dans $R_w$ :
+\[
+\frac{V}{V_{cc} - V} = \frac{N \, V_{cc} / 1024}{V_{cc} - N \, V_{cc} / 1024}
+\]
+On factorise $V_{cc} / 1024$ au dénominateur :
+\[
+\frac{V}{V_{cc} - V} = \frac{N \, V_{cc} / 1024}{(1024 - N) \, V_{cc} / 1024}
+\]
+$V_{cc}$ et $1024$ se simplifient :
+\[
+\frac{V}{V_{cc} - V} = \frac{N}{1024 - N}
+\]
+D'où :
+\[
+R_w = R_{\text{ref}} \, \frac{N}{1024 - N}
+\]
+\end{demo}
+
+\begin{retenir}[formule de mesure]
+\[
+R_w = R_{\text{ref}} \, \frac{N}{1024 - N}
+\]
+La valeur de $V_{cc}$ n'intervient pas : une variation de l'alimentation USB ne fausse pas la mesure.
+\end{retenir}
+
+\subsection{Choix de la résistance de référence}
+
+La résistance de référence est le seul composant du circuit à choisir. Une valeur mal adaptée écraserait la mesure contre une des bornes du convertisseur. Je cherche donc la valeur qui rend la tension lue la plus sensible aux variations de la résistance de l'eau.
+
+
+\begin{demo}{valeur de $R_{\text{ref}}$ qui maximise la sensibilité}{R_{\text{ref}}\,[\Omega] = R_w\,[\Omega] \qquad V = \dfrac{V_{cc}}{2}}
+La sensibilité est la variation de la tension lue quand la résistance de l'eau varie, c'est-à-dire la dérivée de $V$ par rapport à $R_w$. On dérive le quotient $V = V_{cc} \, R_w / (R_{\text{ref}} + R_w)$ :
+\[
+\frac{\partial V}{\partial R_w} = V_{cc} \, \frac{1 \cdot (R_{\text{ref}} + R_w) - R_w \cdot 1}{(R_{\text{ref}} + R_w)^2}
+\]
+\[
+\frac{\partial V}{\partial R_w} = V_{cc} \, \frac{R_{\text{ref}}}{(R_{\text{ref}} + R_w)^2}
+\]
+On cherche $R_{\text{ref}}$ qui rend cette sensibilité maximale. On dérive la fonction $g(R_{\text{ref}}) = R_{\text{ref}} / (R_{\text{ref}} + R_w)^2$ :
+\[
+g'(R_{\text{ref}}) = \frac{1 \cdot (R_{\text{ref}} + R_w)^2 - R_{\text{ref}} \cdot 2 \, (R_{\text{ref}} + R_w)}{(R_{\text{ref}} + R_w)^4}
+\]
+On simplifie par $(R_{\text{ref}} + R_w)$ :
+\[
+g'(R_{\text{ref}}) = \frac{(R_{\text{ref}} + R_w) - 2 \, R_{\text{ref}}}{(R_{\text{ref}} + R_w)^3}
+\]
+\[
+g'(R_{\text{ref}}) = \frac{R_w - R_{\text{ref}}}{(R_{\text{ref}} + R_w)^3}
+\]
+Le dénominateur est positif. La dérivée est donc positive pour $R_{\text{ref}} < R_w$, nulle pour $R_{\text{ref}} = R_w$ et négative pour $R_{\text{ref}} > R_w$ : $g$ est croissante puis décroissante. Le maximum est atteint pour :
+\[
+R_{\text{ref}} = R_w
+\]
+À cet optimum, la tension lue vaut :
+\[
+V = V_{cc} \, \frac{R_w}{R_w + R_w}
+\]
+\[
+V = \frac{V_{cc}}{2}
+\]
+La mesure tombe au milieu de la plage du convertisseur.
+\end{demo}
+
+\calcul{valeur normalisée de $R_{\text{ref}}$}{R_{\text{ref}} = 330\,\Omega}
+On prend l'optimum au point de fonctionnement, $R_w \approx 326\U{\Omega}$. Les résistances du commerce suivent la série E12 : autour de cette valeur, on trouve $270\U{\Omega}$, $330\U{\Omega}$ et $390\U{\Omega}$. L'écart relatif de $330\U{\Omega}$ à l'optimum vaut :
+\[
+\frac{330\U{\Omega} - 326\U{\Omega}}{326\U{\Omega}} \approx 0{,}012 = 1{,}2\U{\%}
+\]
+On retient $R_{\text{ref}} = 330\U{\Omega}$, tolérance $1\U{\%}$, $0{,}25\U{W}$.
+
+\subsection{Courants et tensions sur la plage de mesure}
+
+Avant de câbler, je vérifie que le montage ne met pas l'Arduino en danger et que la tension lue reste dans la plage du convertisseur, du bas au haut de la plage de conductivité.
+
+
+\calcul{courant maximal dans les broches}{I_{\max} \approx 1{,}01 \times 10^{-2}\,\mathrm{A}}
+Le courant est le plus fort quand la résistance de l'eau est la plus faible, en haut de plage ($R_w \approx 163\U{\Omega}$) :
+\[
+I_{\max} = \frac{V_{cc}}{R_{\text{ref}} + R_w}
+\]
+\[
+I_{\max} = \frac{5\U{V}}{330\U{\Omega} + 163\U{\Omega}}
+\]
+\[
+I_{\max} = \frac{5\U{V}}{493\U{\Omega}} \approx 1{,}01 \times 10^{-2}\U{A} = 10{,}1\U{mA}
+\]
+On a $10{,}1\U{mA} < 20\U{mA}$ : les broches ne sont pas surchargées.
+
+\calcul{condition générale sur la sonde}{R_{\text{ref}} + R_w \geq 250\,\Omega}
+Pour rester sous $20\U{mA}$, quelle que soit la sonde :
+\[
+\frac{V_{cc}}{R_{\text{ref}} + R_w} \leq 20 \times 10^{-3}\U{A}
+\]
+\[
+R_{\text{ref}} + R_w \geq \frac{5\U{V}}{20 \times 10^{-3}\U{A}}
+\]
+\[
+R_{\text{ref}} + R_w \geq 250\U{\Omega}
+\]
+Avec $R_{\text{ref}} = 330\U{\Omega}$, cette condition est toujours vérifiée.
+
+\calcul{tension lue au point de fonctionnement}{V \approx 2{,}48\,\mathrm{V} \qquad N \approx 509}
+\[
+V = 5\U{V} \times \frac{326\U{\Omega}}{330\U{\Omega} + 326\U{\Omega}}
+\]
+\[
+V = 5\U{V} \times \frac{326\U{\Omega}}{656\U{\Omega}} \approx 2{,}48\U{V}
+\]
+\[
+N = 1024 \times \frac{2{,}48\U{V}}{5\U{V}} \approx 509
+\]
+
+Les autres points sont calculés de la même façon :
+
+\begin{center}
+\begin{tabular}{c c c c c}
+\toprule
+\textbf{$\sigma$ ($\mathrm{mS \cdot cm^{-1}}$)} & \textbf{$R_w$ ($\Omega$)} & \textbf{$V$ (V)} & \textbf{$N$} & \textbf{$I$ (mA)} \\
+\midrule
+0,5 & 977 & 3,74 & 766 & 3,8 \\ \ligne
+1,5 & 326 & 2,48 & 509 & 7,6 \\ \ligne
+3,0 & 163 & 1,65 & 338 & 10,1 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+La tension reste entre $1{,}6$ et $3{,}8\U{V}$ : toute la plage tient dans le convertisseur, loin des bornes $0$ et $5\U{V}$.
+
+\subsection{Résolution}
+
+Le convertisseur de l'Arduino ne donne que 1024 valeurs possibles. Je calcule la plus petite variation de conductivité qu'il peut distinguer, pour savoir si cette finesse suffit à piloter le dosage.
+
+
+\begin{demo}{variation relative de $R_w$ pour un pas du convertisseur}{\dfrac{\mathrm{d}R_w}{R_w} = \mathrm{d}N \; \dfrac{1024}{N \, (1024 - N)}}
+On part de $R_w = R_{\text{ref}} \, N / (1024 - N)$ et on prend le logarithme :
+\[
+\ln R_w = \ln R_{\text{ref}} + \ln N - \ln(1024 - N)
+\]
+On différencie par rapport à $N$ :
+\[
+\frac{\mathrm{d}R_w}{R_w} = \frac{\mathrm{d}N}{N} + \frac{\mathrm{d}N}{1024 - N}
+\]
+On met au même dénominateur :
+\[
+\frac{\mathrm{d}R_w}{R_w} = \mathrm{d}N \, \frac{(1024 - N) + N}{N \, (1024 - N)}
+\]
+\[
+\frac{\mathrm{d}R_w}{R_w} = \mathrm{d}N \, \frac{1024}{N \, (1024 - N)}
+\]
+Comme $\sigma = K / R_w$, une erreur relative sur $R_w$ donne la même erreur relative sur $\sigma$.
+\end{demo}
+
+\calcul{résolution au point de fonctionnement}{\dfrac{\mathrm{d}R_w}{R_w} \approx 3{,}9 \times 10^{-3}}
+Pour un pas, $\mathrm{d}N = 1$, avec $N = 509$ :
+\[
+\frac{\mathrm{d}R_w}{R_w} = \frac{1024}{509 \times (1024 - 509)}
+\]
+\[
+\frac{\mathrm{d}R_w}{R_w} = \frac{1024}{509 \times 515} = \frac{1024}{262\,135} \approx 3{,}9 \times 10^{-3}
+\]
+Soit $0{,}39\U{\%}$, c'est-à-dire environ $0{,}006\U{mS \cdot cm^{-1}}$ à $1{,}5\U{mS \cdot cm^{-1}}$. La moyenne sur 200 lectures réduit encore l'effet du bruit. La résolution est très suffisante pour piloter le dosage.
+
+\subsection{Brochage sur l'Arduino Uno}
+
+Sur la tour, plusieurs broches de l'Arduino sont déjà prises, dont \textbf{D2 pour la sonde de température d'eau (DS18B20)}. La sonde de conductivité est donc câblée sur des broches libres :
+
+\begin{center}
+\begin{tabular}{l l l}
+\toprule
+\textbf{Broche} & \textbf{Raccordement} & \textbf{Rôle} \\
+\midrule
+D5 & $R_{\text{ref}}$ ($330\U{\Omega}$) puis électrode E1 & alterne $5\U{V}$ / $0\U{V}$ \\ \ligne
+A0 & point $J$ entre $R_{\text{ref}}$ et E1 & lecture de la tension \\ \ligne
+D6 & électrode E2 & alterne $0\U{V}$ / $5\U{V}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+D0 et D1 (liaison USB avec le Raspberry Pi), D2 (sonde de température d'eau), A1 (sonde pH, en attendant l'ADS1115), A3 (lumière), A4 et A5 (bus I2C) restent inchangées. La soudure du point $J$ se fait près de l'Arduino, jamais dans l'eau. Aucun fil ne relie directement la sonde au GND : c'est l'alternance de D5 et D6, reliées tour à tour au +5 V et à la masse à l'intérieur de l'Arduino, qui fait circuler le courant. Le schéma électrique complet, avec la fonction de chaque composant, est donné page suivante (partie~\ref{sec:schema}).
+
+
+\debutpaysage
+\subsection{Schéma électrique complet}
+\label{sec:schema}
+
+Je regroupe tout le montage sur un seul schéma normalisé, avec un repère et une fonction pour chaque composant. Ce schéma sert de référence pour le câblage et la vérification.
+
+\vspace{-3mm}
+\begin{center}
+\resizebox{0.56\textwidth}{!}{%
+\begin{circuitikz}[line width=0.7pt, font=\small]
+  % ---------------- Rails communs de l'Arduino ----------------
+  \draw (0,7) node[vcc]{$+5\U{V}$} -- (20.9,7);
+  \draw (0,0) node[ground]{} -- (20.9,0);
+  \node[anchor=west, font=\footnotesize] at (21.0,7) {rail $+5\U{V}$ de l'Arduino};
+  \node[anchor=west, font=\footnotesize] at (21.0,0) {masse (GND) de l'Arduino};
+
+  % ---------------- Broche D5 ----------------
+  \node[spdt, xscale=-1, anchor=in] (S1) at (3.5,4) {};
+  \draw (S1.out 1) -- ++(-0.5,0) coordinate (a1) -- (a1 |- 0,7) node[circ]{};
+  \draw (S1.out 2) -- ++(-0.5,0) coordinate (b1) -- (b1 |- 0,0) node[circ]{};
+  \node[font=\bfseries, bleutitre] at (3.0,4.75) {D5};
+
+  % ---------------- Pont diviseur et sonde ----------------
+  \draw (S1.in) to[R, l={$R_{\text{ref}} = 330\U{\Omega}$}, i>^={$I$}] (7.5,4) node[circ] (J) {};
+  \node[anchor=south east] at (7.4,4.05) {$J$};
+  \draw (J) to[R, l={$R_w$}, v_>={$V_{w}$}] (11.5,4);
+  \draw[dashed, teal!70!black] (8.3,2.75) rectangle (11.2,5.4);
+  \node[teal!60!black, align=center, font=\footnotesize\bfseries] at (9.75,5.8) {\textbf{-B2} \quad Sonde graphite (eau du bac)};
+
+  % ---------------- Broche D6 ----------------
+  \node[spdt, yscale=-1, anchor=in] (S2) at (11.5,4) {};
+  \draw (S2.out 2) -- ++(0.5,0) coordinate (a2) -- (a2 |- 0,7) node[circ]{};
+  \draw (S2.out 1) -- ++(0.5,0) coordinate (b2) -- (b2 |- 0,0) node[circ]{};
+  \node[font=\bfseries, bleutitre] at (12.0,3.15) {D6};
+
+  % ---------------- Entrée A0 ----------------
+  \draw (J) -- (7.5,2.2) node[ocirc] (A0) {};
+  \node[anchor=west, font=\bfseries, bleutitre] at (7.65,2.2) {A0};
+  \node[anchor=west, font=\footnotesize] at (7.65,1.75) {(CAN 10 bits)};
+  \draw (7.5,0) node[circ]{} to[open, v<={$V_{A0}$}] (A0);
+
+  % ---------------- DS18B20 ----------------
+  \draw (15,7) node[circ]{} to[R, l_={$4{,}7\U{k\Omega}$}] (15,3.0) node[circ] (DQ) {};
+  \draw (DQ) -- (14.1,3.0) node[ocirc]{};
+  \node[anchor=east, font=\bfseries, bleutitre] at (14.0,3.0) {D2};
+  \draw (DQ) -- (16.5,3.0);
+  \draw[line width=1pt] (16.5,1.9) rectangle (20.0,4.6);
+  \node[font=\scriptsize, align=center] at (18.45,3.85) {\textbf{-B4}\\[-1pt] Sonde de température\\[-1pt] d'eau (DS18B20)};
+  \node[font=\scriptsize, anchor=west] at (16.55,3.0) {DQ};
+  \draw (17,7) node[circ]{} -- (17,4.6);
+  \node[font=\scriptsize, anchor=north] at (17,4.6) {VDD};
+  \draw (18.6,1.9) -- (18.6,0) node[circ]{};
+  \node[font=\scriptsize, anchor=south] at (18.6,1.9) {GND};
+  \node[teal!60!black, font=\footnotesize\bfseries, anchor=east] at (18.4,1.4) {dans l'eau du bac};
+
+
+  % ---------------- Repères ----------------
+  \tikzset{rep/.style={circle, draw=black, fill=yellow!25, inner sep=1.2pt, minimum size=13pt, font=\scriptsize\bfseries}}
+  \node[rep] at (1.3,7.4) {1};
+  \node[rep] at (1.3,0.4) {2};
+  \node[rep] at (2.35,4.75) {3};
+  \node[rep] at (5.5,3.35) {4};
+  \node[anchor=west, font=\footnotesize\bfseries] at (5.85,3.35) {-R1};
+  \node[rep] at (7.9,4.55) {5};
+  \node[rep] at (8.9,2.2) {6};
+  \node[rep] at (8.65,5.05) {7};
+  \node[rep] at (12.0,2.55) {8};
+  \node[rep] at (15.6,5.25) {9};
+  \node[anchor=west, font=\footnotesize\bfseries] at (15.35,4.55) {-R2};
+  \node[rep] at (13.75,2.45) {10};
+  \node[rep] at (20.45,4.3) {11};
+
+  % ---------------- Légende et cartouche ----------------
+  \node[anchor=north west, align=left, font=\footnotesize, text width=9.2cm] at (0,-0.9) {\textit{Inverseurs -K2\string:D5 et -K2\string:D6 représentés en phase 1 (mesure) : D5 relié au $+5\U{V}$, D6 relié à la masse.}\\[2pt] Broches D5, D6, A0, D2, $+5\U{V}$ et GND : Arduino Uno \textbf{-K2}.};
+  \begin{scope}[shift={(10.6,-3.5)}]
+    \draw[line width=0.8pt] (0,0) rectangle (9.0,2.5);
+    \draw (0,1.7) -- (9.0,1.7);
+    \draw (0,0.85) -- (9.0,0.85);
+    \draw (5.0,0) -- (5.0,1.7);
+    \draw (7.2,0) -- (7.2,1.7);
+    \node[font=\small\bfseries] at (4.5,2.1) {HydroTour -- Schéma de la sonde de conductivité};
+    \node[font=\tiny, anchor=north west] at (0.06,1.66) {Normes};
+    \node[font=\scriptsize, anchor=south west] at (0.06,0.9) {IEC 61082-1 $\cdot$ 60617 $\cdot$ 81346};
+    \node[font=\tiny, anchor=north west] at (5.06,1.66) {Référence};
+    \node[font=\scriptsize, anchor=south west] at (5.06,0.9) {HT-EC-01};
+    \node[font=\tiny, anchor=north west] at (7.26,1.66) {Révision};
+    \node[font=\scriptsize, anchor=south west] at (7.26,0.9) {1.0};
+    \node[font=\tiny, anchor=north west] at (0.06,0.81) {Auteur};
+    \node[font=\scriptsize, anchor=south west] at (0.06,0.05) {E. RAPARII};
+    \node[font=\tiny, anchor=north west] at (5.06,0.81) {Date};
+    \node[font=\scriptsize, anchor=south west] at (5.06,0.05) {02/11/2026};
+    \node[font=\tiny, anchor=north west] at (7.26,0.81) {Feuille};
+    \node[font=\scriptsize, anchor=south west] at (7.26,0.05) {1/1};
+  \end{scope}
+\end{circuitikz}}
+\captionof{figure}{Schéma électrique de la sonde de conductivité, selon IEC 61082-1 (repères IEC 81346, symboles IEC 60617).}
+\end{center}
+\vspace{-4mm}
+{\scriptsize
+\renewcommand{\arraystretch}{1.0}
+\begin{tabularx}{\textwidth}{c l >{\raggedright\arraybackslash}p{6.6cm} >{\raggedright\arraybackslash}X}
+\toprule
+\textbf{N°} & \textbf{Repère} & \textbf{Composant} & \textbf{Fonction} \\
+\midrule
+1 & -K2\string:+5V & Rail $+5\U{V}$ (broche 5V de l'Arduino) & Alimente la sonde EC quand D5 ou D6 est à l'état haut, alimente la sonde de température d'eau (DS18B20) et sa résistance de tirage. \\ \ligne
+2 & -K2\string:GND & Masse (GND de l'Arduino) & Référence commune de toutes les tensions ; reçoit le courant quand D5 ou D6 est à l'état bas. \\ \ligne
+3 & -K2\string:D5 & Broche D5 (sortie numérique) & Applique $+5\U{V}$ puis $0\U{V}$ au pont diviseur ; en haute impédance au repos pour couper tout courant. \\ \ligne
+4 & -R1 & $R_{\text{ref}} = 330\U{\Omega}$, $1\U{\%}$ & Résistance connue du pont diviseur ; limite le courant à $10\U{mA}$ au plus ; égale à $R_w$ au point de fonctionnement pour une sensibilité maximale. \\ \ligne
+5 & $J$ & Point $J$ & Jonction entre $R_{\text{ref}}$ et la sonde : sa tension dépend de $R_w$. Soudé côté boîtier, jamais dans l'eau. \\ \ligne
+6 & -K2\string:A0 & Entrée A0 (convertisseur 10 bits) & Mesure $V_{A0}$ en phase 1 et la convertit en un entier $N$ de 0 à 1023 ; ne prélève pas de courant. \\ \ligne
+7 & -B2 & Sonde graphite $R_w$ & Deux mines de graphite dans l'eau ; leur résistance $R_w = K / \sigma$ est la grandeur mesurée. \\ \ligne
+8 & -K2\string:D6 & Broche D6 (sortie numérique) & Applique $0\U{V}$ puis $+5\U{V}$, en opposition avec D5 : inverse le sens du courant (moyenne nulle, pas d'électrolyse). \\ \ligne
+9 & -R2 & Résistance de tirage $4{,}7\U{k\Omega}$ & Maintient la ligne de données au $+5\U{V}$ au repos ; la sonde de température d'eau et l'Arduino ne font que la tirer à la masse pour communiquer. \\ \ligne
+10 & -K2\string:D2 & Broche D2 (bus 1-Wire) & Dialogue numérique avec la sonde de température d'eau : demande et lecture de la température. \\ \ligne
+11 & -B4 & Sonde de température d'eau (DS18B20) & Mesure la température de l'eau, pour ramener la conductivité à $25\,^{\circ}\mathrm{C}$. \\
+\bottomrule
+\end{tabularx}
+}
+\finpaysage
+
+
+%================ 7 =================
+\newpage
+\section{Erreurs et compensation}
+\label{sec:erreurs}
+
+Le circuit idéal suppose des broches parfaites et une eau toujours à la même température. Sur la vraie tour, ce n'est pas le cas. Je cherche donc les causes d'erreur qui peuvent fausser la mesure, et la façon de les corriger.
+
+Cette partie traite d'abord la résistance interne des broches de l'Arduino, puis l'effet de la température, et se termine par les autres causes d'erreur liées à l'installation dans le bac.
+
+
+\subsection{Résistance interne des broches}
+
+Une broche de l'Uno n'est pas une source de tension parfaite : à l'état haut comme à l'état bas, elle présente une petite résistance interne, de l'ordre de quelques dizaines d'ohms (on prend $r_h = r_l = 25\U{\Omega}$ pour l'exemple, valeurs à confirmer par l'étalonnage).
+
+\begin{demo}{modèle de la mesure avec les résistances des broches}{R_{\text{app}}\,[\Omega] = g \, R_w\,[\Omega] + r_0\,[\Omega] \qquad g = \dfrac{R_{\text{ref}}}{R_{\text{ref}} + r_h} \qquad r_0 = g \, r_l}
+D5 à l'état haut se modélise par $V_{cc}$ en série avec $r_h$ ; D6 à l'état bas par la masse en série avec $r_l$. Le circuit complet est une seule maille :
+\[
+I = \frac{V_{cc}}{r_h + R_{\text{ref}} + R_w + r_l}
+\]
+La tension en $J$, mesurée par rapport à la masse, est celle aux bornes de $R_w$ et $r_l$ :
+\[
+V = (R_w + r_l) \, I
+\]
+La tension restante, $V_{cc} - V$, est celle aux bornes de $r_h$ et $R_{\text{ref}}$ :
+\[
+V_{cc} - V = (r_h + R_{\text{ref}}) \, I
+\]
+On fait le rapport des deux, le courant se simplifie :
+\[
+\frac{V}{V_{cc} - V} = \frac{R_w + r_l}{R_{\text{ref}} + r_h}
+\]
+Le programme calcule la résistance apparente $R_{\text{app}} = R_{\text{ref}} \, V / (V_{cc} - V)$ :
+\[
+R_{\text{app}} = R_{\text{ref}} \, \frac{R_w + r_l}{R_{\text{ref}} + r_h}
+\]
+On développe :
+\[
+R_{\text{app}} = \frac{R_{\text{ref}}}{R_{\text{ref}} + r_h} \, R_w + \frac{R_{\text{ref}}}{R_{\text{ref}} + r_h} \, r_l
+\]
+On pose le gain $g$ et le décalage $r_0$ :
+\[
+g = \frac{R_{\text{ref}}}{R_{\text{ref}} + r_h}
+\]
+\[
+r_0 = g \, r_l
+\]
+Il vient une relation affine :
+\[
+R_{\text{app}} = g \, R_w + r_0
+\]
+\end{demo}
+
+\calcul{erreur commise sans correction}{g \approx 0{,}930 \qquad r_0 \approx 23{,}2\,\Omega \qquad \text{erreur} \approx -4{,}6\,\% \ \text{en bas de plage}}
+Avec $r_h = r_l = 25\U{\Omega}$ :
+\[
+g = \frac{330\U{\Omega}}{330\U{\Omega} + 25\U{\Omega}} = \frac{330\U{\Omega}}{355\U{\Omega}} \approx 0{,}930
+\]
+\[
+r_0 = 0{,}930 \times 25\U{\Omega} \approx 23{,}2\U{\Omega}
+\]
+En bas de plage, $R_w = 977\U{\Omega}$ :
+\[
+R_{\text{app}} = 0{,}930 \times 977\U{\Omega} + 23{,}2\U{\Omega} \approx 932\U{\Omega}
+\]
+\[
+\frac{R_{\text{app}} - R_w}{R_w} = \frac{932\U{\Omega} - 977\U{\Omega}}{977\U{\Omega}} \approx -4{,}6\U{\%}
+\]
+
+\begin{center}
+\begin{tabular}{c c c c}
+\toprule
+\textbf{$\sigma$ ($\mathrm{mS \cdot cm^{-1}}$)} & \textbf{$R_w$ ($\Omega$)} & \textbf{$R_{\text{app}}$ ($\Omega$)} & \textbf{Erreur sur $R$} \\
+\midrule
+0,5 & 977 & 932 & $-4{,}6\U{\%}$ \\ \ligne
+1,5 & 326 & 326 & $+0{,}1\U{\%}$ \\ \ligne
+3,0 & 163 & 175 & $+7{,}2\U{\%}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+L'erreur est presque nulle au point de fonctionnement (là où $R_w \approx R_{\text{ref}}$, les deux effets se compensent), mais atteint plusieurs pour cent aux bords de la plage. Elle se corrige entièrement par un \textbf{étalonnage électronique} (partie~\ref{sec:etalonnage}), qui mesure directement $g$ et $r_0$.
+
+\subsection{Compensation de la température}
+
+La mobilité des ions augmente avec la température : à concentration égale, une eau plus chaude conduit mieux. Sans correction, le Pi croirait que l'engrais augmente quand l'eau se réchauffe dans la journée.
+
+\begin{demo}{conductivité ramenée à 25 °C}{\sigma_{25}\,[\mathrm{S \cdot m^{-1}}] = \dfrac{\sigma_T\,[\mathrm{S \cdot m^{-1}}]}{1 + \alpha\,[\mathrm{K^{-1}}] \; (T - T_0)\,[\mathrm{K}]} \qquad T_0 = 298{,}15\,\mathrm{K}}
+Autour de $25\U{{}^{\circ}C}$, on approche la variation de la conductivité par un développement au premier ordre :
+\[
+\sigma_T = \sigma_{25} + \left. \frac{\mathrm{d}\sigma}{\mathrm{d}T} \right|_{25} (T - 25\U{{}^{\circ}C})
+\]
+On factorise $\sigma_{25}$ :
+\[
+\sigma_T = \sigma_{25} \left[ 1 + \frac{1}{\sigma_{25}} \left. \frac{\mathrm{d}\sigma}{\mathrm{d}T} \right|_{25} (T - 25\U{{}^{\circ}C}) \right]
+\]
+On pose le coefficient de température relatif :
+\[
+\alpha = \frac{1}{\sigma_{25}} \left. \frac{\mathrm{d}\sigma}{\mathrm{d}T} \right|_{25}
+\]
+Il vient :
+\[
+\sigma_T = \sigma_{25} \left[ 1 + \alpha \, (T - 25\U{{}^{\circ}C}) \right]
+\]
+On divise par le crochet :
+\[
+\sigma_{25} = \frac{\sigma_T}{1 + \alpha \, (T - 25\U{{}^{\circ}C})}
+\]
+\end{demo}
+
+\calcul{exemple de compensation}{\sigma_{25} = 0{,}150\,\mathrm{S \cdot m^{-1}}}
+Hypothèse $\alpha = 0{,}02\U{{}^{\circ}C^{-1}}$ (valeur courante pour les solutions nutritives, mesurée en partie~\ref{sec:etalonnage}). Mesure de $\sigma_T = 1{,}65\U{mS \cdot cm^{-1}}$ à $T = 30\U{{}^{\circ}C}$ :
+\[
+\sigma_{25} = \frac{1{,}65\U{mS \cdot cm^{-1}}}{1 + 0{,}02\U{{}^{\circ}C^{-1}} \times (30\U{{}^{\circ}C} - 25\U{{}^{\circ}C})}
+\]
+\[
+\sigma_{25} = \frac{1{,}65\U{mS \cdot cm^{-1}}}{1 + 0{,}10}
+\]
+\[
+\sigma_{25} = \frac{1{,}65\U{mS \cdot cm^{-1}}}{1{,}10} = 1{,}50\U{mS \cdot cm^{-1}}
+\]
+Sans compensation, l'erreur serait de $10\U{\%}$ pour seulement $5\U{{}^{\circ}C}$ d'écart.
+
+\subsection{Autres causes d'erreur}
+
+Certaines erreurs ne viennent pas de l'électronique mais de l'installation de la sonde dans le bac. Elles ne se calculent pas, mais se préviennent par de bonnes pratiques que je résume ici.
+
+
+\begin{itemize}[nosep]
+\item \textbf{Interférence avec la sonde pH} : les deux sondes dans le même bac partagent la masse de l'Arduino. Le pH est lu quand D5 et D6 sont en haute impédance (c'est le cas en dehors de la mesure EC), et la sonde EC est placée à au moins 3 cm de la sonde pH.
+\item \textbf{Encrassement} : les sels se déposent sur le graphite et modifient $K$. Nettoyage et contrôle de $K$ toutes les 2 à 4 semaines.
+\item \textbf{Bulles d'air} collées aux mines : elles réduisent la surface active. Mesure pompe arrêtée, et sonde inclinée ou tapotée à l'installation.
+\item \textbf{Proximité des parois} : elle déforme les lignes de courant. L'étalonnage se fait dans un récipient d'au moins 10 cm de diamètre, sonde centrée.
+\end{itemize}
+
+%================ 8 =================
+\newpage
+\section{Étalonnage}
+\label{sec:etalonnage}
+
+Les parties précédentes ont introduit trois paramètres que le calcul ne donne qu'approximativement : le gain et le décalage de l'électronique, la constante de cellule réelle et le coefficient de température. Seule la mesure permet de les connaître avec précision.
+
+
+L'étalonnage se fait en deux temps, ce qui sépare les erreurs de l'électronique de celles de la sonde.
+
+Cette partie présente d'abord l'étalonnage électronique par deux résistances, puis l'étalonnage de la sonde dans une solution de chlorure de potassium, et se termine par la mesure du coefficient de température.
+
+\subsection{Étalonnage électronique par deux résistances}
+
+On remplace la sonde par deux résistances précises connues $R_1$ et $R_2$ (tolérance $1\U{\%}$), par exemple $150\U{\Omega}$ et $1\U{k\Omega}$, qui encadrent la plage de mesure. Pour chacune, le programme donne la résistance apparente $R_{\text{app},1}$ et $R_{\text{app},2}$.
+
+\begin{demo}{détermination du gain et du décalage}{g = \dfrac{R_{\text{app},2} - R_{\text{app},1}}{R_2 - R_1} \qquad r_0\,[\Omega] = R_{\text{app},1} - g \, R_1}
+La relation $R_{\text{app}} = g \, R_w + r_0$ s'écrit pour les deux résistances :
+\[
+R_{\text{app},1} = g \, R_1 + r_0
+\]
+\[
+R_{\text{app},2} = g \, R_2 + r_0
+\]
+On soustrait la première équation de la seconde, $r_0$ disparaît :
+\[
+R_{\text{app},2} - R_{\text{app},1} = g \, (R_2 - R_1)
+\]
+\[
+g = \frac{R_{\text{app},2} - R_{\text{app},1}}{R_2 - R_1}
+\]
+On reporte dans la première équation :
+\[
+r_0 = R_{\text{app},1} - g \, R_1
+\]
+En mesure, on inverse la relation affine pour retrouver la vraie résistance de l'eau :
+\[
+R_w = \frac{R_{\text{app}} - r_0}{g}
+\]
+\end{demo}
+
+\calcul{exemple d'étalonnage électronique}{g \approx 0{,}930 \qquad r_0 \approx 23{,}2\,\Omega}
+Valeurs d'exemple, obtenues avec $r_h = r_l = 25\U{\Omega}$ : $R_{\text{app},1} = 162{,}7\U{\Omega}$ pour $R_1 = 150\U{\Omega}$, et $R_{\text{app},2} = 952{,}8\U{\Omega}$ pour $R_2 = 1000\U{\Omega}$.
+\[
+g = \frac{952{,}8\U{\Omega} - 162{,}7\U{\Omega}}{1000\U{\Omega} - 150\U{\Omega}}
+\]
+\[
+g = \frac{790{,}1\U{\Omega}}{850\U{\Omega}} \approx 0{,}930
+\]
+\[
+r_0 = 162{,}7\U{\Omega} - 0{,}930 \times 150\U{\Omega}
+\]
+\[
+r_0 = 162{,}7\U{\Omega} - 139{,}5\U{\Omega} = 23{,}2\U{\Omega}
+\]
+On retrouve bien les valeurs du modèle de la partie~\ref{sec:erreurs}.
+
+\subsection{Étalonnage de la sonde au chlorure de potassium}
+
+Une solution de chlorure de potassium (KCl) à $0{,}01\U{mol \cdot L^{-1}}$ a une conductivité de référence de $1{,}413\U{mS \cdot cm^{-1}}$ à $25\U{{}^{\circ}C}$ (valeur à valider). Elle se prépare avec de l'eau distillée.
+
+\begin{demo}{masse de soluté à dissoudre}{m\,[\mathrm{kg}] = C\,[\mathrm{mol \cdot m^{-3}}] \; M\,[\mathrm{kg \cdot mol^{-1}}] \; V_{\text{sol}}\,[\mathrm{m^3}]}
+La quantité de matière nécessaire pour un volume $V_{\text{sol}}$ de solution de concentration $C$ est :
+\[
+n = C \, V_{\text{sol}}
+\]
+La masse correspondante, avec la masse molaire $M$ :
+\[
+m = n \, M
+\]
+\[
+m = C \, M \, V_{\text{sol}}
+\]
+\end{demo}
+
+\calcul{masse de KCl pour 1 L}{m = 7{,}455 \times 10^{-4}\,\mathrm{kg}}
+Masse molaire du chlorure de potassium :
+\[
+M(\mathrm{KCl}) = M(\mathrm{K}) + M(\mathrm{Cl})
+\]
+\[
+M(\mathrm{KCl}) = 39{,}10\U{g \cdot mol^{-1}} + 35{,}45\U{g \cdot mol^{-1}} = 74{,}55\U{g \cdot mol^{-1}}
+\]
+\[
+m = 0{,}01\U{mol \cdot L^{-1}} \times 74{,}55\U{g \cdot mol^{-1}} \times 1\U{L}
+\]
+\[
+m = 0{,}7455\U{g}
+\]
+On pèse $0{,}746\U{g}$ de KCl séché, que l'on dissout dans une fiole jaugée de $1\U{L}$ complétée à l'eau distillée.
+
+\calcul{constante de cellule mesurée}{K \approx 48{,}8\,\mathrm{m^{-1}}}
+On plonge la sonde dans la solution à $25\U{{}^{\circ}C}$ et on obtient $R_w$ (après correction électronique). D'après $\sigma = K / R$ :
+\[
+K = \sigma_{\text{ref}} \, R_w
+\]
+Exemple avec une résistance mesurée de $R_w = 345\U{\Omega}$ :
+\[
+K = 1{,}413 \times 10^{-3}\U{S \cdot cm^{-1}} \times 345\U{\Omega}
+\]
+\[
+K \approx 0{,}488\U{cm^{-1}}
+\]
+Si la solution n'est pas exactement à $25\U{{}^{\circ}C}$, on ramène d'abord la valeur de référence à la température réelle avec $\sigma_T = \sigma_{25} [1 + \alpha (T - 25\U{{}^{\circ}C})]$.
+
+\subsection{Mesure du coefficient de température}
+
+Le coefficient de température utilisé jusqu'ici est une valeur courante, pas une valeur mesurée sur ma solution. Je montre comment le déterminer à partir de deux mesures à deux températures différentes.
+
+
+\begin{demo}{coefficient $\alpha$ à partir de deux mesures}{\alpha\,[\mathrm{K^{-1}}] = \dfrac{\sigma_2 - \sigma_1}{\sigma_1 \, (T_2 - T_0) - \sigma_2 \, (T_1 - T_0)}}
+On mesure la conductivité de la même solution à deux températures $T_1$ et $T_2$ :
+\[
+\sigma_1 = \sigma_{25} \left[ 1 + \alpha \, (T_1 - 25\U{{}^{\circ}C}) \right]
+\]
+\[
+\sigma_2 = \sigma_{25} \left[ 1 + \alpha \, (T_2 - 25\U{{}^{\circ}C}) \right]
+\]
+On fait le rapport, $\sigma_{25}$ se simplifie :
+\[
+\frac{\sigma_2}{\sigma_1} = \frac{1 + \alpha \, (T_2 - 25\U{{}^{\circ}C})}{1 + \alpha \, (T_1 - 25\U{{}^{\circ}C})}
+\]
+On fait le produit en croix :
+\[
+\sigma_2 + \sigma_2 \, \alpha \, (T_1 - 25\U{{}^{\circ}C}) = \sigma_1 + \sigma_1 \, \alpha \, (T_2 - 25\U{{}^{\circ}C})
+\]
+On regroupe les termes en $\alpha$ :
+\[
+\sigma_2 - \sigma_1 = \alpha \left[ \sigma_1 \, (T_2 - 25\U{{}^{\circ}C}) - \sigma_2 \, (T_1 - 25\U{{}^{\circ}C}) \right]
+\]
+\[
+\alpha = \frac{\sigma_2 - \sigma_1}{\sigma_1 \, (T_2 - 25\U{{}^{\circ}C}) - \sigma_2 \, (T_1 - 25\U{{}^{\circ}C})}
+\]
+Si la première mesure est faite à $T_1 = 25\U{{}^{\circ}C}$, le second terme du dénominateur s'annule :
+\[
+\alpha = \frac{\sigma_2 - \sigma_1}{\sigma_1 \, (T_2 - 25\U{{}^{\circ}C})}
+\]
+\end{demo}
+
+\calcul{exemple}{\alpha \approx 0{,}020\,\mathrm{K^{-1}}}
+Valeurs d'exemple : $\sigma_1 = 1{,}413\U{mS \cdot cm^{-1}}$ à $25\U{{}^{\circ}C}$ et $\sigma_2 = 1{,}555\U{mS \cdot cm^{-1}}$ à $30\U{{}^{\circ}C}$.
+\[
+\alpha = \frac{1{,}555\U{mS \cdot cm^{-1}} - 1{,}413\U{mS \cdot cm^{-1}}}{1{,}413\U{mS \cdot cm^{-1}} \times (30\U{{}^{\circ}C} - 25\U{{}^{\circ}C})}
+\]
+\[
+\alpha = \frac{0{,}142\U{mS \cdot cm^{-1}}}{7{,}065\U{mS \cdot cm^{-1} \cdot {}^{\circ}C}}
+\]
+\[
+\alpha \approx 0{,}020\U{{}^{\circ}C^{-1}}
+\]
+La mesure réelle se fait de préférence dans la \textbf{solution nutritive elle-même}, dont le coefficient peut différer de celui du KCl.
+
+%================ 9 =================
+\newpage
+\section{Programme}
+\label{sec:programme}
+
+Le montage et les étalonnages sont définis. Il reste à écrire le programme qui fait alterner les broches, lit la tension et transforme la mesure en conductivité. Je répartis ce travail entre l'Arduino, qui mesure, et le Raspberry Pi, qui calcule.
+
+Cette partie présente d'abord la fonction de mesure de l'Arduino, puis la suite de calculs faite par le Raspberry Pi.
+
+
+\subsection{Fonction de mesure sur l'Arduino}
+
+La fonction de mesure doit respecter tout ce que l'étude a établi : alternance de moyenne nulle, lecture en phase 1 seulement, broches en haute impédance au repos. Je la présente en entier, avec les modifications à apporter au programme existant.
+
+
+L'Arduino reste un actionneur : il mesure la résistance apparente et l'envoie au Raspberry Pi, qui fait toutes les conversions. La fonction ci-dessous remplace \texttt{lireECmV()} du programme \texttt{HydroTour\_\allowbreak Actionneur.ino}. La durée de mesure ($85\U{ms}$) est très inférieure au chien de garde de $8\U{s}$.
+
+\begin{lstlisting}[language=C++]
+const uint8_t  BROCHE_EC_A   = 5;     // vers R_ref puis électrode E1
+const uint8_t  BROCHE_EC_B   = 6;     // vers électrode E2
+const uint8_t  BROCHE_EC_ADC = A0;    // point J entre R_ref et E1
+const float    R_REF         = 330.0; // ohms, valeur mesurée au multimètre
+const uint16_t NB_CYCLES_EC  = 200;
+
+// Renvoie la résistance apparente de la sonde en ohms
+// (NAN si la sonde est hors de l'eau ou en court-circuit)
+float lireECohm() {
+  pinMode(BROCHE_EC_A, OUTPUT);
+  pinMode(BROCHE_EC_B, OUTPUT);
+  unsigned long somme = 0;
+  for (uint16_t i = 0; i < NB_CYCLES_EC; i++) {
+    digitalWrite(BROCHE_EC_A, HIGH);   // phase 1 : mesure
+    digitalWrite(BROCHE_EC_B, LOW);
+    delayMicroseconds(100);
+    somme += analogRead(BROCHE_EC_ADC);
+    digitalWrite(BROCHE_EC_A, LOW);    // phase 2 : inversion
+    digitalWrite(BROCHE_EC_B, HIGH);
+    delayMicroseconds(212);            // même durée que la phase 1
+  }
+  digitalWrite(BROCHE_EC_B, LOW);
+  pinMode(BROCHE_EC_A, INPUT);         // repos : haute impédance,
+  pinMode(BROCHE_EC_B, INPUT);         // aucun courant dans l'eau
+  float n = (float)somme / NB_CYCLES_EC;
+  if (n >= 1020.0 || n <= 3.0) return NAN;
+  return R_REF * n / (1024.0 - n);
+}
+\end{lstlisting}
+
+Modifications associées dans le programme :
+\begin{itemize}[nosep]
+\item supprimer \texttt{BROCHE\_EC\_ALIM} (D7) et la lecture EC par l'ADS1115 ;
+\item dans \texttt{commandeLecture()}, appeler \texttt{lireECohm()} après la lecture du pH (jamais pendant) ;
+\item le champ \texttt{ec=} du protocole série contient désormais des ohms et non des millivolts : mettre à jour \texttt{SPEC.md} et \texttt{cerveau.py}.
+\end{itemize}
+
+\subsection{Conversion sur le Raspberry Pi}
+
+L'Arduino envoie une résistance brute. Le Raspberry Pi la transforme en conductivité ramenée à 25 °C, en appliquant dans l'ordre les corrections démontrées dans cette étude.
+
+
+Le Pi enchaîne les quatre formules démontrées dans cette étude, dans l'ordre :
+
+Correction électronique (partie~\ref{sec:etalonnage}) :
+\[
+R_w = \frac{R_{\text{app}} - r_0}{g}
+\]
+Conductivité à la température de l'eau (partie~\ref{sec:principe}) :
+\[
+\sigma_T = \frac{K}{R_w}
+\]
+Passage en $\mathrm{mS \cdot cm^{-1}}$, avec $K$ en $\mathrm{cm^{-1}}$ et $R_w$ en ohms :
+\[
+\sigma_T \,[\mathrm{mS \cdot cm^{-1}}] = 1000 \times \frac{K}{R_w}
+\]
+Compensation de température avec la mesure de la sonde de température d'eau (DS18B20) (partie~\ref{sec:erreurs}) :
+\[
+\sigma_{25} = \frac{\sigma_T}{1 + \alpha \, (T - 25\U{{}^{\circ}C})}
+\]
+Les paramètres $g$, $r_0$, $K$ et $\alpha$ sont stockés dans le fichier de configuration du Pi et mis à jour à chaque étalonnage.
+
+%================ 10 =================
+\newpage
+\section{Protocole de fabrication et d'essais}
+\label{sec:protocole}
+
+Toute l'étude repose sur des calculs et des hypothèses. Avant d'utiliser la sonde pour doser les engrais, je dois la fabriquer avec soin, puis vérifier par des essais qu'elle se comporte comme prévu.
+
+Cette partie donne d'abord les étapes de fabrication, puis les essais à réaliser, avec les tableaux de relevé à remplir.
+
+
+\subsection{Fabrication}
+
+L'ordre de fabrication compte : la tête de la sonde ne doit être noyée dans l'époxy qu'une fois les essais réussis, pour pouvoir encore corriger une connexion. Je suis donc les étapes suivantes.
+
+\begin{enumerate}[nosep]
+\item Imprimer le support en PETG (entraxe $10\U{mm}$, logements des mines de $2{,}1\U{mm}$, longueur exposée $15\U{mm}$, logements des vis M2 et du presse-étoupe).
+\item Insérer les mines B à 4B de $2\U{mm}$, serrer les vis M2 sur les cosses, faire sortir le câble par le presse-étoupe.
+\item Vérifier au multimètre la continuité entre chaque fil et sa mine, et l'absence de contact entre les deux mines (à sec : résistance infinie).
+\item Époxyer la surface du corps, sans toucher aux $15\U{mm}$ de mine exposée. La tête n'est noyée qu'après réussite des essais E1 et E2.
+\item Câbler $R_{\text{ref}}$ et le point $J$ côté boîtier, sur D5, A0 et D6.
+\end{enumerate}
+
+\subsection{Essais}
+
+Chaque essai vérifie une hypothèse précise de l'étude ou mesure un paramètre d'étalonnage. Je les fais dans l'ordre, car les premiers fournissent les valeurs dont les suivants ont besoin.
+
+
+\textbf{E1 : étalonnage électronique.} Remplacer la sonde par $R_1 = 150\U{\Omega}$ puis $R_2 = 1\U{k\Omega}$ (valeurs exactes mesurées au multimètre), relever $R_{\text{app}}$ sur 5 mesures, calculer $g$ et $r_0$.
+
+\begin{center}
+\begin{tabular}{p{3.6cm} p{3.2cm} p{2.2cm} p{2.2cm} p{2.4cm}}
+\toprule
+\textbf{Résistance} & \textbf{Valeur multimètre ($\Omega$)} & \textbf{$R_{\text{app}}$ 1} & \textbf{$R_{\text{app}}$ 2} & \textbf{$R_{\text{app}}$ moyen} \\
+\midrule
+$R_1$ ($150\U{\Omega}$) & & & & \\ \ligne
+$R_2$ ($1\U{k\Omega}$) & & & & \\ \ligne
+\multicolumn{5}{l}{Résultat : $g =$ \hspace{4cm} $r_0 =$} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{E2 : constante de cellule.} Sonde centrée dans au moins $0{,}5\U{L}$ de KCl à $0{,}01\U{mol \cdot L^{-1}}$, sans bulles, température relevée par la sonde de température d'eau. Trois mesures, puis $K = \sigma_{\text{ref}} \, R_w$.
+
+\begin{center}
+\begin{tabular}{p{2.4cm} p{2.4cm} p{2.6cm} p{2.6cm} p{2.6cm}}
+\toprule
+\textbf{Essai} & \textbf{$T$ (°C)} & \textbf{$R_{\text{app}}$ ($\Omega$)} & \textbf{$R_w$ ($\Omega$)} & \textbf{$K$ ($\mathrm{cm^{-1}}$)} \\
+\midrule
+1 & & & & \\ \ligne
+2 & & & & \\ \ligne
+3 & & & & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{E3 : coefficient de température.} Dans la solution nutritive du bac, mesurer $\sigma_T$ à $25\U{{}^{\circ}C}$ puis vers $30\U{{}^{\circ}C}$ (bain-marie), et calculer $\alpha$.
+
+\begin{center}
+\begin{tabular}{p{3.2cm} p{3.2cm} p{3.4cm} p{3.2cm}}
+\toprule
+\textbf{$T$ (°C)} & \textbf{$R_w$ ($\Omega$)} & \textbf{$\sigma_T$ ($\mathrm{mS \cdot cm^{-1}}$)} & \textbf{$\alpha$ ($\mathrm{{}^{\circ}C^{-1}}$)} \\
+\midrule
+& & & \\ \ligne
+& & & \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{E4 : vérification de linéarité.} Diluer la solution de KCl de moitié avec de l'eau distillée ; la conductivité doit être d'environ la moitié. Un écart de plus de $5\U{\%}$ signale un problème (bulles, polarisation, câblage).
+
+\textbf{E5 : électrolyse et interférence.} Faire 100 mesures de suite : aucune bulle ne doit apparaître sur les mines. Lire le pH avec et sans la sonde EC dans le bac : l'écart doit rester inférieur à $0{,}05$ unité pH.
+
+\textbf{E6 : suivi dans le temps.} Contrôler $K$ dans le KCl toutes les 2 à 4 semaines. Une dérive de plus de $5\U{\%}$ impose un nettoyage, puis un nouvel étalonnage.
+
+\begin{alerte}{Points à vérifier avant la mise en service}
+\begin{itemize}[nosep]
+\item Durée réelle de \texttt{analogRead} mesurée avec \texttt{micros()}, et délai de la phase 2 ajusté pour que $t_1 = t_2$.
+\item D5 et D6 bien en \texttt{INPUT} après chaque mesure (sinon bulles sur les mines entre deux mesures).
+\item Valeurs à valider : plage de conductivité de la laitue, conductivité de référence du KCl, coefficient $\alpha$.
+\end{itemize}
+\end{alerte}
+
+%================ 11 =================
+\newpage
+\section{Synthèse}
+
+Cette dernière partie rassemble les choix et les résultats de l'étude, pour avoir sous les yeux, en une seule page, tout ce qui définit la sonde.
+
+
+\begin{center}
+\begin{tabular}{l l}
+\toprule
+\textbf{Élément} & \textbf{Valeur retenue} \\
+\midrule
+Électrodes & 2 mines graphite $\varnothing\, 2\U{mm}$, B à 4B \\ \ligne
+Géométrie & entraxe $10\U{mm}$, longueur exposée $15\U{mm}$ \\ \ligne
+Constante de cellule prévue & $K \approx 0{,}489\U{cm^{-1}}$ (à étalonner) \\ \ligne
+Résistance de l'eau & $163$ à $977\U{\Omega}$ pour $3{,}0$ à $0{,}5\U{mS \cdot cm^{-1}}$ \\ \ligne
+Résistance de référence & $R_{\text{ref}} = 330\U{\Omega}$, $1\U{\%}$ \\ \ligne
+Brochage & D5, A0, D6 \\ \ligne
+Alimentation de la sonde & carré $\pm 5\U{V}$ à moyenne nulle, environ $2{,}4\U{kHz}$ \\ \ligne
+Courant maximal & $10{,}1\U{mA}$ par broche \\ \ligne
+Résolution & $0{,}39\U{\%}$ par pas du convertisseur \\ \ligne
+Temps sous tension & environ $0{,}01\U{\%}$ \\ \ligne
+Corrections & électronique ($g$, $r_0$), cellule ($K$), température ($\alpha$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{retenir}[conclusion]
+Une sonde de conductivité en graphite, lue directement par l'Arduino Uno avec une seule résistance de $330\U{\Omega}$, couvre la plage utile de la laitue avec une résolution meilleure que $0{,}5\U{\%}$. L'alimentation en signal carré de moyenne nulle par deux broches en opposition évite la polarisation et l'électrolyse. La mesure est indépendante de la tension USB. Après les trois étalonnages (électronique, KCl, température), la conductivité ramenée à $25\U{{}^{\circ}C}$ est fournie au Raspberry Pi pour piloter le dosage des engrais.
+\end{retenir}
+
+\end{document}
