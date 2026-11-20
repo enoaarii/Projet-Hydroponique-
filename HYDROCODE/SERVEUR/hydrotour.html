@@ -1,0 +1,2097 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>HydroTour</title>
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>[hidden]{display:none!important}</style>
+<script id="ht-moi" type="application/json">null</script>
+</head>
+<body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Disposition : schéma de la tour à gauche, mesures + courbe + journal à droite.
+   Langage visuel inspiré d'Apple : police système, fonds groupés, cartes sans bordure, matériaux translucides. */
+:root{
+  --bg:#f2f2f7; --surface:#ffffff; --ink:#1d1d1f; --muted:#6e6e73; --line:rgba(60,60,67,.13); --sep:rgba(60,60,67,.16);
+  --fill:rgba(118,118,128,.12); --thumb:#ffffff;
+  --accent:#00897f; --accent-ink:#ffffff; --band:rgba(36,138,61,.11);
+  --ok:#248a3d; --warn:#c26a00; --crit:#d70015; --water:#32ade6; --leaf:#34c759;
+  --cal-past:#e2e2e7; --cal-left:#cde6fb; --cal-harvest:#bdeec7;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 6px 20px rgba(0,0,0,.05);
+  --mat:rgba(242,242,247,.72);
+  /* Liquid Glass : réservé à la couche de navigation (barre, contrôles), jamais au contenu. */
+  --glass:rgba(255,255,255,.52); --glass-thumb:rgba(255,255,255,.92);
+  --glass-hi:rgba(255,255,255,.95); --glass-lo:rgba(255,255,255,.35); --glass-edge:rgba(0,0,0,.07);
+  --glass-shadow:0 8px 28px rgba(0,0,0,.10),0 1px 3px rgba(0,0,0,.06); --glass-spec:rgba(255,255,255,.7);
+  --f-display:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI Variable Display','Segoe UI',system-ui,sans-serif;
+  --f-body:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI Variable Text','Segoe UI',system-ui,sans-serif;
+  --f-num:ui-rounded,'SF Pro Rounded',-apple-system,BlinkMacSystemFont,'Segoe UI Variable Display','Segoe UI',system-ui,sans-serif;
+  --f-mono:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  /* Mouvement : amorti critique (pas de rebond) pour tout ce qui n'est pas lancé du doigt. */
+  --ease-out:cubic-bezier(.23,1,.32,1);
+  --ease-in-out:cubic-bezier(.77,0,.175,1);
+  --ease-spring:cubic-bezier(.32,.72,0,1);
+  --t-press:120ms; --t-state:200ms;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#000000; --surface:#1c1c1e; --ink:#f5f5f7; --muted:#98989d; --line:rgba(84,84,88,.45); --sep:rgba(84,84,88,.6);
+    --fill:rgba(118,118,128,.24); --thumb:#636366;
+    --accent:#40d4c4; --accent-ink:#00201d; --band:rgba(48,209,88,.13);
+    --ok:#30d158; --warn:#ffa31a; --crit:#ff453a; --water:#64d2ff; --leaf:#30d158;
+    --cal-past:#2c2c2e; --cal-left:#163a59; --cal-harvest:#1e5230;
+    --shadow:none; --mat:rgba(0,0,0,.68);
+    --glass:rgba(44,44,48,.5); --glass-thumb:rgba(120,120,128,.42);
+    --glass-hi:rgba(255,255,255,.28); --glass-lo:rgba(255,255,255,.07); --glass-edge:rgba(255,255,255,.09);
+    --glass-shadow:0 8px 28px rgba(0,0,0,.45); --glass-spec:rgba(255,255,255,.22);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#000000; --surface:#1c1c1e; --ink:#f5f5f7; --muted:#98989d; --line:rgba(84,84,88,.45); --sep:rgba(84,84,88,.6);
+  --fill:rgba(118,118,128,.24); --thumb:#636366;
+  --accent:#40d4c4; --accent-ink:#00201d; --band:rgba(48,209,88,.13);
+  --ok:#30d158; --warn:#ffa31a; --crit:#ff453a; --water:#64d2ff; --leaf:#30d158;
+    --cal-past:#2c2c2e; --cal-left:#163a59; --cal-harvest:#1e5230;
+  --shadow:none; --mat:rgba(0,0,0,.68);
+  --glass:rgba(44,44,48,.5); --glass-thumb:rgba(120,120,128,.42);
+  --glass-hi:rgba(255,255,255,.28); --glass-lo:rgba(255,255,255,.07); --glass-edge:rgba(255,255,255,.09);
+  --glass-shadow:0 8px 28px rgba(0,0,0,.45); --glass-spec:rgba(255,255,255,.22);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.47 var(--f-body);letter-spacing:-.008em;
+  padding-bottom:calc(104px + env(safe-area-inset-bottom,0px)); /* place pour la barre d'onglets */
+  -webkit-font-smoothing:antialiased;transition:background-color 300ms ease,color 300ms ease}
+/* Lueur d'ambiance fixe : donne au verre quelque chose à réfracter (pas de background-attachment:fixed, cassé sur iOS). */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(900px 520px at 8% -8%,color-mix(in srgb,var(--accent) 16%,transparent),transparent 62%),
+             radial-gradient(800px 480px at 100% 4%,color-mix(in srgb,var(--water) 15%,transparent),transparent 60%)}
+
+/* ---------- Matériau Liquid Glass ---------- */
+.glass{position:relative;isolation:isolate;background:var(--glass);
+  -webkit-backdrop-filter:blur(14px) saturate(190%) brightness(1.04);backdrop-filter:blur(14px) saturate(190%) brightness(1.04);
+  /* Bords qui attrapent la lumière : filet clair en haut, plus faible en bas, contour très fin. */
+  box-shadow:inset 0 .5px 0 var(--glass-hi),inset 0 -.5px 0 var(--glass-lo),0 0 0 .5px var(--glass-edge),var(--glass-shadow)}
+/* Reflet spéculaire : suit le pointeur (--mx) sur ordinateur, posé en haut à gauche sinon. */
+.glass::after{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;
+  background:radial-gradient(120% 90% at var(--mx,28%) -20%,var(--glass-spec),transparent 58%);opacity:.75;
+  transition:opacity var(--t-state) ease}
+.wrap{max-width:1180px;margin:0 auto;display:grid;gap:18px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.mono{font-variant-numeric:tabular-nums}
+code{font:13px var(--f-mono);background:var(--fill);padding:1px 5px;border-radius:5px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* Mobile : pas de flash gris au tap, pas de délai double-tap, pas de sélection du texte des boutons. */
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+button,summary{touch-action:manipulation;-webkit-user-select:none;user-select:none}
+/* Retour de pression, dès l'appui (pas au relâchement). */
+.tile,.btn,.seg button{transition:transform var(--t-press) var(--ease-out),background-color var(--t-state) ease,color var(--t-state) ease,box-shadow var(--t-state) ease}
+.tile:active,.btn:active{transform:scale(.97)}
+.seg button:active{transform:scale(.95)}
+
+/* ---------- Barre translucide : le contenu défile dessous ---------- */
+/* La barre n'a plus de fond : ce sont des capsules de verre qui flottent au-dessus du contenu. */
+.bar{position:sticky;top:0;z-index:20;pointer-events:none}
+/* Effet de bord de défilement : un flou dégradé, seulement quand du contenu passe dessous (pas de filet dur). */
+.bar::before{content:"";position:absolute;inset:0 0 -18px;z-index:-1;opacity:0;transition:opacity 300ms ease;
+  background:linear-gradient(var(--bg),color-mix(in srgb,var(--bg) 0%,transparent));
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  -webkit-mask-image:linear-gradient(#000 45%,transparent);mask-image:linear-gradient(#000 45%,transparent)}
+.bar.scrolled::before{opacity:1}
+.bar-in{max-width:1180px;margin:0 auto;min-height:60px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:calc(env(safe-area-inset-top,0px) + 8px) max(12px,env(safe-area-inset-right,0px)) 4px max(12px,env(safe-area-inset-left,0px))}
+.bar-in>*{pointer-events:auto}
+/* Le titre compact se matérialise (échelle + flou + opacité ensemble) au lieu d'un simple fondu. */
+.bar-title{font:600 16px var(--f-display);letter-spacing:-.022em;padding:9px 16px;border-radius:99px;
+  opacity:0;transform:scale(.86);filter:blur(4px);transform-origin:left center;
+  transition:opacity 220ms ease,transform 420ms var(--ease-spring),filter 260ms ease}
+.bar.scrolled .bar-title{opacity:1;transform:none;filter:none}
+.conn{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:2px 12px;color:var(--muted);font-size:13px;
+  padding:8px 14px;border-radius:22px;margin-left:auto}
+.conn .badge{background:transparent;padding:0}
+.badge{font-size:12px;font-weight:600;padding:4px 10px 4px 8px;border-radius:99px;background:var(--fill);white-space:nowrap;
+  display:inline-flex;align-items:center;gap:6px;transition:color var(--t-state) ease}
+.badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.badge.demo{color:var(--warn)} .badge.live{color:var(--ok)} .badge.off{color:var(--crit)}
+
+/* Grand titre, comme dans les apps Apple : il cède la place au titre compact de la barre. */
+.hero{padding-top:6px}
+h1{font:700 clamp(32px,4.2vw,40px)/1.08 var(--f-display);letter-spacing:-.026em;margin:0}
+.sub{margin:4px 0 0;color:var(--muted);font-size:15px}
+
+.banner{--c:var(--ok);display:flex;gap:14px;align-items:center;padding:14px 16px;border-radius:18px;
+  background:color-mix(in srgb,var(--c) 10%,var(--surface));box-shadow:var(--shadow);
+  transition:background-color 300ms ease}
+.banner.warn{--c:var(--warn)} .banner.crit{--c:var(--crit)}
+.banner .ic{flex:none;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--c) 16%,transparent);transition:background-color 300ms ease}
+.banner .msg{animation:msg-in 260ms var(--ease-out);min-width:0}
+@keyframes msg-in{from{opacity:0;transform:translateY(3px);filter:blur(2px)}}
+.banner b{display:block;font:600 17px/1.3 var(--f-display);letter-spacing:-.022em}
+.banner span{color:var(--muted);font-size:14px}
+
+.grid{display:grid;grid-template-columns:minmax(260px,320px) minmax(0,1fr);gap:18px;align-items:start}
+.aside{position:sticky;top:76px;min-width:0}
+.stack{display:grid;grid-template-columns:minmax(0,1fr);gap:26px;min-width:0}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}.aside{position:static;order:2}}
+.card{background:var(--surface);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+.eyebrow{font:600 20px/1.2 var(--f-display);letter-spacing:-.02em;margin:0 0 10px;color:var(--ink)}
+.card .eyebrow{font-size:17px;letter-spacing:-.022em}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+@media (max-width:520px){.tiles>:last-child:nth-child(odd){grid-column:1/-1}}
+.tile{appearance:none;text-align:left;font:inherit;color:inherit;background:var(--surface);border:0;box-shadow:var(--shadow);
+  border-radius:18px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;cursor:pointer;min-width:0}
+.tile.s-warn{background:color-mix(in srgb,var(--warn) 7%,var(--surface))}
+.tile.s-crit{background:color-mix(in srgb,var(--crit) 8%,var(--surface))}
+@media (hover:hover) and (pointer:fine){
+  .tile:hover{box-shadow:0 0 0 1px var(--line),var(--shadow)}
+  .btn:hover{filter:brightness(.97)}
+  .seg button[aria-pressed="false"]:hover{color:var(--ink)}
+}
+.t-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.t-label{font-weight:600;font-size:14px;letter-spacing:-.01em}
+.s-ok{--c:var(--ok)} .s-warn{--c:var(--warn)} .s-crit{--c:var(--crit)} .s-info{--c:var(--muted)}
+/* Pilule d'état en verre teinté (équivalent de .glassEffect(.regular.tint(couleur))) :
+   fond translucide teinté par l'état, filet de lumière en haut, contour et ombre de la même couleur. */
+.pill{position:relative;isolation:isolate;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:5px;
+  color:var(--c,var(--muted));white-space:nowrap;padding:3px 9px 3px 7px;border-radius:99px;
+  background:color-mix(in srgb,var(--c,var(--muted)) 14%,var(--glass));
+  -webkit-backdrop-filter:blur(10px) saturate(180%);backdrop-filter:blur(10px) saturate(180%);
+  box-shadow:inset 0 .5px 0 var(--glass-hi),inset 0 -.5px 0 var(--glass-lo),
+    0 0 0 .5px color-mix(in srgb,var(--c,var(--muted)) 30%,transparent),0 2px 8px color-mix(in srgb,var(--c,var(--muted)) 16%,transparent);
+  transition:color var(--t-state) ease,background-color var(--t-state) ease,box-shadow var(--t-state) ease}
+/* Reflet spéculaire : lumière sur la moitié haute de la capsule. */
+.pill::after{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(180deg,var(--glass-spec),transparent 60%);opacity:.85}
+/* Changement d'état : la capsule rebondit et s'illumine une fois (rare, donc ça mérite un signal). */
+.pill.shine{animation:pill-shine 520ms var(--ease-out)}
+@keyframes pill-shine{
+  0%{transform:scale(1);filter:brightness(1)}
+  35%{transform:scale(1.12);filter:brightness(1.35) saturate(1.2)}
+  100%{transform:scale(1);filter:brightness(1)}}
+.pill::before{content:"";width:7px;height:7px;background:currentColor;border-radius:50%}
+.pill.s-warn::before{border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%);width:8px;height:8px}
+.pill.s-crit::before{border-radius:1px;width:6px;height:6px;transform:rotate(45deg)}
+.t-val{display:flex;align-items:baseline;gap:5px;min-width:0}
+.t-val b{font:600 32px/1 var(--f-num);letter-spacing:-.03em;font-variant-numeric:tabular-nums;transition:color var(--t-state) ease}
+.t-val i{font-style:normal;color:var(--muted);font-size:13px;font-weight:500}
+.tile.s-warn .t-val b{color:var(--warn)} .tile.s-crit .t-val b{color:var(--crit)}
+.t-sub{color:var(--muted);font-size:12.5px;min-height:2.9em;letter-spacing:0}
+.spark{position:relative;height:28px}
+.spark svg{width:100%;height:100%;display:block;overflow:visible}
+.spark polyline{fill:none;stroke:var(--accent);stroke-width:1.75;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round;transition:stroke var(--t-state) ease}
+.tile.s-warn polyline{stroke:var(--warn)} .tile.s-crit polyline{stroke:var(--crit)}
+.spark .dot{position:absolute;right:0;width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 2px var(--surface);
+  transform:translate(50%,-50%);transition:top 400ms var(--ease-in-out),background-color var(--t-state) ease}
+.tile.s-warn .dot{background:var(--warn)} .tile.s-crit .dot{background:var(--crit)}
+
+/* ---------- Feuille de la courbe ----------
+   Ordinateur : fenêtre centrée qui apparaît depuis le centre. Téléphone : feuille qui monte du bas et y redescend
+   (même chemin à l'aller et au retour). Entrée amortie sans rebond, sortie plus rapide. */
+html:has(.sheet[open]){overflow:hidden}
+.sheet{border:0;padding:0;margin:auto;width:min(900px,calc(100% - 32px));max-width:none;max-height:calc(100% - 32px);
+  border-radius:28px;background:var(--surface);color:var(--ink);overflow:hidden;
+  box-shadow:inset 0 .5px 0 var(--glass-hi),0 0 0 .5px var(--glass-edge),0 24px 70px rgba(0,0,0,.28);
+  opacity:1;transform:none;
+  transition:opacity 220ms ease,transform 420ms var(--ease-spring),display 420ms allow-discrete,overlay 420ms allow-discrete}
+.sheet:not([open]){opacity:0;transform:scale(.96);
+  transition:opacity 180ms ease,transform 220ms var(--ease-out),display 220ms allow-discrete,overlay 220ms allow-discrete}
+@starting-style{.sheet[open]{opacity:0;transform:scale(.96)}}
+/* Voile : on assombrit l'arrière-plan pour concentrer l'attention sur la courbe. */
+.sheet::backdrop{background:rgba(0,0,0,.32);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);opacity:1;
+  transition:opacity 300ms ease,display 300ms allow-discrete,overlay 300ms allow-discrete}
+.sheet:not([open])::backdrop{opacity:0}
+@starting-style{.sheet[open]::backdrop{opacity:0}}
+.sheet-in{padding:20px 22px 22px;overflow:auto;max-height:inherit}
+/* Fenêtre de confirmation : petite carte centrée, mêmes entrée et voile que la feuille. */
+.confirm form,.confirm .dlg-in{padding:22px} /* la marge est sur le contenu : seul le voile ferme la fenêtre */
+.dlg-warn{margin:12px 0 0;padding:10px 12px;border-radius:12px;font-size:13.5px;
+  background:color-mix(in srgb,var(--warn) 15%,var(--surface));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--warn) 35%,transparent)}
+.dlg-warn b{color:var(--warn)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.choices{border:0;margin:8px 0 12px;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.choices label{position:relative}
+.choices input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.choices span{display:block;text-align:center;padding:14px 6px;border-radius:14px;background:var(--fill);font-weight:600;
+  transition:background-color var(--t-state) ease,box-shadow var(--t-state) ease,color var(--t-state) ease}
+.choices input:checked+span{color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--surface));box-shadow:inset 0 0 0 2px var(--accent)}
+.choices input:focus-visible+span{outline:2px solid var(--accent);outline-offset:2px}
+.confirm{border:0;margin:auto;padding:0;width:min(420px,calc(100% - 32px));border-radius:24px;background:var(--surface);color:var(--ink);
+  box-shadow:inset 0 .5px 0 var(--glass-hi),0 0 0 .5px var(--glass-edge),0 24px 70px rgba(0,0,0,.28);
+  opacity:1;transform:none;transition:opacity 200ms ease,transform 320ms var(--ease-spring),display 320ms allow-discrete,overlay 320ms allow-discrete}
+.confirm:not([open]){opacity:0;transform:scale(.96);transition:opacity 150ms ease,transform 180ms var(--ease-out),display 180ms allow-discrete,overlay 180ms allow-discrete}
+@starting-style{.confirm[open]{opacity:0;transform:scale(.96)}}
+.confirm::backdrop{background:rgba(0,0,0,.32);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.confirm .c-sub{margin:6px 0 14px;font-size:14px}
+.cmp{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:0;padding:12px 14px;border-radius:14px;background:var(--fill);font-size:14px;font-variant-numeric:tabular-nums}
+.cmp dt{font-weight:600} .cmp dd{margin:0} .cmp s{color:var(--muted)} .cmp b{color:var(--accent)}
+.stock{border:0;margin:14px 0 0;padding:0;display:grid;gap:8px}
+.stock legend{font-weight:600;font-size:14px;padding:0;margin-bottom:8px}
+.stock label{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:14px}
+.stock span{display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
+.stock input{width:96px;text-align:right}
+.stock input:user-invalid{box-shadow:0 0 0 2px var(--crit)}
+.batt-form{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px}
+.batt-form label{display:inline-flex;align-items:center;gap:8px;font-size:14px}
+.batt-form span{display:inline-flex;align-items:center;gap:6px;color:var(--muted)}
+.batt-form input{width:90px;text-align:right}
+.batt-form input:user-invalid{box-shadow:0 0 0 2px var(--crit)}
+@media (prefers-reduced-motion:reduce){.confirm,.confirm:not([open]){transform:none!important}}
+.grab{display:none}
+.c-txt{min-width:0}
+.c-ctl{display:flex;align-items:center;gap:10px}
+.x{appearance:none;border:0;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--muted);cursor:pointer;
+  transition:transform var(--t-press) var(--ease-out),color var(--t-state) ease}
+.x:active{transform:scale(.92)}
+@media (hover:hover) and (pointer:fine){.x:hover{color:var(--ink)}}
+.sheet-now{display:flex;align-items:baseline;gap:12px;margin:2px 0 8px}
+.sheet-now b{font:600 40px/1 var(--f-num);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.sheet-now .pill{font-size:12px;padding:4px 11px 4px 9px;align-self:center}
+@media (max-width:640px){
+  .sheet{margin:auto 0 0;width:100%;max-height:92%;border-radius:28px 28px 0 0;
+    transition:transform 460ms var(--ease-spring),display 460ms allow-discrete,overlay 460ms allow-discrete}
+  .sheet:not([open]){opacity:1;transform:translateY(100%);
+    transition:transform 260ms var(--ease-out),display 260ms allow-discrete,overlay 260ms allow-discrete}
+  @starting-style{.sheet[open]{opacity:1;transform:translateY(100%)}}
+  .sheet.dragging{transition:none}
+  .sheet-in{padding:8px 18px max(22px,env(safe-area-inset-bottom,0px))}
+  .grab{display:block;width:38px;height:5px;border-radius:3px;background:var(--fill);margin:0 auto 12px;
+    box-shadow:0 0 0 1px var(--line)}
+  .c-head,.grab{touch-action:none}
+}
+.c-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 16px;align-items:flex-start;margin-bottom:12px}
+.c-title{font:600 20px/1.2 var(--f-display);letter-spacing:-.02em;margin:0}
+.c-sub{margin:3px 0 0;color:var(--muted);font-size:13px}
+/* Contrôle segmenté : une pastille glisse sous le choix actif. */
+/* Contrôle en verre : piste translucide, pastille de verre plus dense qui glisse et s'étire comme une goutte. */
+.seg{position:relative;display:inline-flex;border-radius:99px;padding:3px}
+.seg-thumb{position:absolute;top:3px;bottom:3px;left:0;border-radius:99px;background:var(--glass-thumb);
+  box-shadow:inset 0 .5px 0 var(--glass-hi),0 0 0 .5px var(--glass-edge),0 4px 12px rgba(0,0,0,.12)}
+.seg.ready .seg-thumb{transition:transform 380ms var(--ease-spring),width 380ms var(--ease-spring)}
+.seg:active::after{opacity:1}
+/* Posé sur une carte blanche, le verre n'a rien à réfracter : on teinte la piste pour qu'elle reste lisible. */
+.seg.glass{background:var(--fill)}
+.seg button{position:relative;z-index:1;appearance:none;border:0;background:transparent;color:var(--muted);
+  font:500 13px var(--f-body);padding:6px 16px;cursor:pointer;border-radius:99px}
+.seg button[aria-pressed="true"]{color:var(--ink);font-weight:600}
+.plot{position:relative;width:100%;min-width:0;overflow:hidden;touch-action:pan-y}
+.plot svg{display:block}
+.plot text{font:11px var(--f-body);font-variant-numeric:tabular-nums;fill:var(--muted)}
+.plot .grid{stroke:var(--line);stroke-width:1}
+.plot .tick{stroke:var(--line);stroke-width:1}
+.plot .band{fill:var(--band)}
+.plot .bl{fill:var(--accent);font-weight:600}
+.plot .alarm{stroke:var(--crit);stroke-width:1;stroke-dasharray:3 4;opacity:.65}
+.plot .al{fill:var(--crit);font-weight:600}
+/* Légende : chaque marque du graphique est expliquée en mots. */
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin:10px 0 0;padding:0;list-style:none;color:var(--muted);font-size:12.5px}
+.legend li{display:inline-flex;align-items:center;gap:7px}
+.legend i{flex:none;display:inline-block;width:18px}
+.lg-ln{height:2.5px;border-radius:2px;background:var(--accent)}
+.lg-band{height:12px;border-radius:3px;background:var(--band);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ok) 35%,transparent)}
+.lg-al{height:0;border-top:1.5px dashed var(--crit)}
+.plot .ln{fill:none;stroke:var(--accent);stroke-width:2.25;stroke-linejoin:round;stroke-linecap:round}
+.plot .end{fill:var(--accent);stroke:var(--surface);stroke-width:2.5}
+.plot .hl{stroke:var(--muted);stroke-width:1;opacity:.5}
+.plot .hd{fill:var(--surface);stroke:var(--accent);stroke-width:2.5}
+/* Bulle en matériau translucide plutôt qu'un bloc opaque. */
+.tip{position:absolute;top:6px;pointer-events:none;color:var(--ink);padding:6px 10px;border-radius:10px;font-size:12px;line-height:1.35;white-space:nowrap;
+  background:color-mix(in srgb,var(--surface) 78%,transparent);
+  -webkit-backdrop-filter:blur(16px) saturate(180%);backdrop-filter:blur(16px) saturate(180%);
+  box-shadow:0 0 0 .5px var(--line),0 6px 18px rgba(0,0,0,.12)}
+.tip b{font:600 14px var(--f-num);font-variant-numeric:tabular-nums}
+
+.log ul{list-style:none;margin:0;padding:0}
+.log li{display:grid;grid-template-columns:5.5em 10px 1fr;gap:10px;align-items:baseline;padding:10px 0;border-top:.5px solid var(--sep)}
+.log li:first-child{border-top:0}
+.tm{color:var(--muted);font-size:13px}
+.ev{width:8px;height:8px;border-radius:50%;background:var(--muted);align-self:center}
+.ev.dose{background:var(--accent)} .ev.alarme{background:var(--crit)} .ev.retour{background:var(--ok)}
+/* Nouvel événement : entre par le haut, là où il s'insère. */
+.log li.in{animation:li-in 300ms var(--ease-out)}
+@keyframes li-in{from{opacity:0;transform:translateY(-6px)}}
+.empty{color:var(--muted)}
+/* Compilation par jour : moyenne en gros, min–max en petit dessous. */
+.sum{border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sum th,.sum td{padding:7px 14px 7px 0;text-align:left;vertical-align:top}
+.sum thead th{color:var(--muted);font-size:12px;font-weight:600;border-bottom:.5px solid var(--sep)}
+.sum tbody tr+tr td,.sum tbody tr+tr th{border-top:.5px solid var(--sep)}
+.sum tbody th{font-weight:600}
+/* La colonne du jour reste visible quand on fait défiler le tableau. */
+.sum tr>:first-child{position:sticky;left:0;z-index:1;background:var(--surface)}
+.sum small{display:block;color:var(--muted);font-size:11.5px}
+
+.cap{margin:6px 0 0;color:var(--muted);font-size:12.5px}
+.acts{list-style:none;margin:0;padding:0}
+.acts li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:.5px solid var(--sep)}
+.acts li:first-child{border-top:0}
+.acts b{font-weight:500}
+.acts small{display:block;color:var(--muted);font-size:12px}
+
+.settings .body{display:grid;gap:26px}
+
+/* ---------- Plantes ---------- */
+.p-date{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px;color:var(--muted);margin-top:12px}
+.p-date input{padding:6px 8px}
+/* Calendrier d'un mois : gris = écoulé, bleu clair = restant, vert clair = récolte. */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.cal-nav b{font:600 17px var(--f-display);letter-spacing:-.02em;text-transform:capitalize}
+.month{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center}
+.month .wk{color:var(--muted);font-size:12px;font-weight:600;padding:2px 0 4px}
+.month .d{position:relative;aspect-ratio:1;display:grid;place-items:center;border-radius:12px;
+  font:500 15px var(--f-num);font-variant-numeric:tabular-nums;
+  appearance:none;border:0;padding:0;background:transparent;color:inherit;cursor:pointer;
+  transition:transform var(--t-press) var(--ease-out),box-shadow var(--t-state) ease}
+.month .d:active{transform:scale(.92)}
+@media (hover:hover) and (pointer:fine){.month .d:hover{box-shadow:inset 0 0 0 1.5px var(--muted)}}
+.d.past,.lg-d.past{background:var(--cal-past)} .d.past{color:var(--muted)}
+.d.left,.lg-d.left{background:var(--cal-left)}
+.d.harvest,.lg-d.harvest{background:var(--cal-harvest)} .d.harvest{font-weight:700}
+.d.today,.lg-d.today{box-shadow:inset 0 0 0 2px var(--ink)}
+.month .d.sel{box-shadow:inset 0 0 0 3px var(--accent)} /* jour affiché sur la tour 3D */
+/* Jour de check-up : pastille orange en haut à droite. */
+.d.chk::before,.lg-d.chk::before{content:"";position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;
+  background:var(--warn);box-shadow:0 0 0 1.5px var(--surface)}
+.lg-d.chk{background:transparent;box-shadow:inset 0 0 0 1px var(--line)} .lg-d.chk::before{top:4px;right:5px}
+.chk-box{margin-top:12px;padding:12px 14px;border-radius:14px;background:var(--fill);font-size:13.5px}
+.chk-box:empty{display:none}
+.chk-box b{display:block;margin-bottom:4px}
+.chk-box ul{margin:0;padding-left:18px} .chk-box li{margin:2px 0}
+.chk-list{margin:0;padding:12px 14px 12px 32px;border-radius:14px;background:var(--fill);font-size:14px}
+.chk-list li{margin:3px 0}
+@media (prefers-reduced-motion:reduce){.month .d:active{transform:none}}
+.d.plant::after,.lg-d.plant::after{content:"";position:absolute;bottom:5px;left:50%;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:currentColor}
+.lg-d{position:relative;height:16px;border-radius:5px}
+.lg-d.plant{color:var(--ink)} .lg-d.plant::after{bottom:5px}
+
+/* ---------- Onglets ---------- */
+/* Changer d'onglet est fréquent : simple fondu court, pas de glissement. */
+.panel{animation:panel-in 180ms ease-out}
+@keyframes panel-in{from{opacity:0}}
+.install{display:grid;gap:18px;grid-template-columns:minmax(0,1fr);align-items:start}
+.t3d-off{margin:24px 0;text-align:center}
+/* Vue 3D : glisser à l'horizontale fait tourner, le défilement vertical de la page reste libre. */
+.t3d{position:relative;width:100%;aspect-ratio:1/1.08;max-height:560px;border-radius:14px;overflow:hidden;
+  cursor:grab;touch-action:pan-y;-webkit-user-select:none;user-select:none;
+  background:radial-gradient(120% 80% at 50% 0%,color-mix(in srgb,var(--water) 10%,transparent),transparent 70%)}
+.t3d.drag{cursor:grabbing}
+.t3d canvas{display:block;width:100%!important;height:100%!important}
+/* Tour (avec ses plantes) à gauche ; calendrier et pompes à droite, ou dessous sur téléphone. */
+.install .side{display:grid;gap:18px;align-content:start;min-width:0}
+@media (min-width:860px){.install{grid-template-columns:minmax(0,1fr) minmax(0,440px)}.install .t3d{max-height:640px}}
+/* Barre d'onglets flottante, centrée, au-dessus de la zone du geste d'accueil. */
+.tabbar{position:fixed;left:50%;bottom:max(14px,env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:30;
+  display:flex;padding:4px;border-radius:99px;max-width:calc(100% - 24px)}
+.tabbar:active::after{opacity:1}
+.tab-thumb{position:absolute;top:4px;bottom:4px;left:0;border-radius:99px;background:var(--fill);
+  box-shadow:inset 0 .5px 0 var(--glass-lo)}
+.tabbar.ready .tab-thumb{transition:transform 380ms var(--ease-spring),width 380ms var(--ease-spring)}
+.tabbar button{position:relative;z-index:1;appearance:none;border:0;background:transparent;color:var(--ink);cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;gap:1px;min-width:74px;padding:7px 12px 6px;border-radius:99px;
+  font:600 10.5px/1.2 var(--f-body);letter-spacing:.01em;transition:color var(--t-state) ease,transform var(--t-press) var(--ease-out)}
+.tabbar button:active{transform:scale(.94)}
+.tabbar button[aria-selected="true"]{color:var(--accent)}
+.tabbar svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab-n{position:absolute;top:2px;left:calc(50% + 6px);min-width:17px;height:17px;padding:0 5px;border-radius:9px;
+  background:var(--crit);color:#fff;font:700 10.5px/17px var(--f-body);text-align:center;box-shadow:0 0 0 2px var(--surface)}
+@media (max-width:380px){.tabbar button{min-width:0;padding-inline:10px}}
+.settings h3{font:600 15px var(--f-body);margin:0 0 6px}
+.settings p{margin:0 0 10px;color:var(--muted);font-size:13.5px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row input[type=url]{flex:1 1 240px;min-width:0}
+input{font:inherit;background:var(--fill);color:var(--ink);border:0;border-radius:9px;padding:8px 10px;
+  transition:box-shadow var(--t-state) ease}
+input:focus{outline:0;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent)}
+/* iOS zoome sur tout champ < 16px : on l'évite sur écran tactile. */
+@media (pointer:coarse){input{font-size:16px}}
+.btn{appearance:none;border:0;background:var(--fill);color:var(--accent);font:600 14px var(--f-body);padding:8px 16px;border-radius:99px;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.5;cursor:default}
+.acts .row{flex-wrap:nowrap}
+.scroll{overflow-x:auto}
+
+/* ---------- Accessibilité ---------- */
+/* Mouvement réduit : plus de déplacements, on garde les fondus de couleur qui aident à comprendre. */
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important}
+  .tile:active,.btn:active,.seg button:active{transform:none}
+  .spark .dot,.seg.ready .seg-thumb,.tabbar.ready .tab-thumb{transition:none}
+  .tabbar button:active{transform:none}
+  .sheet,.sheet:not([open]){transform:none!important;transition:opacity 200ms ease,display 200ms allow-discrete,overlay 200ms allow-discrete}
+  .sheet:not([open]){opacity:0}
+  @starting-style{.sheet[open]{opacity:0}}
+  .bar-title{transform:none;filter:none;transition:opacity 200ms ease}
+}
+/* Transparence réduite : le verre devient opaque (équivalent web de .identity). */
+@media (prefers-reduced-transparency:reduce){
+  .glass{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .glass::after,body::before,.pill::after{display:none}
+  .pill{background:color-mix(in srgb,var(--c,var(--muted)) 14%,var(--surface));-webkit-backdrop-filter:none;backdrop-filter:none}
+  .bar::before{background:var(--bg);-webkit-backdrop-filter:none;backdrop-filter:none;-webkit-mask-image:none;mask-image:none}
+  .tip{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+/* Contraste renforcé : vraies bordures. */
+@media (prefers-contrast:more){
+  .card,.tile,.banner{box-shadow:0 0 0 1px var(--muted)}
+  .glass{background:var(--surface);box-shadow:0 0 0 1px var(--muted)}
+  .pill{box-shadow:0 0 0 1px var(--c,var(--muted))}
+  .pill::after{display:none}
+  .glass::after{display:none}
+}
+</style>
+
+<header id="bar" class="bar">
+  <div class="bar-in">
+    <span class="bar-title glass" aria-hidden="true">HydroTour</span>
+    <div class="conn glass"><span id="mode" class="badge demo">Données de démonstration</span><span id="last" class="mono"></span></div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <h1 id="h1">HydroTour</h1>
+    <p class="sub">Tour hydroponique verticale · site UPF</p>
+  </div>
+
+  <section id="banner" class="banner" role="status" aria-live="polite"></section>
+
+  <main>
+  <section id="p-install" class="panel" role="tabpanel" aria-labelledby="tab-install" hidden>
+    <div class="install">
+    <div class="card">
+      <h2 class="eyebrow">Tour</h2>
+      <p id="t3d-off" class="empty t3d-off">Chargement du modèle 3D…</p>
+      <div id="t3d" class="t3d" role="img" aria-label="Modèle 3D de l’installation : tour de culture avec les plantes à leur stade actuel, bac, pompes, bouteilles de dosage et panneau solaire" hidden></div>
+      <div class="row" style="justify-content:space-between;margin-top:6px">
+        <p id="p3d-cap" class="cap" style="font-weight:600;color:var(--ink);margin:0" aria-live="polite"></p>
+        <button id="cal-today" class="btn" type="button" hidden>Revenir à aujourd’hui</button>
+      </div>
+      <p id="t-cap" class="cap" hidden>Fais glisser pour tourner autour · double-clic pour recentrer. Alimentation 100 % solaire.</p>
+    </div>
+    <div class="side">
+    <div class="card cal-card">
+      <h2 id="pl-title" class="eyebrow" style="margin:0 0 14px">Tomate</h2>
+      <div class="cal-nav">
+        <button id="cal-prev" class="x glass" type="button" aria-label="Mois précédent"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M9 2L4 7l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <b id="cal-month" aria-live="polite"></b>
+        <button id="cal-next" class="x glass" type="button" aria-label="Mois suivant"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M5 2l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+      <div id="cal" class="month"></div>
+      <div id="chk" class="chk-box" aria-live="polite"></div>
+      <p class="cap">Touche un jour pour voir la pousse ce jour-là sur la tour 3D et les check-ups prévus.</p>
+      <ul class="legend">
+        <li><i class="lg-d past"></i>Jours écoulés</li>
+        <li><i class="lg-d left"></i>Jours restants</li>
+        <li><i class="lg-d harvest"></i>Jour de récolte</li>
+        <li><i class="lg-d today"></i>Aujourd’hui</li>
+        <li><i class="lg-d plant"></i>Plantation</li>
+        <li><i class="lg-d chk"></i>Check-up</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2 class="eyebrow">Pompes</h2>
+      <ul id="acts" class="acts"></ul>
+    </div>
+    </div>
+    </div>
+  </section>
+
+  <section id="p-mesures" class="panel stack" role="tabpanel" aria-labelledby="tab-mesures">
+      <section>
+        <h2 class="eyebrow">Bac et solution nutritive</h2>
+        <div id="g1" class="tiles"></div>
+      </section>
+      <section>
+        <h2 class="eyebrow">Environnement</h2>
+        <div id="g2" class="tiles"></div>
+      </section>
+      <section>
+        <h2 class="eyebrow">Batterie</h2>
+        <div id="g3" class="tiles"></div>
+        <p class="cap">Touche une mesure pour voir sa courbe.</p>
+      </section>
+  </section>
+
+  <section id="p-journal" class="panel stack" role="tabpanel" aria-labelledby="tab-journal" hidden>
+    <div class="card log">
+      <h2 class="eyebrow">Derniers événements</h2>
+      <ul id="log"></ul>
+    </div>
+    <div class="card">
+      <div class="c-head" style="margin-bottom:6px">
+        <h2 class="eyebrow" style="margin:0">Données récoltées</h2>
+        <div id="sum-seg" class="seg glass" role="group" aria-label="Période">
+          <span class="seg-thumb" aria-hidden="true"></span>
+          <button type="button" data-s="24h" aria-pressed="false">24 h</button>
+          <button type="button" data-s="7d" aria-pressed="true">7 j</button>
+          <button type="button" data-s="30d" aria-pressed="false">30 j</button>
+        </div>
+      </div>
+      <p id="sum-info" class="cap" style="margin:0 0 12px"></p>
+      <div class="scroll"><table id="sum" class="sum"></table></div>
+      <div class="row" style="margin-top:14px">
+        <button id="csv-raw" class="btn primary" type="button">Télécharger les mesures (CSV)</button>
+        <button id="csv-day" class="btn" type="button">Télécharger le résumé par jour (CSV)</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="p-reglages" class="panel" role="tabpanel" aria-labelledby="tab-reglages" hidden>
+  <div class="card settings">
+    <div class="body">
+      <div id="acc-box" hidden>
+        <h3>Accès</h3>
+        <p>Un seul identifiant et un seul mot de passe pour tout le monde : qui les connaît a tous les droits. Pour changer, donne le mot de passe actuel ; laisse le nouveau mot de passe vide pour ne changer que l’identifiant. Les autres appareils devront se reconnecter.</p>
+        <p id="acc-warn" class="cap" style="color:var(--warn)" hidden>Le mot de passe est encore le provisoire du premier lancement : change-le.</p>
+        <form id="acc-form" class="batt-form">
+          <label>Identifiant <input id="acc-id" required minlength="3" maxlength="64" autocomplete="username" autocapitalize="none" style="width:160px;text-align:left"></label>
+          <label>Nouveau mot de passe <input id="acc-mdp" type="password" minlength="8" autocomplete="new-password" style="width:160px;text-align:left"></label>
+          <label>Répète-le <input id="acc-mdp2" type="password" autocomplete="new-password" style="width:160px;text-align:left"></label>
+          <label>Mot de passe actuel <input id="acc-actuel" type="password" required autocomplete="current-password" style="width:160px;text-align:left"></label>
+          <button class="btn primary" type="submit">Enregistrer</button>
+        </form>
+        <p id="acc-msg" class="cap" role="status"></p>
+        <form method="post" action="/deconnexion" style="margin-top:10px"><button class="btn">Se déconnecter</button></form>
+      </div>
+      <div>
+        <h3>Légume cultivé</h3>
+        <p>La tour 3D et le calendrier (onglet Installation) suivent ce légume, et les seuils pH et EC s’adaptent tout seuls à son stade.</p>
+        <div id="crop-seg" class="seg glass" role="group" aria-label="Légume cultivé">
+          <span class="seg-thumb" aria-hidden="true"></span>
+          <button type="button" data-crop="tomate" aria-pressed="true">Tomate</button>
+          <button type="button" data-crop="salade" aria-pressed="false">Salade</button>
+          <button type="button" data-crop="poivron" aria-pressed="false">Poivron</button>
+        </div>
+        <label class="p-date">Date de plantation <input id="crop-date" type="date"></label>
+      </div>
+      <div>
+        <h3>Batterie</h3>
+        <p>Recopie la capacité et la tension écrites sur l’étiquette de ta batterie. Elles servent au pourcentage restant et à l’autonomie.</p>
+        <form id="batt-form" class="batt-form">
+          <label>Capacité <span><input id="batt-ah" type="number" min="0.5" max="1000" step="0.1" inputmode="decimal" required> Ah</span></label>
+          <label>Tension <span><input id="batt-v" type="number" min="3" max="60" step="0.1" inputmode="decimal" required> V</span></label>
+          <button class="btn primary" type="submit">Enregistrer</button>
+        </form>
+        <p id="batt-msg" class="cap" role="status"></p>
+      </div>
+      <div id="pilot-box" hidden>
+        <h3>Pilotage automatique</h3>
+        <p>Le Raspberry fait tourner la pompe principale par cycles et dose les engrais et le pH- selon le légume. La pompe s’arrête quand la batterie descend au seuil de coupure, et reprend au seuil de reprise ou plus tôt s’il y a assez de soleil.</p>
+        <form id="pilot-form" class="batt-form">
+          <label><input id="pi-auto" type="checkbox" style="width:auto"> Automatique</label>
+          <label>Marche <span><input id="pi-on" type="number" min="1" max="240" step="1" inputmode="numeric" required> min</span></label>
+          <label>Arrêt <span><input id="pi-off" type="number" min="0" max="240" step="1" inputmode="numeric" required> min</span></label>
+          <label>Coupure batterie <span><input id="pi-cut" type="number" min="5" max="90" step="1" inputmode="numeric" required> %</span></label>
+          <label>Reprise <span><input id="pi-res" type="number" min="7" max="100" step="1" inputmode="numeric" required> %</span></label>
+          <button class="btn primary" type="submit">Enregistrer</button>
+        </form>
+        <p id="pilot-warn" class="cap"></p>
+        <p id="pilot-msg" class="cap" role="status"></p>
+        <h3 style="margin-top:18px">Étalonnage des sondes</h3>
+        <p>Plonge la sonde pH dans la solution tampon (ou vide puis remplis le réservoir), attends une minute que la mesure se stabilise, puis appuie sur le bouton correspondant.</p>
+        <div class="row">
+          <button class="btn" type="button" data-etal="ph=7">pH 7,00</button>
+          <button class="btn" type="button" data-etal="ph=4">pH 4,00</button>
+          <button class="btn" type="button" data-etal="niveau=vide">Réservoir vide</button>
+          <button class="btn" type="button" data-etal="niveau=plein">Réservoir plein</button>
+        </div>
+        <p id="etal-msg" class="cap" role="status"></p>
+      </div>
+      <div id="srv-box">
+        <h3>Connexion au serveur</h3>
+        <p>Adresse du serveur qui reçoit les mesures de l’Arduino. La page lit <code>/api/latest</code> toutes les 10 s et <code>/api/history</code> pour les courbes.</p>
+        <div class="row">
+          <input id="api" type="url" placeholder="https://mon-serveur.exemple" aria-label="Adresse du serveur">
+          <button id="api-go" class="btn primary" type="button">Connecter</button>
+          <button id="api-demo" class="btn" type="button">Revenir à la démo</button>
+        </div>
+        <p id="api-msg" style="margin-top:8px" role="status"></p>
+      </div>
+      <div id="demo-box">
+        <h3>Démonstration</h3>
+        <p>Les valeurs affichées sont simulées : le pH dérive, les pompes dosent, le niveau baisse puis l’appoint se déclenche.</p>
+        <button id="bump" class="btn" type="button">Simuler une dérive du pH</button>
+      </div>
+    </div>
+  </div>
+  </section>
+  </main>
+</div>
+
+<!-- Barre d'onglets flottante en verre (couche de navigation). -->
+<nav class="tabbar glass" role="tablist" aria-label="Sections">
+  <span class="tab-thumb" aria-hidden="true"></span>
+  <button id="tab-mesures" type="button" role="tab" aria-controls="p-mesures" aria-selected="true">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19v-7M10 19V6M15 19v-9M20 19V9"/></svg>Mesures
+  </button>
+  <button id="tab-install" type="button" role="tab" aria-controls="p-install" aria-selected="false" tabindex="-1">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V11"/><path d="M12 11c0-4 3-7 8-7 0 5-3 7-8 7z"/><path d="M12 15c0-3-2.5-5-7-5 0 4 2.5 5 7 5z"/></svg>Installation
+  </button>
+  <button id="tab-journal" type="button" role="tab" aria-controls="p-journal" aria-selected="false" tabindex="-1">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Journal
+    <span id="tab-n" class="tab-n" hidden></span>
+  </button>
+  <button id="tab-reglages" type="button" role="tab" aria-controls="p-reglages" aria-selected="false" tabindex="-1">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/></svg>Paramètres
+  </button>
+</nav>
+
+<!-- Confirmation avant de changer de légume : les cibles pH et EC changent avec lui. -->
+<dialog id="crop-dlg" class="confirm" aria-labelledby="crop-dlg-t" aria-describedby="crop-dlg-txt">
+  <form method="dialog">
+    <h2 id="crop-dlg-t" class="c-title">Changer de légume ?</h2>
+    <p id="crop-dlg-txt" class="c-sub"></p>
+    <dl id="crop-dlg-vals" class="cmp"></dl>
+    <p id="crop-dlg-warn" class="dlg-warn" hidden></p>
+    <p id="crop-dlg-date" class="cap"></p>
+    <fieldset class="stock">
+      <legend>Combien de litres de nutriments as-tu ?</legend>
+      <label>Nutriment A <span><input id="stock-a" type="number" min="0" max="200" step="0.1" inputmode="decimal" required autofocus> L</span></label>
+      <label>Nutriment B <span><input id="stock-b" type="number" min="0" max="200" step="0.1" inputmode="decimal" required> L</span></label>
+    </fieldset>
+    <div class="row" style="justify-content:flex-end;margin-top:16px">
+      <!-- type="button" : Entrée dans un champ valide « Oui », pas « Annuler » -->
+      <button id="crop-no" class="btn" type="button">Annuler</button>
+      <button id="crop-yes" class="btn primary" value="oui">Oui, changer</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Choix du légume : obligatoire au premier lancement, proposé après une récolte. -->
+<dialog id="setup-dlg" class="confirm" aria-labelledby="setup-t">
+  <form method="dialog">
+    <h2 id="setup-t" class="c-title">Quel légume cultives-tu ?</h2>
+    <p id="setup-txt" class="c-sub"></p>
+    <fieldset class="choices">
+      <legend class="sr">Légume</legend>
+      <label><input type="radio" name="crop" value="tomate" required><span>Tomate</span></label>
+      <label><input type="radio" name="crop" value="salade"><span>Salade</span></label>
+      <label><input type="radio" name="crop" value="poivron"><span>Poivron</span></label>
+    </fieldset>
+    <label class="p-date" style="margin-top:4px">Date de plantation <input id="setup-date" type="date"></label>
+    <p class="cap" style="margin:4px 0 0">Laisse vide si ce n’est pas encore planté.</p>
+    <fieldset class="stock">
+      <legend>Combien de litres de nutriments as-tu ?</legend>
+      <label>Nutriment A <span><input id="setup-a" type="number" min="0" max="200" step="0.1" inputmode="decimal" required> L</span></label>
+      <label>Nutriment B <span><input id="setup-b" type="number" min="0" max="200" step="0.1" inputmode="decimal" required> L</span></label>
+    </fieldset>
+    <div class="row" style="justify-content:flex-end;margin-top:16px">
+      <button id="setup-no" class="btn" type="button" hidden>Annuler</button>
+      <button class="btn primary" value="ok">Valider</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Rappel à l'ouverture, une fois par jour, les jours de check-up. -->
+<dialog id="chk-dlg" class="confirm" aria-labelledby="chk-t">
+  <div class="dlg-in">
+    <h2 id="chk-t" class="c-title">C’est jour de check-up</h2>
+    <p id="chk-sub" class="c-sub"></p>
+    <ul id="chk-list" class="chk-list"></ul>
+    <div class="row" style="justify-content:flex-end;margin-top:16px">
+      <button id="chk-cal" class="btn" type="button">Voir le calendrier</button>
+      <button id="chk-ok" class="btn primary" type="button" autofocus>C’est noté</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Autour de la date de maturité (J-1 à J+1), à l'ouverture : la récolte est-elle faite ? -->
+<dialog id="mat-dlg" class="confirm" aria-labelledby="mat-t">
+  <div class="dlg-in">
+    <div id="mat-1">
+      <h2 id="mat-t" class="c-title">Les légumes sont-ils mûrs et récoltés ?</h2>
+      <p id="mat-txt" class="c-sub"></p>
+      <div class="row" style="justify-content:flex-end;margin-top:16px">
+        <button id="mat-no" class="btn" type="button">Non, pas encore</button>
+        <button id="mat-yes" class="btn primary" type="button">Oui, récoltés</button>
+      </div>
+    </div>
+    <div id="mat-2" hidden>
+      <h2 class="c-title">Bien, nous verrons cela demain.</h2>
+      <div class="row" style="justify-content:flex-end;margin-top:16px"><button id="mat-ok" class="btn primary" type="button">OK</button></div>
+    </div>
+    <div id="mat-3" hidden>
+      <h2 class="c-title">Bravo pour la récolte !</h2>
+      <p class="c-sub">Veux-tu commencer une nouvelle culture ?</p>
+      <div class="row" style="justify-content:flex-end;margin-top:16px">
+        <button id="mat-later" class="btn" type="button">Plus tard</button>
+        <button id="mat-new" class="btn primary" type="button">Commencer une nouvelle culture</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<!-- Feuille de la courbe : s'ouvre depuis une bulle de mesure. -->
+<dialog id="sheet" class="sheet" aria-labelledby="c-title">
+  <div class="sheet-in">
+    <div class="grab" aria-hidden="true"></div>
+    <div class="c-head">
+      <div class="c-txt">
+        <h2 id="c-title" class="c-title">pH</h2>
+        <p id="c-sub" class="c-sub"></p>
+      </div>
+      <div class="c-ctl">
+        <div id="range-seg" class="seg glass" role="group" aria-label="Période">
+          <span class="seg-thumb" aria-hidden="true"></span>
+          <button type="button" data-r="6h" aria-pressed="false">6 h</button>
+          <button type="button" data-r="24h" aria-pressed="true">24 h</button>
+          <button type="button" data-r="7d" aria-pressed="false">7 j</button>
+        </div>
+        <button id="sheet-x" class="x glass" type="button" aria-label="Fermer"><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
+      </div>
+    </div>
+    <div class="sheet-now"><b id="c-val" class="mono"></b><span id="c-pill" class="pill"></span></div>
+    <div id="plot" class="plot"></div>
+    <ul id="legend" class="legend"></ul>
+  </div>
+</dialog>
+
+<script>
+(function(){
+'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const fmt=(v,d)=>(v==null||Number.isNaN(v))?'—':Number(v).toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const LS={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const hhmm=t=>new Date(t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+// Page servie par le Raspberry (connecté) : le serveur y pose le légume en cours.
+let MOI=null;try{MOI=JSON.parse($('#ht-moi').textContent);}catch(e){}
+// Session expirée ou fermée ailleurs : retour à la page de connexion.
+if(MOI){const f0=window.fetch.bind(window);window.fetch=async(...a)=>{const r=await f0(...a);if(r.status===401)location.href='/connexion';return r;};}
+
+/*<sim>*/
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const rnd=mulberry(20261019);
+const gauss=()=>(rnd()+rnd()+rnd()-1.5)*2;
+function newSim(t){return{t,ph:(cfg.ph.target[0]+cfg.ph.target[1])/2,ec:(cfg.ec.target[0]+cfg.ec.target[1])/2,ta:26,tw:21,lvl:84,cloud:.8,lux:0,hum:70,soc:.7,bw:0,timers:{a:0,b:0,ph:0,eau:0}}}
+function simStep(s,dt,ev){
+  s.t+=dt*6e4;
+  const d=new Date(s.t),h=d.getHours()+d.getMinutes()/60,k=Math.min(1,dt/60),q=Math.sqrt(dt);
+  s.ta+=(27+3*Math.sin((h-9)/24*2*Math.PI)-s.ta)*k+gauss()*0.12*q;
+  s.tw+=(s.ta-6-s.tw)*Math.min(1,dt/180)+gauss()*0.02*q;
+  s.cloud=clamp(s.cloud+(0.8-s.cloud)*0.08+gauss()*0.05*Math.sqrt(dt/5),0.35,1);
+  const day=h>6&&h<18?Math.pow(Math.sin(Math.PI*(h-6)/12),1.4):0;
+  s.lux=100*day*s.cloud;
+  s.hum=clamp(85-(s.ta-23)*2.5+gauss()*1.2,35,99);
+  s.lvl-=0.025*dt*(s.lux/100+0.1);
+  s.ph+=0.0009*dt+gauss()*0.004*q;
+  s.ec-=0.25*dt;
+  const T=s.timers;
+  if(s.ph>cfg.ph.target[1]&&T.ph<=0){T.ph=2;if(ev)ev.push({t:s.t,type:'dose',p:['ph'],text:'Dosage du correcteur pH'});}
+  if(s.ec<cfg.ec.target[0]+50&&T.a<=0&&T.b<=0){T.a=2;T.b=2;if(ev)ev.push({t:s.t,type:'dose',p:['a','b'],text:'Dosage nutriments A et B'});}
+  if(s.lvl<62&&T.eau<=0){T.eau=4;if(ev)ev.push({t:s.t,type:'dose',p:['eau'],text:'Appoint d’eau claire'});}
+  const use=x=>Math.min(dt,x);
+  let x=use(T.ph);s.ph-=0.09*x;T.ph-=x;
+  x=use(T.a);s.ec+=45*x;T.a-=x;
+  x=use(T.b);s.ec+=45*x;T.b-=x;
+  x=use(T.eau);s.lvl+=6*x;T.eau-=x;
+  // Batterie (capacité des Paramètres) : panneau 55 W selon le soleil, moins la consommation (Raspberry, pompe 19 W un quart d'heure sur deux, doseuses).
+  const pvW=55*.8*s.lux/100,needW=4.5+(Math.floor(s.t/9e5)%2===0?19:0)+(T.a>0||T.b>0||T.ph>0?6:0);
+  s.bw=s.soc>=1&&pvW>needW?0:pvW-needW;s.soc=clamp(s.soc+s.bw*dt/60/battWh(),0,1);
+}
+function readSim(s){return{t:s.t,ph:s.ph+gauss()*0.01,ec:s.ec+gauss()*4,tw:s.tw+gauss()*0.05,ta:s.ta+gauss()*0.08,hum:clamp(s.hum+gauss()*0.4,0,100),lux:Math.max(0,s.lux*(1+gauss()*0.02)),pr:1013+3*Math.sin(s.t/864e5)+gauss()*0.3,lvl:clamp(s.lvl+gauss()*0.15,0,100),...(()=>{const bw=s.bw+gauss()*.2,bv=(12.9+.5*s.soc+.012*s.bw)*batt.v/12.8+gauss()*.005;return{bw,bv,ba:bw/bv,bp:s.soc*100};})()}}
+function pumpsOf(s){return{main:Math.floor(s.t/9e5)%2===0,a:s.timers.a>0,b:s.timers.b>0,ph:s.timers.ph>0,eau:s.timers.eau>0}}
+/*</sim>*/
+
+const DEFAULTS={
+  ph:{label:'pH',unit:'',dec:2,alarm:[5.5,6.5],target:[5.8,6.2],axis:[5,7.5]},
+  ec:{label:'Nutriments (EC)',unit:'µS/cm',dec:0,alarm:[1200,2600],target:[1600,2000],axis:[1000,2800]},
+  tw:{label:'Température de l’eau',unit:'°C',dec:1,alarm:[15,28],target:[18,24],axis:[12,32]},
+  lvl:{label:'Niveau d’eau',unit:'%',dec:0,alarm:[30,null],target:[60,null],axis:[0,100]},
+  ta:{label:'Température de l’air',unit:'°C',dec:1,alarm:[15,36],target:[20,32],axis:[14,38]},
+  hum:{label:'Humidité de l’air',unit:'%',dec:0,alarm:[40,95],target:[50,88],axis:[30,100]},
+  // Capteur de lumière du Sensor Kit : non étalonné en lux, donné en % de sa pleine échelle.
+  lux:{label:'Lumière',unit:'%',dec:0,alarm:[null,null],target:[null,null],axis:[0,100]},
+  pr:{label:'Pression de l’air',unit:'hPa',dec:0,alarm:[null,null],target:[null,null],axis:[980,1040]},
+  // Pourcentage calculé par le serveur (ampères-heures comptés sur 6 Ah).
+  bp:{label:'Batterie restante',unit:'%',dec:0,alarm:[20,null],target:[40,null],axis:[0,100]},
+  // Batterie LiFePO4 12,8 V (INA260) : au repos vers 13,2 V, pleine vers 14,4 V, presque vide sous 12 V.
+  bv:{label:'Tension batterie',unit:'V',dec:2,alarm:[12.0,14.6],target:[12.8,14.4],axis:[11.5,15]},
+  // Puissance positive = la batterie se charge (soleil), négative = elle alimente l'installation.
+  bw:{label:'Puissance batterie',unit:'W',dec:1,alarm:[null,null],target:[null,null],axis:[-40,60]}
+};
+const cfg=JSON.parse(JSON.stringify(DEFAULTS));
+const G1=['ph','ec','tw','lvl'],G2=['ta','hum','lux','pr'],G3=['bp','bv','bw'],ALL=[...G1,...G2,...G3];
+const PUMPS=[['main','Circulation'],['a','Nutriment A'],['b','Nutriment B'],['ph','Correcteur pH'],['eau','Eau claire (appoint)']];
+const PILL={ok:'Dans la cible',warn:'À surveiller',crit:'Alarme',info:'Mesure'};
+const RANGE={'6h':6*36e5,'24h':24*36e5,'7d':7*864e5};
+const ICON={
+  ok:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg>',
+  warn:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.01"/></svg>',
+  crit:'<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2h8l6 6v8l-6 6H8l-6-6V8z"/><path d="M12 7v6M12 16.5v.01"/></svg>'
+};
+
+let mode='demo',apiBase='',sel='ph',range='24h',hist=[],live=null,pumps={},sim=null,loop=null,online=true,polls=0;
+let events=[],lastRun={},prevStatus={},prevPumps={},geo=null,hoverPx=null;
+let tab='mesures',seenT=Infinity;
+
+const lo=x=>x==null?-Infinity:x,hi=x=>x==null?Infinity:x;
+function status(k,v){
+  if(v==null||Number.isNaN(v))return'info';
+  const c=cfg[k];
+  if(c.alarm[0]==null&&c.alarm[1]==null&&c.target[0]==null&&c.target[1]==null)return'info';
+  if(v<lo(c.alarm[0])||v>hi(c.alarm[1]))return'crit';
+  if(v<lo(c.target[0])||v>hi(c.target[1]))return'warn';
+  return'ok';
+}
+function rangeText(a,d){const x=a[0],y=a[1];if(x!=null&&y!=null)return`${fmt(x,d)} – ${fmt(y,d)}`;if(x!=null)return`≥ ${fmt(x,d)}`;if(y!=null)return`≤ ${fmt(y,d)}`;return'';}
+function subText(k,v){
+  const c=cfg[k];
+  if(k==='lux')return v<5?'nuit ou ombre':v<30?'ciel couvert':v<70?'ensoleillé':'plein soleil';
+  // Énergie de la batterie = tension × capacité (Paramètres) : énergie restante et, en décharge, autonomie au rythme actuel.
+  if(k==='bp'){
+    const wh=battWh()*v/100,w=live&&live.bw,h=Number.isFinite(w)&&w<-0.5?wh/-w:null;
+    const auto=h==null?(Number.isFinite(w)&&w>0.5?' · en charge':''):` · ${h>=1?`environ ${fmt(h,h<10?1:0)} h`:`${Math.round(h*60)} min`} d’autonomie`;
+    return Number.isFinite(v)?`${fmt(wh,0)} Wh sur ${fmt(battWh(),0)} Wh${auto}`:'';
+  }
+  if(k==='bw'){const a=live&&Number.isFinite(live.ba)?` · ${fmt(Math.abs(live.ba),2)} A`:'';
+    return v>0.5?`en charge${a}`:v<-0.5?`en décharge${a}`:'au repos';}
+  const rt=rangeText(c.target,c.dec);
+  const base=rt?`cible ${rt}${c.unit&&k!=='ph'?' '+c.unit:''}`:'';
+  return base;
+}
+function ago(t){const m=Math.round((Date.now()-t)/60000);if(m<1)return'à l’instant';if(m<60)return`il y a ${m} min`;const h=Math.floor(m/60);if(h<24)return`il y a ${h} h`;return`il y a ${Math.floor(h/24)} j`;}
+function when(t){const d=new Date(t),n=new Date();return d.toDateString()===n.toDateString()?hhmm(t):d.toLocaleString('fr-FR',{weekday:'short',hour:'2-digit',minute:'2-digit'});}
+function log(type,text,t){events.unshift({t:t||Date.now(),type,text});if(events.length>40)events.length=40;}
+function dose(p,text,t){p.forEach(k=>{lastRun[k]=t;});log('dose',text,t);}
+
+/* ---------- Données : démo ---------- */
+function initDemo(){
+  const now=Date.now();
+  sim=newSim(now-7*864e5);hist=[];events=[];lastRun={};prevStatus={};
+  const ev=[];
+  while(sim.t+3e5<=now){simStep(sim,5,ev);hist.push(readSim(sim));}
+  ev.forEach(e=>e.p.forEach(k=>{lastRun[k]=e.t;}));
+  ev.slice(-6).forEach(e=>events.unshift({t:e.t,type:e.type,text:e.text}));
+  live=readSim(sim);live.t=now;pumps=pumpsOf(sim);prevPumps=Object.assign({},pumps);
+}
+function tickDemo(){
+  const ev=[];simStep(sim,0.5,ev);
+  live=readSim(sim);live.t=Date.now();pumps=pumpsOf(sim);
+  ev.forEach(e=>dose(e.p,e.text,Date.now()));
+  render();
+}
+
+/* ---------- Données : serveur ---------- */
+const nz=v=>v==null?NaN:+v;
+const mapRow=j=>({t:Date.parse(j.t)||Date.now(),ph:nz(j.ph),ec:nz(j.ec),tw:nz(j.temp_eau),ta:nz(j.temp_air),hum:nz(j.humidite),lux:nz(j.lux),pr:nz(j.pression),lvl:nz(j.niveau),bv:nz(j.batt_v),ba:nz(j.batt_a),bw:nz(j.batt_w),bp:nz(j.batt_pct)});
+const mapPumps=o=>({main:!!(o&&o.principale),a:!!(o&&o.engrais_a),b:!!(o&&o.engrais_b),ph:!!(o&&o.ph),eau:!!(o&&o.eau)});
+async function getHistory(base,r){
+  const res=await fetch(`${base}/api/history?hours=${RANGE[r]/36e5}`,{cache:'no-store'});
+  if(!res.ok)throw new Error('history');
+  const arr=await res.json();
+  return arr.map(mapRow).sort((a,b)=>a.t-b.t);
+}
+function pumpEvents(np){
+  for(const [k,n] of PUMPS.slice(1)){if(np[k]&&!prevPumps[k])dose([k],`${n} : démarrage`,Date.now());}
+  prevPumps=Object.assign({},np);
+}
+async function pollApi(){
+  try{
+    const r=await fetch(apiBase+'/api/latest',{cache:'no-store'});
+    if(!r.ok)throw new Error('latest');
+    const j=await r.json();
+    live=mapRow(j);pumps=mapPumps(j.pompes);pumpEvents(pumps);srvState(j);online=true;
+    if(++polls%6===0){try{hist=await getHistory(apiBase,range);}catch(e){}}
+  }catch(e){online=false;}
+  render();
+}
+async function connect(base){
+  base=base.replace(/\/+$/,'');
+  try{
+    const r=await fetch(base+'/api/latest',{cache:'no-store'});
+    if(!r.ok)throw new Error('latest');
+    const j=await r.json();
+    const h=await getHistory(base,range);
+    mode='api';apiBase=base;online=true;hist=h;live=mapRow(j);pumps=mapPumps(j.pompes);
+    prevPumps=Object.assign({},pumps);events=[];lastRun={};prevStatus={};polls=0;srvKeys=new Set();srvState(j);
+    LS.set('ht.api',base);startLoop();loadStock();loadBatt();loadPilot();sendCulture();return true;
+  }catch(e){return false;}
+}
+// Alertes du pilote (batterie, niveau, dosage...) et son journal, renvoyés par /api/latest.
+function srvState(j){
+  srvAlerts=j.alertes||[];autoOn=j.auto!==false;
+  (j.evenements||[]).slice().reverse().forEach(e=>{
+    const k=e.t+e.texte;if(srvKeys.has(k))return;srvKeys.add(k);
+    const t=Date.parse(e.t);
+    if(e.type==='dose')(/engrais/.test(e.texte)?['a','b']:/pH/i.test(e.texte)?['ph']:[]).forEach(p=>{lastRun[p]=t;});
+    log(e.type==='info'?'':e.type,e.texte,t);
+  });
+  events.sort((a,b)=>b.t-a.t);
+}
+function backToDemo(){mode='demo';LS.set('ht.api','');initDemo();startLoop();}
+function startLoop(){
+  clearInterval(loop);
+  if(mode==='demo'){render();loop=setInterval(tickDemo,3000);}
+  else{render();loop=setInterval(pollApi,10000);}
+}
+
+/* ---------- Mesures ---------- */
+function buildTiles(){
+  for(const [id,keys] of [['g1',G1],['g2',G2],['g3',G3]]){
+    $('#'+id).innerHTML=keys.map(k=>`<button class="tile" type="button" data-k="${k}" aria-haspopup="dialog">
+      <span class="t-head"><span class="t-label">${cfg[k].label}</span><span class="pill" data-p></span></span>
+      <span class="t-val"><b data-v>—</b><i>${cfg[k].unit}</i></span>
+      <span class="t-sub" data-s></span>
+      <span class="spark"><svg viewBox="0 0 100 28" preserveAspectRatio="none" aria-hidden="true"><polyline points=""/></svg><span class="dot"></span></span>
+    </button>`).join('');
+  }
+  document.querySelectorAll('.tile').forEach(b=>b.addEventListener('click',()=>{sel=b.dataset.k;openSheet();}));
+}
+function updateTiles(){
+  if(!live)return;
+  const t0=live.t-6*36e5,recent=hist.filter(p=>p.t>=t0).concat(live);
+  document.querySelectorAll('.tile').forEach(b=>{
+    const k=b.dataset.k,c=cfg[k],v=live[k],s=status(k,v);
+    b.className='tile s-'+s;
+    $('[data-v]',b).textContent=fmt(v,c.dec);
+    const p=$('[data-p]',b);setPill(p,s,PILL[s]);
+    $('[data-s]',b).textContent=subText(k,v);
+    const vals=recent.map(r=>r[k]).filter(x=>x!=null&&!Number.isNaN(x)),n=vals.length;
+    const pl=$('polyline',b),dt=$('.dot',b);
+    if(n<2){pl.setAttribute('points','');dt.style.display='none';return;}
+    dt.style.display='';
+    let mn=Math.min(...vals),mx=Math.max(...vals);if(mx-mn<1e-9){mn-=1;mx+=1;}
+    const ys=vals.map(x=>26-((x-mn)/(mx-mn))*24);
+    pl.setAttribute('points',vals.map((x,i)=>`${(i/(n-1)*100).toFixed(2)},${ys[i].toFixed(2)}`).join(' '));
+    dt.style.top=(ys[n-1]/28*100)+'%';
+  });
+}
+function updateBanner(){
+  if(!live)return;
+  const items=[];
+  for(const k of ALL){
+    const s=status(k,live[k]);
+    if(s==='warn'||s==='crit'){
+      const c=cfg[k],low=live[k]<lo(c.target[0]);
+      items.push({s,text:`${c.label} ${fmt(live[k],c.dec)}${c.unit?' '+c.unit:''} (${low?'trop bas':'trop haut'})`});
+    }
+  }
+  if(mode==='api')for(const a of srvAlerts)items.push({s:a.niveau==='crit'?'crit':'warn',text:a.texte});
+  const crit=items.filter(i=>i.s==='crit'),warn=items.filter(i=>i.s==='warn');
+  const st=crit.length?'crit':warn.length?'warn':'ok';
+  const title=st==='crit'?(crit.length>1?`${crit.length} alarmes`:'Alarme'):st==='warn'?'À surveiller':'Tout est dans la cible';
+  const detail=st==='ok'?'Toutes les mesures reçues sont dans leurs plages.':(crit.length?crit:warn).map(i=>i.text).join(' · ');
+  const b=$('#banner');b.className='banner '+st;
+  const html=`<span class="ic">${ICON[st]}</span><div class="msg"><b>${title}</b><span>${detail}</span></div>`;
+  if(b.dataset.html!==html){b.dataset.html=html;b.innerHTML=html;}
+}
+function watch(){
+  if(!live)return;
+  for(const k of ALL){
+    const s=status(k,live[k]),p=prevStatus[k];
+    if(p&&p!==s){
+      const c=cfg[k];
+      if(s==='crit')log('alarme',`Alarme : ${c.label} à ${fmt(live[k],c.dec)}${c.unit?' '+c.unit:''}`);
+      else if(p==='crit')log('retour',`${c.label} revenu dans les limites`);
+    }
+    prevStatus[k]=s;
+  }
+}
+
+/* ---------- Pompes ---------- */
+// Met à jour une pilule ; elle ne brille que si son état change réellement (jamais au premier affichage).
+function setPill(p,s,text){
+  if(!p.classList.contains('s-'+s)){const had=/\bs-/.test(p.className);p.className='pill s-'+s;if(had){void p.offsetWidth;p.classList.add('shine');}}
+  if(p.textContent!==text)p.textContent=text;
+}
+document.addEventListener('animationend',e=>{if(e.animationName==='pill-shine')e.target.classList.remove('shine');});
+let actsPrev=null,pumpBusy=false,pumpMsg='',srvAlerts=[],srvKeys=new Set(),autoOn=true;
+const PUMP_API={main:'principale',a:'engrais_a',b:'engrais_b',ph:'ph'};
+function updateActs(){
+  const prev=actsPrev;actsPrev=Object.assign({},pumps);
+  const hadFocus=!!(document.activeElement&&document.activeElement.dataset&&document.activeElement.dataset.pump);
+  // La vraie tour n'a pas de pompe d'eau claire (seulement la démo).
+  $('#acts').innerHTML=PUMPS.filter(([k])=>mode==='demo'||k!=='eau').map(([k,name])=>{
+    const on=!!pumps[k],sh=prev&&!!prev[k]!==on?' shine':'';
+    let last=k==='main'?(pumpMsg||(mode==='api'?(autoOn?'cycle automatique':'manuel · automatique en pause'):'')):(lastRun[k]?`${k==='eau'?'dernier appoint':'dernier dosage'} ${ago(lastRun[k])}`:'aucune activation récente');
+    if((k==='a'||k==='b')&&stock[k]!=null)last=`stock ${fmt(stock[k],1)} L · ${last}`;
+    // Avec le serveur : la circulation se démarre / s'arrête, les doseuses font une dose de 3 s.
+    const ctl=mode!=='api'?'':`<button class="btn" type="button" data-pump="${k}"${pumpBusy||(k!=='main'&&on)?' disabled':''}>${k==='main'?(on?'Arrêter':'Démarrer'):'Doser 3 s'}</button>`;
+    return`<li><span><b>${name}</b>${last?`<small>${last}</small>`:''}</span><span class="row">${ctl}<span class="pill ${on?'s-ok':'s-info'}${sh}">${on?'En marche':'Arrêt'}</span></span></li>`;
+  }).join('');
+  const b=$('#acts [data-pump]');if(hadFocus&&b)b.focus();
+}
+// Requête POST sans corps JSON : pas de pré-vérification CORS, ça marche aussi si la page vient d'ailleurs.
+$('#acts').addEventListener('click',async e=>{
+  const btn=e.target.closest('[data-pump]');if(!btn||pumpBusy)return;
+  const k=btn.dataset.pump,on=!pumps.main;pumpBusy=true;pumpMsg='';updateActs();
+  try{
+    const q=k==='main'?`on=${on?1:0}`:'secondes=3';
+    const r=await fetch(`${apiBase}/api/pompe?pompe=${PUMP_API[k]}&${q}`,{method:'POST',cache:'no-store'});
+    const j=await r.json();
+    if(!r.ok)throw new Error(j.erreur||'pompe');
+    autoOn=j.auto;pumps=mapPumps(j.pompes);prevPumps=Object.assign({},pumps); // le journal vient du serveur
+    if(k!=='main')lastRun[k]=Date.now();
+    pollApi();
+  }catch(err){pumpMsg=err.message==='Arduino non connecté'?'Arduino non connecté au Raspberry':'Commande impossible : serveur injoignable';}
+  pumpBusy=false;render();
+  const b=$('#acts [data-pump]');if(b)b.focus();  // le bouton désactivé pendant la requête a perdu le focus
+});
+let logTop=null,logSig='';
+function drawLog(){
+  const list=events.slice(0,25),sig=list.map(e=>e.t+e.text).join('|')+'|'+(list[0]?when(list[0].t):'');
+  if(sig===logSig)return;
+  // Seuls les événements plus récents que le dernier affiché entrent en animation (pas au premier rendu).
+  const seen=logTop;logSig=sig;logTop=list[0]?list[0].t:logTop;
+  $('#log').innerHTML=list.map(e=>`<li${seen!=null&&e.t>seen?' class="in"':''}><span class="mono tm">${when(e.t)}</span><span class="ev ${e.type}" aria-hidden="true"></span><span>${e.text}</span></li>`).join('')||'<li class="empty">Aucun événement pour le moment.</li>';
+}
+
+/* ---------- Données récoltées : compilation par jour + export CSV ---------- */
+const SUMR={'24h':24*36e5,'7d':7*864e5,'30d':30*864e5};
+const COLS=ALL;
+let sumP='7d',sumRows=[],sumReq=0;
+const dayKey=t=>{const d=new Date(t);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+// Serveur : toutes les mesures (full=1, sans l'échantillonnage des courbes). Démo : l'historique simulé.
+async function loadRows(){
+  if(mode==='api'){
+    const r=await fetch(`${apiBase}/api/history?hours=${SUMR[sumP]/36e5}&full=1`,{cache:'no-store'});
+    if(!r.ok)throw new Error('history');
+    return(await r.json()).map(mapRow).sort((a,b)=>a.t-b.t);
+  }
+  const since=Date.now()-SUMR[sumP];
+  return hist.concat(live?[live]:[]).filter(p=>p.t>=since);
+}
+function byDay(rows){
+  const m=new Map();
+  for(const r of rows){const k=dayKey(r.t);if(!m.has(k))m.set(k,[]);m.get(k).push(r);}
+  return[...m].map(([day,rs])=>{
+    const o={day,n:rs.length};
+    for(const c of COLS){
+      const v=rs.map(r=>r[c]).filter(x=>x!=null&&!Number.isNaN(x));
+      o[c]=v.length?{avg:v.reduce((a,b)=>a+b,0)/v.length,min:Math.min(...v),max:Math.max(...v)}:null;
+    }
+    return o;
+  }).reverse(); // jour le plus récent en haut
+}
+const stamp=t=>new Date(t).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const colHead=c=>cfg[c].label+(cfg[c].unit?` (${cfg[c].unit})`:'');
+async function drawSummary(){
+  const id=++sumReq;
+  let rows;
+  try{rows=await loadRows();}catch(e){if(id===sumReq)$('#sum-info').textContent='Impossible de lire l’historique du serveur.';return;}
+  if(id!==sumReq)return; // une demande plus récente est partie entre-temps
+  sumRows=rows;
+  const days=byDay(rows),empty=!rows.length;
+  $('#sum-info').textContent=empty?'Aucune mesure sur cette période.':
+    `${rows.length.toLocaleString('fr-FR')} mesures, du ${stamp(rows[0].t)} au ${stamp(rows[rows.length-1].t)}. Moyenne du jour, minimum et maximum dessous.`;
+  $('#sum').innerHTML=empty?'':`<thead><tr><th>Jour</th><th>Mesures</th>${COLS.map(c=>`<th>${colHead(c)}</th>`).join('')}</tr></thead><tbody>`+
+    days.map(d=>`<tr><th scope="row">${new Date(d.day+'T12:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</th><td>${d.n}</td>`+
+      COLS.map(c=>{const s=d[c],k=cfg[c].dec;return`<td>${s?`${fmt(s.avg,k)}<small>${fmt(s.min,k)} – ${fmt(s.max,k)}</small>`:'—'}</td>`;}).join('')+'</tr>').join('')+'</tbody>';
+  $('#csv-raw').disabled=$('#csv-day').disabled=empty;
+}
+// CSV « à la française » : point-virgule et virgule décimale, pour qu'Excel l'ouvre directement en colonnes.
+const csvNum=(v,d)=>v==null||Number.isNaN(v)?'':v.toFixed(d).replace('.',',');
+function saveCsv(name,lines){
+  const blob=new Blob(['﻿'+lines.map(l=>l.join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+$('#csv-raw').addEventListener('click',()=>saveCsv(`hydrotour_mesures_${sumP}_${dayKey(Date.now())}.csv`,[
+  ['Date','Heure',...COLS.map(colHead)],
+  ...sumRows.map(r=>[dayKey(r.t),new Date(r.t).toLocaleTimeString('fr-FR'),...COLS.map(c=>csvNum(r[c],cfg[c].dec))])
+]));
+$('#csv-day').addEventListener('click',()=>saveCsv(`hydrotour_resume_${sumP}_${dayKey(Date.now())}.csv`,[
+  ['Date','Mesures',...COLS.flatMap(c=>[`${colHead(c)} moy`,`${colHead(c)} min`,`${colHead(c)} max`])],
+  ...byDay(sumRows).reverse().map(d=>[d.day,d.n,...COLS.flatMap(c=>{const s=d[c],k=cfg[c].dec;return s?[csvNum(s.avg,k),csvNum(s.min,k),csvNum(s.max,k)]:['','',''];})])
+]));
+document.querySelectorAll('[data-s]').forEach(b=>b.addEventListener('click',()=>{
+  sumP=b.dataset.s;
+  document.querySelectorAll('[data-s]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+  moveThumb();drawSummary();
+}));
+
+/* ---------- Courbe ---------- */
+function niceTicks(a,b,n){
+  const raw=(b-a)/n,mag=Math.pow(10,Math.floor(Math.log10(raw))),r=raw/mag;
+  const step=(r<1.5?1:r<3?2:r<7?5:10)*mag,out=[];
+  for(let v=Math.ceil(a/step-1e-9)*step;v<=b+1e-9;v+=step)out.push(+v.toFixed(10));
+  return out;
+}
+function xTicks(t0,t1){
+  const out=[],d=new Date(t0);
+  if(range==='7d'){d.setHours(0,0,0,0);while(d<t0)d.setDate(d.getDate()+1);for(;d<=t1;d.setDate(d.getDate()+1))out.push(+d);}
+  else{
+    const st=range==='6h'?1:4;d.setMinutes(0,0,0);d.setHours(Math.ceil(d.getHours()/st)*st);
+    while(d<t0)d.setHours(d.getHours()+st);
+    for(;d<=t1;d.setHours(d.getHours()+st))out.push(+d);
+  }
+  return out;
+}
+const xlab=t=>range==='7d'?new Date(t).toLocaleDateString('fr-FR',{weekday:'short'}):hhmm(t);
+function chartHead(){
+  const c=cfg[sel];
+  $('#c-title').textContent=c.label+(c.unit?` · ${c.unit}`:'');
+  const parts=[],rt=rangeText(c.target,c.dec);
+  if(rt)parts.push(`zone cible ${rt}`);
+  if(c.alarm[0]!=null)parts.push(`alarme sous ${fmt(c.alarm[0],c.dec)}`);
+  if(c.alarm[1]!=null)parts.push(`alarme au-dessus de ${fmt(c.alarm[1],c.dec)}`);
+  $('#c-sub').textContent=parts.length?parts.join(' · '):'Aucun seuil : mesure de contexte.';
+  const lg=[`<li><i class="lg-ln"></i>${c.label} mesuré</li>`];
+  if(rt)lg.push(`<li><i class="lg-band"></i>Zone cible (${rt}) : valeurs idéales</li>`);
+  if(c.alarm[0]!=null||c.alarm[1]!=null)lg.push(`<li><i class="lg-al"></i>Seuil d’alarme</li>`);
+  const lh=lg.join('');if($('#legend').innerHTML!==lh)$('#legend').innerHTML=lh;
+  if(live){
+    const v=live[sel],s=status(sel,v),pl=$('#c-pill');
+    $('#c-val').textContent=fmt(v,c.dec)+(c.unit?' '+c.unit:'');
+    setPill(pl,s,PILL[s]);
+  }
+}
+function drawChart(){
+  const el=$('#plot');
+  if(!live||!el.clientWidth)return;
+  const W=el.clientWidth,H=W<520?230:300,ml=48,mr=16,mt=14,mb=26,pw=W-ml-mr,ph=H-mt-mb;
+  const c=cfg[sel],t1=live.t,t0=t1-RANGE[range];
+  const t0c=t0;
+  const pts=hist.filter(p=>p.t>=t0c).concat(live).map(p=>[p.t,p[sel]]).filter(p=>p[1]!=null&&!Number.isNaN(p[1]));
+  if(pts.length<2){el.innerHTML='<p class="empty">Pas encore assez de mesures sur cette période.</p>';geo=null;return;}
+  let y0=c.axis[0],y1=c.axis[1];
+  for(const p of pts){y0=Math.min(y0,p[1]);y1=Math.max(y1,p[1]);}
+  const X=t=>ml+(t-t0)/(t1-t0)*pw,Y=v=>mt+(1-(v-y0)/(y1-y0))*ph;
+  const ticks=niceTicks(y0,y1,5),step=ticks.length>1?ticks[1]-ticks[0]:1;
+  const dec=Math.max(0,-Math.floor(Math.log10(step)+1e-9));
+  const lab=v=>fmt(v,dec);
+  let g='';
+  for(const v of ticks){const y=Y(v);g+=`<line class="grid" x1="${ml}" x2="${W-mr}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/><text x="${ml-8}" y="${(y+4).toFixed(1)}" text-anchor="end">${lab(v)}</text>`;}
+  let band='';
+  if(c.target[0]!=null||c.target[1]!=null){
+    const top=Y(Math.min(y1,c.target[1]==null?y1:c.target[1])),bot=Y(Math.max(y0,c.target[0]==null?y0:c.target[0]));
+    band=`<rect class="band" x="${ml}" y="${top.toFixed(1)}" width="${pw}" height="${Math.max(0,bot-top).toFixed(1)}"/>`;
+  }
+  let al='';
+  c.alarm.forEach((a,i)=>{
+    if(a==null||a<=y0||a>=y1)return;
+    const y=Y(a);
+    al+=`<line class="alarm" x1="${ml}" x2="${W-mr}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/><text class="al" x="${W-mr-4}" y="${(y+(i===0?12:-4)).toFixed(1)}" text-anchor="end">alarme</text>`;
+  });
+  let xt='';
+  for(const t of xTicks(t0,t1)){const x=X(t).toFixed(1);xt+=`<line class="tick" x1="${x}" x2="${x}" y1="${H-mb}" y2="${H-mb+4}"/><text x="${x}" y="${H-6}" text-anchor="middle">${xlab(t)}</text>`;}
+  const d=pts.map((p,i)=>`${i?'L':'M'}${X(p[0]).toFixed(1)} ${Y(p[1]).toFixed(1)}`).join('');
+  const lp=pts[pts.length-1];
+  el.innerHTML=`<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Courbe : ${c.label}">${band}${g}${al}${xt}<path class="ln" d="${d}"/><circle class="end" cx="${X(lp[0]).toFixed(1)}" cy="${Y(lp[1]).toFixed(1)}" r="4.5"/><g id="hov" hidden><line class="hl" x1="0" x2="0" y1="${mt}" y2="${H-mb}"/><circle class="hd" r="4" cx="0" cy="0"/></g></svg><div class="tip" hidden></div>`;
+  geo={pts,X,Y,ml,mr,W,H,mt,mb,t0,t1};
+  if(hoverPx!=null)showHover(hoverPx);
+}
+function hideHover(){const el=$('#plot'),h=$('#hov',el),t=$('.tip',el);if(h)h.setAttribute('hidden','');if(t)t.hidden=true;}
+function showHover(px){
+  const el=$('#plot'),g=geo;
+  if(!g)return;
+  if(px<g.ml||px>g.W-g.mr){hideHover();return;}
+  const t=g.t0+(px-g.ml)/(g.W-g.ml-g.mr)*(g.t1-g.t0);
+  let a=0,b=g.pts.length-1;
+  while(b-a>1){const m=(a+b)>>1;if(g.pts[m][0]<t)a=m;else b=m;}
+  const p=Math.abs(g.pts[a][0]-t)<=Math.abs(g.pts[b][0]-t)?g.pts[a]:g.pts[b];
+  const x=g.X(p[0]),y=g.Y(p[1]),c=cfg[sel];
+  const hov=$('#hov',el),tip=$('.tip',el);
+  if(!hov||!tip)return;
+  const l=$('.hl',hov),d=$('.hd',hov);
+  l.setAttribute('x1',x);l.setAttribute('x2',x);d.setAttribute('cx',x);d.setAttribute('cy',y);
+  hov.removeAttribute('hidden');
+  const when_=new Date(p[0]).toLocaleString('fr-FR',range==='7d'?{weekday:'short',hour:'2-digit',minute:'2-digit'}:{hour:'2-digit',minute:'2-digit'});
+  tip.innerHTML=`${when_}<br><b>${fmt(p[1],c.dec)}${c.unit?' '+c.unit:''}</b>`;
+  tip.hidden=false;
+  tip.style.left=clamp(x+10,4,g.W-130)+'px';
+}
+
+/* ---------- Plantes ---------- */
+/*<plantes>*/
+// Valeurs issues de la recherche documentée dans HYDROPONIE/Sources_besoins_plantes.pdf.
+// Jours comptés depuis la mise en tour (plant de 3 à 7 semaines). EC en µS/cm.
+// Durées valables au chaud et en pleine lumière : compter 1 à 3 semaines de plus en hiver.
+// maturite : [min, typique, max] jusqu'à la première récolte. ecAl / phAl : seuils d'alarme.
+const PLANTS={
+  tomate:{nom:'Tomate',variete:'cerise',maturite:[50,60,75],ecAl:[1200,3500],phAl:[5.2,6.8],stades:[
+    {k:'rep',nom:'Reprise',j:[0,7],ec:[1500,2000],ph:[5.8,6.2]},
+    {k:'veg',nom:'Croissance végétative',j:[7,21],ec:[1800,2200],ph:[5.8,6.2]},
+    {k:'fleur',nom:'Floraison',j:[21,35],ec:[2000,2400],ph:[5.8,6.3]},
+    {k:'fruit',nom:'Grossissement des fruits',j:[35,60],ec:[2200,2800],ph:[5.8,6.3]},
+    {k:'mur',nom:'Récolte continue',j:[60,88],ec:[2400,3000],ph:[5.8,6.5]}]},
+  salade:{nom:'Salade',variete:'laitue',maturite:[25,32,45],ecAl:[800,2200],phAl:[5.2,6.5],stades:[
+    {k:'rep',nom:'Reprise',j:[0,5],ec:[1000,1200],ph:[5.6,6.0]},
+    {k:'veg',nom:'Croissance des feuilles',j:[5,22],ec:[1200,1600],ph:[5.6,6.0]},
+    {k:'pom',nom:'Pommaison',j:[22,32],ec:[1400,1800],ph:[5.6,6.0]},
+    {k:'mur',nom:'Prête à récolter',j:[32,42],ec:[1400,1800],ph:[5.6,6.0]}]},
+  poivron:{nom:'Poivron',variete:'classique',maturite:[60,75,100],ecAl:[1200,3000],phAl:[5.3,6.8],stades:[
+    {k:'rep',nom:'Reprise',j:[0,10],ec:[1500,1800],ph:[5.8,6.2]},
+    {k:'veg',nom:'Croissance végétative',j:[10,30],ec:[1800,2200],ph:[5.8,6.2]},
+    {k:'fleur',nom:'Floraison',j:[30,45],ec:[2000,2300],ph:[5.8,6.3]},
+    {k:'fruit',nom:'Grossissement des fruits',j:[45,75],ec:[2200,2500],ph:[5.8,6.3]},
+    {k:'mur',nom:'Récolte (vert, puis coloré vers j 80–100)',j:[75,103],ec:[2200,2500],ph:[5.8,6.3]}]}
+};
+/*</plantes>*/
+const DAY=864e5;
+const dayOf=t=>{const d=new Date(t);d.setHours(0,0,0,0);return d.getTime();};
+// Tant qu'aucun légume n'a été choisi, la page affiche la tomate derrière la fenêtre de choix (obligatoire).
+// Connecté au Raspberry : c'est son légume qui compte.
+const SRV_CROP=MOI&&MOI.culture&&PLANTS[MOI.culture.crop]?MOI.culture:null;
+let cropChosen=!!SRV_CROP||!!PLANTS[LS.get('ht.crop')],crop=SRV_CROP?SRV_CROP.crop:PLANTS[LS.get('ht.crop')]?LS.get('ht.crop'):'tomate';
+let starts={};
+try{starts=JSON.parse(LS.get('ht.plants')||'{}')||{};}catch(e){starts={};}
+if(SRV_CROP){if(SRV_CROP.date)starts[crop]=SRV_CROP.date;else delete starts[crop];}
+// Date de plantation : celle choisie (passée ou à venir), sinon le plan « si tu plantes aujourd'hui ».
+function plantInfo(k){
+  const p=PLANTS[k],today=dayOf(Date.now()),set=!!starts[k];
+  const t0=set?dayOf(Date.parse(starts[k]+'T00:00')):today;
+  const day=Math.max(0,Math.round((today-t0)/DAY)),mat=p.maturite[1];
+  let i=p.stades.findIndex(s=>day>=s.j[0]&&day<s.j[1]);if(i<0)i=p.stades.length-1;
+  const tMat=dayOf(t0+mat*DAY+DAY/2);
+  return{p,set,t0,today,day,i,st:p.stades[i],tMat};
+}
+// Les cibles pH/EC suivent le stade du légume (pas de réglage à la main) :
+// recalculées au démarrage, au changement de légume ou de date, et chaque heure.
+function applyStage(){
+  const x=plantInfo(crop);
+  cfg.ph.target=x.st.ph.slice();cfg.ph.alarm=x.p.phAl.slice();
+  cfg.ec.target=x.st.ec.slice();cfg.ec.alarm=x.p.ecAl.slice();
+}
+let calM=null;
+function drawCal(){
+  const x=plantInfo(crop),p=x.p;
+  if(!calM){const d=new Date(x.today);calM={y:d.getFullYear(),m:d.getMonth()};}
+  $('#pl-title').textContent=`${p.nom} ${p.variete}`;
+  const first=new Date(calM.y,calM.m,1),n=new Date(calM.y,calM.m+1,0).getDate();
+  $('#cal-month').textContent=first.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  let h=['L','M','M','J','V','S','D'].map(d=>`<span class="wk" aria-hidden="true">${d}</span>`).join('');
+  h+='<span></span>'.repeat((first.getDay()+6)%7);
+  for(let d=1;d<=n;d++){
+    const t=dayOf(new Date(calM.y,calM.m,d)),c=[],lab=[];
+    if(t===x.tMat){c.push('harvest');lab.push('jour de récolte');}
+    else if(t>=x.t0&&t<x.today){c.push('past');lab.push('jour écoulé');}
+    else if(t>=Math.max(x.t0,x.today)&&t<x.tMat){c.push('left');lab.push('jour restant');}
+    if(t===x.today){c.push('today');lab.push('aujourd’hui');}
+    if(x.set&&t===x.t0){c.push('plant');lab.push('plantation');}
+    if(checksAt(x,t).length){c.push('chk');lab.push('check-up');}
+    if(t===calSel)c.push('sel');
+    h+=`<button type="button" class="d ${c.join(' ')}" data-day="${t}" aria-pressed="${t===calSel}" aria-label="${d}${lab.length?' : '+lab.join(', '):''}">${d}</button>`;
+  }
+  $('#cal').innerHTML=h;
+  drawChecks(x);
+  publishPlant();
+}
+/* ---------- Check-ups d'entretien, comptés depuis la plantation (rythmes courants en hydroponie) ---------- */
+const CHECKS=[
+  {every:7,txt:'Contrôle général : racines, feuilles, fuites, débit de la tour, godets propres'},
+  {every:14,txt:'Renouveler la solution nutritive (vidanger et rincer le bac)'},
+  {every:14,txt:'Étalonner la sonde pH (solutions tampon 7 et 4)'},
+  {every:28,txt:'Étalonner la sonde EC et les pompes doseuses, nettoyer le filtre de la pompe'}
+];
+function checksAt(x,t){
+  const d=Math.round((t-x.t0)/DAY);
+  if(d<0||t>x.tMat)return[];
+  if(d===0)return['Mise en route : vérifier les sondes pH et EC, étalonner les pompes doseuses'];
+  const out=CHECKS.filter(c=>d%c.every===0).map(c=>c.txt);
+  if(t===x.tMat)out.push('Après la récolte : nettoyer et désinfecter la tour et les godets');
+  return out;
+}
+// Tâches du jour touché dans le calendrier, sinon le prochain check-up à venir.
+function drawChecks(x){
+  const list=t=>`<ul>${checksAt(x,t).map(s=>`<li>${s}</li>`).join('')}</ul>`;
+  let t=calSel,head='';
+  if(t!=null&&checksAt(x,t).length)head=`Check-up du ${dLong(t)}`;
+  else{
+    for(t=x.today;t<=x.tMat&&!checksAt(x,t).length;t=dayOf(t+DAY*1.5)); // jour suivant, même au changement d'heure
+    if(t>x.tMat){$('#chk').innerHTML='<b>Plus de check-up prévu avant la récolte.</b>';return;}
+    const n=Math.round((t-x.today)/DAY);
+    head=`Prochain check-up : ${dLong(t)} (${n===0?'aujourd’hui':n===1?'demain':`dans ${n} jours`})`;
+  }
+  $('#chk').innerHTML=`<b>${head}</b>${list(t)}`;
+}
+let calSel=null; // jour cliqué dans le calendrier (aperçu 3D) ; null = aujourd'hui
+const dLong=t=>new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
+// État publié pour les plantes de la tour 3D (module séparé) : taille selon les jours, détails selon le stade.
+function publishPlant(){
+  const x=plantInfo(crop),p=x.p,t=calSel??x.today,d=Math.round((t-x.t0)/DAY),day=Math.max(0,d);
+  let i=p.stades.findIndex(s=>day>=s.j[0]&&day<s.j[1]);if(i<0)i=p.stades.length-1;
+  const st=p.stades[i],preview=calSel!=null&&calSel!==x.today;
+  window.HT_PLANT={crop,day,mat:p.maturite[1],k:st.k,frac:clamp((day-st.j[0])/(st.j[1]-st.j[0]),0,1),empty:preview&&d<0};
+  document.dispatchEvent(new CustomEvent('ht:plant'));
+  $('#p3d-cap').textContent=preview?`Aperçu du ${dLong(t)} : ${d<0?'pas encore planté':`${st.nom.toLowerCase()} · jour ${d}`}`
+    :x.set&&x.t0<=x.today?`${st.nom} · jour ${x.day}`:'Pas encore planté : jeune plant';
+  $('#cal-today').hidden=!preview;
+}
+$('#cal').addEventListener('click',e=>{
+  const b=e.target.closest('[data-day]');if(!b)return;
+  const t=+b.dataset.day;calSel=calSel===t?null:t; // second clic sur le même jour : retour à aujourd'hui
+  drawCal();
+  const nb=$(`#cal [data-day="${t}"]`);if(nb)nb.focus({preventScroll:true});
+  // Sur téléphone, la tour est au-dessus du calendrier : on la ramène à l'écran pour voir la pousse.
+  const tw=$('#t3d');
+  if(!tw.hidden&&tw.getBoundingClientRect().bottom<140){
+    const top=scrollY+tw.closest('.card').getBoundingClientRect().top-70; // sous la barre du haut
+    window.scrollTo({top,behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth'});
+  }
+});
+$('#cal-today').addEventListener('click',()=>{calSel=null;calM=null;drawCal();});
+const shiftM=k=>{const d=new Date(calM.y,calM.m+k,1);calM={y:d.getFullYear(),m:d.getMonth()};drawCal();};
+$('#cal-prev').addEventListener('click',()=>shiftM(-1));
+$('#cal-next').addEventListener('click',()=>shiftM(1));
+function syncCrop(){
+  document.querySelectorAll('[data-crop]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.crop===crop)));
+  $('#crop-date').value=starts[crop]||'';
+  moveThumb();
+}
+function cropChanged(){
+  calM=null;calSel=null;applyStage();syncCrop();drawCal();
+  if(mode==='demo')initDemo(); // la démo repart dans les cibles du nouveau légume
+  sendCulture();render();
+}
+// Changer de légume change les cibles pH et EC : on demande confirmation en montrant l'avant / après.
+const DU={tomate:'de la tomate',salade:'de la salade',poivron:'du poivron'};
+const LA={tomate:'la tomate',salade:'la salade',poivron:'le poivron'};
+const rng=(a,d,u='')=>`${fmt(a[0],d)}–${fmt(a[1],d)}${u}`;
+let cropNext=null;
+const cropDlg=$('#crop-dlg');
+function askCrop(k){
+  const now=plantInfo(crop).st,next=plantInfo(k);
+  $('#crop-dlg-txt').textContent=`Les cibles de nutriments (EC) et de pH vont passer à celles ${DU[k]} :`;
+  $('#crop-dlg-vals').innerHTML=
+    `<dt>pH</dt><dd><s>${rng(now.ph,1)}</s> → <b>${rng(next.st.ph,1)}</b></dd>`+
+    `<dt>EC</dt><dd><s>${rng(now.ec,0)}</s> → <b>${rng(next.st.ec,0,' µS/cm')}</b></dd>`;
+  $('#crop-dlg-date').textContent=starts[k]?`Date de plantation enregistrée : ${dLong(Date.parse(starts[k]+'T00:00'))}.`:'Aucune date de plantation pour ce légume : à choisir ensuite.';
+  // Le légume en place n'a pas fini son cycle : on le signale avant de changer.
+  const cur=plantInfo(crop),warn=$('#crop-dlg-warn'),left=Math.round((cur.tMat-cur.today)/DAY);
+  warn.hidden=!(cur.set&&cur.t0<=cur.today&&left>0);
+  if(!warn.hidden)warn.innerHTML=`<b>Attention :</b> ${LA[crop]} planté${crop==='poivron'?'':'e'} le ${dLong(cur.t0)} n’est pas encore à pleine maturité (prévue vers le ${dLong(cur.tMat)}, dans ${left} jour${left>1?'s':''}).`;
+  $('#stock-a').value=stock.a??'';$('#stock-b').value=stock.b??''; // dernière saisie, à corriger si besoin
+  cropNext=k;
+  if(cropDlg.showModal)cropDlg.showModal();
+  else if(confirm(`Changer de légume ? Les cibles pH et EC vont changer.`))setCrop(k);
+}
+function setCrop(k){crop=k;LS.set('ht.crop',crop);cropChanged();}
+// Le choix est lu à l'envoi du formulaire (synchrone), pas à la fermeture de la fenêtre.
+// L'envoi n'a lieu que si les deux quantités sont valides (champs obligatoires, 0 à 200 L).
+cropDlg.querySelector('form').addEventListener('submit',e=>{
+  const k=cropNext;cropNext=null;
+  if(!(e.submitter&&e.submitter.value==='oui'&&k))return;
+  saveStock(+$('#stock-a').value,+$('#stock-b').value);
+  setCrop(k);
+});
+$('#crop-no').addEventListener('click',()=>{cropNext=null;cropDlg.close();});
+cropDlg.addEventListener('click',e=>{if(e.target===cropDlg){cropNext=null;cropDlg.close();}}); // clic sur le voile = annuler
+
+/* ---------- Batterie : capacité et tension saisies dans Paramètres ---------- */
+let batt={ah:6,v:12.8}; // batterie du kit : LiFePO4 12,8 V 6 Ah
+try{Object.assign(batt,JSON.parse(LS.get('ht.batt')||'{}'));}catch(e){}
+const battWh=()=>batt.ah*batt.v;
+// Les seuils de tension suivent la tension nominale (valeurs de référence : LiFePO4 12,8 V).
+function applyBatt(){
+  const k=batt.v/12.8;
+  cfg.bv.alarm=[12*k,14.6*k];cfg.bv.target=[12.8*k,14.4*k];cfg.bv.axis=[11.5*k,15*k];
+  $('#batt-ah').value=batt.ah;$('#batt-v').value=batt.v;
+}
+$('#batt-form').addEventListener('submit',e=>{
+  e.preventDefault(); // champs vérifiés par le navigateur avant d'arriver ici
+  batt={ah:+$('#batt-ah').value,v:+$('#batt-v').value};LS.set('ht.batt',JSON.stringify(batt));
+  applyBatt();render();
+  $('#batt-msg').textContent=`Enregistré : ${fmt(batt.ah,1)} Ah · ${fmt(batt.v,1)} V, soit ${fmt(battWh(),0)} Wh.`;
+  if(mode==='api')fetch(`${apiBase}/api/batterie?ah=${batt.ah}&v=${batt.v}`,{method:'POST'}).catch(()=>{});
+});
+// Avec le serveur, c'est sa valeur qui compte (c'est lui qui calcule le pourcentage).
+async function loadBatt(){
+  try{const j=await(await fetch(apiBase+'/api/batterie',{cache:'no-store'})).json();
+    if(j.ah){batt={ah:j.ah,v:j.v};LS.set('ht.batt',JSON.stringify(batt));applyBatt();render();}}catch(e){}
+}
+
+/* ---------- Pilotage automatique et étalonnage (Raspberry) ---------- */
+// Le Raspberry dose selon le légume : il doit connaître le légume et sa date de plantation.
+function sendCulture(){if(mode==='api'&&cropChosen)fetch(`${apiBase}/api/culture?crop=${crop}&date=${starts[crop]||''}`,{method:'POST'}).catch(()=>{});}
+function pilotWarn(){
+  const c=+$('#pi-cut').value,r=+$('#pi-res').value,w=[];
+  if(c<30)w.push(`Conseil : couper à 30 % (pas ${c} %) pour protéger la batterie.`);
+  if(r<35)w.push(`Conseil : reprendre à 35 % (pas ${r} %), ou plus tôt quand le panneau reçoit assez de soleil.`);
+  $('#pilot-warn').textContent=w.join(' ');
+}
+function showPilot(j){
+  $('#pi-auto').checked=!!j.auto;$('#pi-on').value=j.cycle_on;$('#pi-off').value=j.cycle_off;
+  $('#pi-cut').value=j.batt_coupure;$('#pi-res').value=j.batt_reprise;autoOn=!!j.auto;pilotWarn();
+}
+async function loadPilot(){try{showPilot(await(await fetch(apiBase+'/api/pilotage',{cache:'no-store'})).json());}catch(e){}}
+['#pi-cut','#pi-res'].forEach(s=>$(s).addEventListener('input',pilotWarn));
+$('#pilot-form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const q=`auto=${$('#pi-auto').checked?1:0}&cycle_on=${+$('#pi-on').value}&cycle_off=${+$('#pi-off').value}`+
+    `&batt_coupure=${+$('#pi-cut').value}&batt_reprise=${+$('#pi-res').value}`;
+  try{
+    const r=await fetch(`${apiBase}/api/pilotage?${q}`,{method:'POST'}),j=await r.json();
+    if(!r.ok){$('#pilot-msg').textContent=j.erreurs.join(' ');return;}
+    showPilot(j);$('#pilot-msg').textContent='Enregistré.';render();
+  }catch(err){$('#pilot-msg').textContent='Serveur injoignable.';}
+});
+document.querySelectorAll('[data-etal]').forEach(b=>b.addEventListener('click',async()=>{
+  try{
+    const r=await fetch(`${apiBase}/api/etalonner?${b.dataset.etal}`,{method:'POST'}),j=await r.json();
+    $('#etal-msg').textContent=r.ok?`Enregistré : ${b.textContent} = ${fmt(Object.values(j)[0],0)} ${b.dataset.etal.startsWith('ph')?'mV':'ohms'}.`:j.erreur;
+  }catch(err){$('#etal-msg').textContent='Serveur injoignable.';}
+}));
+
+/* ---------- Stock de nutriments A et B (litres) : saisi au changement de légume ---------- */
+let stock={};
+try{stock=JSON.parse(LS.get('ht.stock')||'{}')||{};}catch(e){stock={};}
+function showStock(){updateActs();} // le stock s'affiche dans la carte Pompes
+// Le Raspberry garde aussi le stock (il en aura besoin pour doser) ; requête POST simple, sans pré-vérification CORS.
+function saveStock(a,b){
+  stock={a,b,t:Date.now()};LS.set('ht.stock',JSON.stringify(stock));showStock();
+  if(mode==='api')fetch(`${apiBase}/api/stock?a=${a}&b=${b}`,{method:'POST'}).catch(()=>{});
+}
+/* ---------- Choix du légume (premier lancement / nouvelle culture) ---------- */
+const isoDay=t=>{const d=new Date(t);return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+const setupDlg=$('#setup-dlg');
+let setupForced=false;
+function openSetup(mode){
+  setupForced=mode==='first';
+  const f=setupDlg.querySelector('form');f.reset();
+  $('#setup-t').textContent=setupForced?'Quel légume cultives-tu ?':'Nouvelle culture';
+  $('#setup-txt').textContent=setupForced
+    ?'Choisis le légume de la tour pour commencer. Le dashboard règle les cibles de pH et de nutriments sur lui.'
+    :'Choisis le légume de la nouvelle culture. Les cibles de pH et de nutriments suivront son stade.';
+  $('#setup-date').value=setupForced?'':isoDay(Date.now()); // nouvelle culture : plantée aujourd'hui par défaut
+  $('#setup-a').value=stock.a??'';$('#setup-b').value=stock.b??'';
+  $('#setup-no').hidden=setupForced; // premier lancement : pas d'échappatoire
+  setupDlg.setAttribute('closedby',setupForced?'none':'any'); // ni Échap ni clic à côté
+  if(!setupDlg.open)setupDlg.showModal();
+}
+// Filet de sécurité (navigateurs sans « closedby ») : tant qu'aucun légume n'est choisi, la fenêtre revient.
+setInterval(()=>{if(setupForced&&!cropChosen&&!setupDlg.open)setupDlg.showModal();},500);
+setupDlg.querySelector('form').addEventListener('submit',e=>{
+  if(!e.submitter||e.submitter.value!=='ok')return;
+  const f=e.target,k=f.elements.crop.value,d=$('#setup-date').value;
+  if(d)starts[k]=d;else delete starts[k];
+  LS.set('ht.plants',JSON.stringify(starts));
+  saveStock(+$('#setup-a').value,+$('#setup-b').value);
+  cropChosen=true;setupForced=false;
+  log('retour',`Nouvelle culture : ${PLANTS[k].nom.toLowerCase()}${d?`, planté${k==='poivron'?'':'e'} le ${dLong(Date.parse(d+'T00:00'))}`:''}`);
+  setCrop(k);
+});
+$('#setup-no').addEventListener('click',()=>setupDlg.close());
+// Premier lancement : Échap ne ferme pas la fenêtre.
+setupDlg.addEventListener('cancel',e=>{if(setupForced)e.preventDefault();});
+setupDlg.addEventListener('click',e=>{if(e.target===setupDlg&&!setupForced)setupDlg.close();});
+
+/* ---------- Récolte : de J-1 à J+1 de la maturité, on demande à l'ouverture ---------- */
+const matDlg=$('#mat-dlg');
+let matKey='';
+const matStep=n=>[1,2,3].forEach(i=>{$('#mat-'+i).hidden=i!==n;});
+function checkHarvest(){
+  if(!cropChosen||!starts[crop])return;
+  const x=plantInfo(crop),diff=Math.round((x.today-x.tMat)/DAY);
+  if(x.t0>x.today||Math.abs(diff)>1)return;
+  matKey=`${crop}:${starts[crop]}:${isoDay(x.today)}`;
+  if(LS.get('ht.matAsk')===matKey)return; // déjà répondu « non » aujourd'hui
+  $('#mat-txt').textContent=`${LA[crop][0].toUpperCase()+LA[crop].slice(1)} planté${crop==='poivron'?'':'e'} le ${dLong(x.t0)} arrive à pleine maturité ${diff<0?'demain':diff>0?'depuis hier':'aujourd’hui'}.`;
+  matStep(1);matDlg.showModal();
+}
+$('#mat-no').addEventListener('click',()=>{LS.set('ht.matAsk',matKey);matStep(2);});
+$('#mat-ok').addEventListener('click',()=>matDlg.close());
+// Récoltée : la culture est terminée (plus de date de plantation), puis on propose d'en commencer une autre.
+$('#mat-yes').addEventListener('click',()=>{
+  log('retour',`Récolte : ${PLANTS[crop].nom.toLowerCase()}`);
+  delete starts[crop];LS.set('ht.plants',JSON.stringify(starts));
+  calM=null;calSel=null;applyStage();syncCrop();drawCal();sendCulture();render();
+  matStep(3);
+});
+$('#mat-later').addEventListener('click',()=>matDlg.close());
+
+/* ---------- Rappel de check-up : à l'ouverture, une seule fois par jour ---------- */
+const chkDlg=$('#chk-dlg');
+function checkReminder(){
+  if(!cropChosen||!starts[crop])return; // sans date de plantation, le planning n'est qu'une prévision
+  const x=plantInfo(crop),tasks=checksAt(x,x.today);
+  if(!tasks.length)return;
+  const key=`${crop}:${starts[crop]}:${isoDay(x.today)}`;
+  if(LS.get('ht.chkSeen')===key)return;
+  LS.set('ht.chkSeen',key);
+  const d=Math.round((x.today-x.t0)/DAY);
+  $('#chk-sub').textContent=`${PLANTS[crop].nom} ${PLANTS[crop].variete} · jour ${d}. Voici ce qu’il y a à faire aujourd’hui :`;
+  $('#chk-list').innerHTML=tasks.map(s=>`<li>${s}</li>`).join('');
+  chkDlg.showModal();
+}
+$('#chk-ok').addEventListener('click',()=>chkDlg.close());
+$('#chk-cal').addEventListener('click',()=>{
+  chkDlg.close();showTab('install');
+  setTimeout(()=>{const c=$('.cal-card');window.scrollTo(0,scrollY+c.getBoundingClientRect().top-70);},50); // après l'affichage de l'onglet
+});
+chkDlg.addEventListener('click',e=>{if(e.target===chkDlg)chkDlg.close();});
+$('#mat-new').addEventListener('click',()=>{matDlg.close();openSetup('new');});
+
+async function loadStock(){
+  try{
+    const j=await(await fetch(apiBase+'/api/stock',{cache:'no-store'})).json();
+    if(j.a!=null&&(!stock.t||Date.parse(j.t)>stock.t)){stock={a:j.a,b:j.b,t:Date.parse(j.t)};LS.set('ht.stock',JSON.stringify(stock));}
+  }catch(e){}
+  showStock();
+}
+document.querySelectorAll('[data-crop]').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.crop!==crop)askCrop(b.dataset.crop);}));
+$('#crop-date').addEventListener('change',e=>{
+  if(e.target.value)starts[crop]=e.target.value;else delete starts[crop];
+  LS.set('ht.plants',JSON.stringify(starts));cropChanged();
+});
+
+
+function render(){
+  const modeEl=$('#mode');
+  if(mode==='demo'){modeEl.className='badge demo';modeEl.textContent='Données de démonstration';}
+  else if(online){modeEl.className='badge live';modeEl.textContent='En direct';}
+  else{modeEl.className='badge off';modeEl.textContent='Hors ligne';}
+  $('#demo-box').hidden=mode!=='demo';$('#pilot-box').hidden=mode!=='api';
+  $('#last').textContent=live?`Dernière mesure ${new Date(live.t).toLocaleTimeString('fr-FR')}`:'';
+  watch();updateBanner();updateTiles();updateActs();chartHead();drawChart();drawLog();
+  // État publié pour le modèle 3D (module séparé).
+  window.HT_STATE={live,pumps};document.dispatchEvent(new CustomEvent('ht:update'));
+  document.querySelectorAll('[data-r]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.r===range)));
+  moveThumb();updateTabs();
+}
+/* ---------- Feuille de la courbe ---------- */
+const sheet=$('#sheet');
+function openSheet(){
+  if(!sheet.open){sheet.style.transform='';sheet.showModal?sheet.showModal():sheet.setAttribute('open','');}
+  render();
+}
+function closeSheet(){if(sheet.open){sheet.style.transform='';sheet.close?sheet.close():sheet.removeAttribute('open');}hoverPx=null;}
+$('#sheet-x').addEventListener('click',closeSheet);
+// Toucher le voile (hors de la feuille) ferme aussi.
+sheet.addEventListener('click',e=>{if(e.target===sheet)closeSheet();});
+/* Téléphone : on tire la feuille vers le bas, elle suit le doigt 1:1 ; un geste rapide suffit à la fermer.
+   Vers le haut, résistance progressive (élastique) au lieu d'un arrêt sec. */
+(function(){
+  let y0=0,t0=0,dy=0,id=null,last=[];
+  const zone=e=>matchMedia('(max-width:640px)').matches&&!e.target.closest('button')&&e.target.closest('.grab,.c-head');
+  sheet.addEventListener('pointerdown',e=>{
+    if(!zone(e))return;
+    id=e.pointerId;y0=e.clientY;t0=performance.now();dy=0;last=[[t0,y0]];
+    sheet.setPointerCapture(id);sheet.classList.add('dragging');
+  });
+  sheet.addEventListener('pointermove',e=>{
+    if(e.pointerId!==id)return;
+    const raw=e.clientY-y0,h=sheet.offsetHeight;
+    dy=raw>=0?raw:-(-raw*h*.55)/(h+.55*-raw);
+    sheet.style.transform=`translateY(${dy}px)`;
+    last.push([performance.now(),e.clientY]);if(last.length>5)last.shift();
+  });
+  const end=e=>{
+    if(e.pointerId!==id)return;
+    id=null;sheet.classList.remove('dragging');
+    const a=last[0],b=last[last.length-1],v=(b[1]-a[1])/Math.max(1,b[0]-a[0]); // px/ms
+    if(dy>sheet.offsetHeight*.3||v>.5)closeSheet();
+    else sheet.style.transform=''; // retour à sa place avec la courbe de la feuille
+  };
+  sheet.addEventListener('pointerup',end);sheet.addEventListener('pointercancel',end);
+})();
+
+/* Les pastilles (période, onglets) repartent toujours de leur position affichée (transition CSS interruptible). */
+function moveThumb(){
+  const seg=$('#range-seg');slide(seg,$(`[data-r="${range}"]`,seg),$('.seg-thumb',seg));
+  const cs=$('#crop-seg');slide(cs,$(`[data-crop="${crop}"]`,cs),$('.seg-thumb',cs));
+  const ss=$('#sum-seg');slide(ss,$(`[data-s="${sumP}"]`,ss),$('.seg-thumb',ss));
+}
+function slide(seg,b,th){
+  if(!b||!b.offsetWidth)return;
+  const x=`translateX(${b.offsetLeft}px)`;
+  // Quand la pastille change de place, elle s'étire puis se resserre (propriété « scale » séparée : n'interrompt pas le glissement).
+  if(th.style.transform&&th.style.transform!==x&&seg.classList.contains('ready')&&th.animate&&!matchMedia('(prefers-reduced-motion:reduce)').matches)
+    th.animate([{scale:'1 1'},{scale:'1.18 .9'},{scale:'1 1'}],{duration:380,easing:'cubic-bezier(.32,.72,0,1)'});
+  th.style.width=b.offsetWidth+'px';th.style.transform=x;
+  if(!seg.classList.contains('ready'))requestAnimationFrame(()=>seg.classList.add('ready'));
+}
+
+/* ---------- Onglets ---------- */
+const TABS=['mesures','install','journal','reglages'];
+function showTab(t,focus){
+  if(t==='plantes')t='install'; // ancien onglet, fusionné avec Installation
+  if(!TABS.includes(t))t='mesures';
+  const changed=t!==tab;tab=t;
+  TABS.forEach(k=>{const on=k===t,b=$('#tab-'+k);$('#p-'+k).hidden=!on;b.setAttribute('aria-selected',String(on));b.tabIndex=on?0:-1;});
+  try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t);}catch(e){}
+  if(changed)window.scrollTo(0,0);
+  if(focus)$('#tab-'+t).focus();
+  updateTabs();
+  document.dispatchEvent(new CustomEvent('ht:tab'));
+}
+// Pastille d'onglet + compteur d'événements non lus sur « Journal ».
+function updateTabs(){
+  if(tab==='journal'&&events[0])seenT=Math.max(seenT,events[0].t);
+  const n=tab==='journal'?0:events.filter(e=>e.t>seenT).length,el=$('#tab-n');
+  el.hidden=!n;el.textContent=n>9?'9+':String(n);
+  $('#tab-journal').setAttribute('aria-label',n?`Journal, ${n} nouveau${n>1?'x':''}`:'Journal');
+  const bar=$('.tabbar');slide(bar,$('#tab-'+tab),$('.tab-thumb',bar));
+}
+document.querySelectorAll('[role="tab"]').forEach(b=>b.addEventListener('click',()=>showTab(b.id.slice(4))));
+// Clavier : flèches gauche/droite, Début, Fin (motif ARIA des onglets).
+$('.tabbar').addEventListener('keydown',e=>{
+  const i=TABS.indexOf(tab),j={ArrowRight:i+1,ArrowLeft:i-1,Home:0,End:TABS.length-1}[e.key];
+  if(j==null)return;e.preventDefault();showTab(TABS[(j+TABS.length)%TABS.length],true);
+});
+window.addEventListener('hashchange',()=>showTab(location.hash.slice(1)));
+
+/* ---------- Modèle 3D de l'installation ---------- */
+// three.js vient d'Internet : sans connexion, on l'explique au lieu de laisser une carte vide.
+function on3dReady(){$('#t3d-off').hidden=true;$('#t3d').hidden=false;$('#t-cap').hidden=false;document.dispatchEvent(new CustomEvent('ht:view'));}
+if(window.HT3D_READY)on3dReady();else{
+  document.addEventListener('ht:3d-ready',on3dReady,{once:true});
+  setTimeout(()=>{if(!window.HT3D_READY)$('#t3d-off').textContent='Modèle 3D indisponible : il faut une connexion Internet pour le charger.';},8000);
+}
+
+/* ---------- Démarrage ---------- */
+buildTiles();applyStage();applyBatt();initDemo();syncCrop();drawCal();showStock();
+// Une seule fenêtre à l'ouverture : choix du légume, sinon récolte, sinon rappel de check-up.
+if(!cropChosen)openSetup('first');else{checkHarvest();if(!matDlg.open)checkReminder();}
+// Les jours avancent même si la page reste ouverte : stade, seuils et calendrier suivent.
+setInterval(()=>{applyStage();syncCrop();drawCal();render();},36e5);
+// Les pastilles ne se placent qu'une fois leur onglet visible ; le journal se recompile à chaque ouverture.
+document.addEventListener('ht:tab',()=>{moveThumb();if(tab==='journal')drawSummary();});
+seenT=events[0]?events[0].t:0; // l'historique de départ compte comme déjà lu
+startLoop();showTab(location.hash.slice(1));
+document.querySelectorAll('[data-r]').forEach(b=>b.addEventListener('click',()=>{
+  range=b.dataset.r;
+  if(mode==='api')getHistory(apiBase,range).then(h=>{hist=h;render();}).catch(()=>{});
+  render();
+}));
+const plot=$('#plot');
+plot.addEventListener('pointermove',e=>{hoverPx=e.clientX-plot.getBoundingClientRect().left;showHover(hoverPx);});
+plot.addEventListener('pointerleave',()=>{hoverPx=null;hideHover();});
+if(window.ResizeObserver){let lw=0;new ResizeObserver(()=>{if(plot.clientWidth!==lw){lw=plot.clientWidth;drawChart();moveThumb();}}).observe(plot);}
+// Quand le grand titre passe sous la barre, la barre affiche le titre compact et son filet.
+if(window.IntersectionObserver){new IntersectionObserver(([e])=>$('#bar').classList.toggle('scrolled',!e.isIntersecting),{rootMargin:'-48px 0px 0px 0px'}).observe($('#h1'));}
+if(document.fonts)document.fonts.ready.then(()=>{moveThumb();updateTabs();});
+// Reflet du verre qui suit la souris (décoratif, ordinateur uniquement ; la variable est posée sur l'élément lui-même).
+if(matchMedia('(hover:hover) and (pointer:fine)').matches)document.querySelectorAll('.glass').forEach(el=>{
+  el.addEventListener('pointermove',e=>{const r=el.getBoundingClientRect();el.style.setProperty('--mx',((e.clientX-r.left)/r.width*100).toFixed(1)+'%');});
+  el.addEventListener('pointerleave',()=>el.style.removeProperty('--mx'));
+});
+$('#bump').addEventListener('click',()=>{if(mode==='demo'){sim.ph+=0.8;tickDemo();}});
+$('#api-go').addEventListener('click',async()=>{
+  const v=$('#api').value.trim(),m=$('#api-msg');
+  if(!v){m.textContent='Entre l’adresse du serveur.';return;}
+  m.textContent='Connexion…';
+  const ok=await connect(v);
+  m.textContent=ok?'Connecté.':'Connexion impossible. Vérifie l’adresse, que le serveur répond sur /api/latest et qu’il autorise les requêtes depuis cette page (CORS).';
+});
+$('#api-demo').addEventListener('click',()=>{backToDemo();$('#api-msg').textContent='Retour aux données de démonstration.';});
+
+/* ---------- Accès : identifiant et mot de passe partagés ---------- */
+function showAcces(j){$('#acc-id').value=j.identifiant;$('#acc-warn').hidden=!j.provisoire;}
+async function loadAcces(){try{showAcces(await(await fetch('/api/acces',{cache:'no-store'})).json());}catch(e){}}
+$('#acc-form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const body=new URLSearchParams({identifiant:$('#acc-id').value.trim(),mdp:$('#acc-mdp').value,mdp2:$('#acc-mdp2').value,actuel:$('#acc-actuel').value});
+  try{
+    const r=await fetch('/api/acces',{method:'POST',body}),j=await r.json();
+    if(!r.ok){$('#acc-msg').textContent=j.erreur;return;}
+    ['#acc-mdp','#acc-mdp2','#acc-actuel'].forEach(k=>{$(k).value='';});
+    showAcces(j);$('#acc-msg').textContent='Enregistré. Les autres appareils devront se reconnecter.';
+  }catch(err){$('#acc-msg').textContent='Serveur injoignable.';}
+});
+if(MOI){$('#srv-box').hidden=true;$('#acc-box').hidden=false;loadAcces();} // la page vient du Raspberry : pas d'autre serveur à choisir
+const saved=LS.get('ht.api');
+if(MOI)connect(location.origin);
+else if(saved){$('#api').value=saved;connect(saved);}
+else if(/^https?:$/.test(location.protocol)){connect(location.origin);}
+})();
+</script>
+
+<!-- Modèle 3D de l'installation (three.js). Sans Internet, ce module ne se charge pas et la page garde le schéma 2D. -->
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+
+const box=document.getElementById('t3d');
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const reduce=matchMedia('(prefers-reduced-motion: reduce)');
+
+let renderer;
+try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});}catch(e){renderer=null;}
+if(renderer){
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+box.appendChild(renderer.domElement);
+
+const scene=new THREE.Scene();
+const cam=new THREE.PerspectiveCamera(32,1,.1,100);
+const TARGET=new THREE.Vector3(-.15,1.55,0);
+
+/* ---------- Lumières : le soleil suit l'ensoleillement mesuré ---------- */
+const hemi=new THREE.HemisphereLight(0xffffff,0x9aa59e,.9);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xfff2da,2);sun.position.set(4,8,5);
+sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
+Object.assign(sun.shadow.camera,{left:-4,right:4,top:5,bottom:-3,near:1,far:20});sun.shadow.bias=-.0005;
+scene.add(sun);
+const ground=new THREE.Mesh(new THREE.CircleGeometry(4.2,64),new THREE.ShadowMaterial({opacity:.16}));
+ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+
+/* ---------- Matériaux ---------- */
+const M={
+  pvc:new THREE.MeshStandardMaterial({color:0xf3f5f4,roughness:.42}),
+  tower:new THREE.MeshStandardMaterial({color:0xf6f8f7,roughness:.35,transparent:true,opacity:.62,depthWrite:false}),
+  glass:new THREE.MeshStandardMaterial({color:0xd8ecf2,roughness:.08,transparent:true,opacity:.22,depthWrite:false,side:THREE.DoubleSide}),
+  water:new THREE.MeshStandardMaterial({color:0x32ade6,roughness:.15,transparent:true,opacity:.55,depthWrite:false}),
+  dark:new THREE.MeshStandardMaterial({color:0x2b2f2d,roughness:.6}),
+  cup:new THREE.MeshStandardMaterial({color:0x3a3f3c,roughness:.7}),
+  leafA:new THREE.MeshStandardMaterial({color:0x52c35d,roughness:.75,flatShading:true}),
+  leafB:new THREE.MeshStandardMaterial({color:0x7bd66a,roughness:.75,flatShading:true}),
+  panel:new THREE.MeshStandardMaterial({color:0x5b7fb8,roughness:.3,metalness:.15}),
+  metal:new THREE.MeshStandardMaterial({color:0xb9c0bd,roughness:.35,metalness:.6}),
+  pump:new THREE.MeshStandardMaterial({color:0x8a9590,roughness:.4,emissive:0x000000}),
+  flow:new THREE.MeshStandardMaterial({color:0x5ac8fa,emissive:0x32ade6,emissiveIntensity:.8})
+};
+const edgeMat=new THREE.LineBasicMaterial({transparent:true,opacity:.55});
+function themeColors(){
+  const acc=new THREE.Color(css('--accent')||'#00897f');
+  edgeMat.color.set(css('--muted')||'#6e6e73');
+  return acc;
+}
+let ACC=themeColors();
+const add=(geo,mat,x,y,z,o={})=>{const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);m.castShadow=o.cast!==false;m.receiveShadow=!!o.recv;scene.add(m);return m;};
+
+/* ---------- Étiquettes (sprites dessinés sur canvas) ---------- */
+function label(text,x,y,z,s=1){
+  const c=document.createElement('canvas');c.width=192;c.height=80;const g=c.getContext('2d');
+  g.fillStyle='rgba(255,255,255,.88)';g.beginPath();g.roundRect(6,10,180,60,30);g.fill();
+  g.fillStyle='#1d1d1f';g.font='600 34px -apple-system,"Segoe UI",system-ui,sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(text,96,41);
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false,toneMapped:false}));
+  sp.position.set(x,y,z);sp.scale.set(.6*s,.25*s,1);sp.renderOrder=10;scene.add(sp);return sp;
+}
+
+/* ---------- Bac : verre, eau, couvercle, sondes ---------- */
+const TW=2.4,TH=.9,TD=1.25,LID=TH+.02;
+const tankGeo=new THREE.BoxGeometry(TW,TH,TD);
+const tank=add(tankGeo,M.glass,0,TH/2,0,{cast:false});tank.renderOrder=2;
+const edges=new THREE.LineSegments(new THREE.EdgesGeometry(tankGeo),edgeMat);edges.position.copy(tank.position);scene.add(edges);
+const water=add(new THREE.BoxGeometry(TW-.04,1,TD-.04),M.water,0,.4,0,{cast:false});water.renderOrder=1;
+add(new THREE.BoxGeometry(TW+.04,.04,TD+.04),M.pvc,0,LID,0,{recv:true});
+[['pH',-.85],['EC',-.6],['T°',-.35]].forEach(([n,x])=>{
+  add(new THREE.CylinderGeometry(.022,.022,.78,12),M.dark,x,LID-.27,.32);
+  add(new THREE.CylinderGeometry(.045,.045,.07,16),M.dark,x,LID+.05,.32);
+  label(n,x,LID+.24,.32,.8);
+});
+add(new THREE.CylinderGeometry(.03,.03,.7,12),M.pvc,.98,LID-.3,.32);
+label('niveau',.98,LID+.2,.32,.8);
+
+/* ---------- Pompe principale et tour ---------- */
+const pump=add(new THREE.BoxGeometry(.52,.2,.42),M.pump,0,LID+.12,-.15);
+const TB=LID+.22,TT=TB+2.55,TR=.22;
+const tower=add(new THREE.CylinderGeometry(TR,TR,TT-TB,40,1,true),M.tower,0,(TB+TT)/2,-.15);tower.renderOrder=3;
+add(new THREE.CylinderGeometry(TR+.02,TR+.02,.08,40),M.pvc,0,TT+.04,-.15);
+add(new THREE.CylinderGeometry(TR+.03,TR+.03,.06,40),M.pvc,0,TB+.03,-.15);
+// Colonne d'eau intérieure + gouttes qui montent quand la pompe tourne
+add(new THREE.CylinderGeometry(.045,.045,TT-TB,12),new THREE.MeshStandardMaterial({color:0x9ad8f5,transparent:true,opacity:.5,depthWrite:false}),0,(TB+TT)/2,-.15,{cast:false});
+const NF=22,flow=new THREE.InstancedMesh(new THREE.SphereGeometry(.05,10,8),M.flow,NF);scene.add(flow);
+const dummy=new THREE.Object3D();
+
+/* ---------- Godets : 4 étages de 3, décalés de 60° d'un étage à l'autre ---------- */
+const SLOTS=[];
+for(let lv=0;lv<4;lv++){
+  const y=TB+.42+lv*.6;
+  for(let i=0;i<3;i++){
+    const a=i*2*Math.PI/3+(lv%2?Math.PI/3:0),dx=Math.cos(a),dz=Math.sin(a);
+    const cx=dx*(TR+.06),cz=-.15+dz*(TR+.06);
+    const cup=add(new THREE.CylinderGeometry(.085,.06,.16,14),M.cup,cx,y,cz);
+    cup.lookAt(cx+dx,y+1.2,cz+dz);cup.rotateX(Math.PI/2);
+    SLOTS.push({x:dx*(TR+.13),y:y+.06,z:-.15+dz*(TR+.13),a});
+  }
+}
+
+/* ---------- Plantes : le légume choisi, à son stade (window.HT_PLANT) ---------- */
+const pmat=(color,o={})=>new THREE.MeshStandardMaterial({color,roughness:.6,side:THREE.DoubleSide,...o});
+const PM={
+  stem:pmat(0x5f9e3c),stake:pmat(0xb48a55,{roughness:.8}),
+  lettuce:pmat(0x8fd862,{roughness:.7}),lettuceIn:pmat(0xc3ec7c,{roughness:.7}),
+  tomLeaf:pmat(0x3f9a3a,{roughness:.65}),pepLeaf:pmat(0x2f8a3a,{roughness:.4}),
+  yellow:pmat(0xffd21f,{roughness:.5}),white:pmat(0xf7f7ef,{roughness:.5})
+};
+
+// Feuille : forme en amande, creusée en gouttière et légèrement retombante ; « ruffle » ondule le bord (laitue).
+function leafGeo(w,l,ruffle=0,droop=.25){
+  const s=new THREE.Shape();
+  s.moveTo(0,0);s.bezierCurveTo(w*.95,l*.12,w*.75,l*.86,0,l);s.bezierCurveTo(-w*.75,l*.86,-w*.95,l*.12,0,0);
+  const g=new THREE.ShapeGeometry(s,10),p=g.attributes.position;
+  for(let i=0;i<p.count;i++){
+    const x=p.getX(i),y=p.getY(i),r=Math.abs(x)/w;
+    p.setZ(i,r*r*w*.5-(y/l)**2*l*droop+(ruffle?Math.sin(y/l*26+x/w*9)*ruffle*w*r:0));
+  }
+  g.computeVertexNormals();return g;
+}
+let seed=1;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+const mesh=(geo,m,parent)=>{const o=new THREE.Mesh(geo,m);o.castShadow=true;o.receiveShadow=true;parent.add(o);return o;};
+// Feuille fixée à la tige : tournée autour de la tige (yaw), puis inclinée vers l'extérieur (tilt).
+function attach(parent,obj,y,yaw,tilt){const pv=new THREE.Group();pv.position.y=y;pv.rotation.y=yaw;obj.rotation.x=tilt;pv.add(obj);parent.add(pv);return pv;}
+// Tige en tube souple, de la base au sommet, avec une légère courbure.
+function stem(parent,h,r,lean=.04){
+  lean=Math.min(lean,h*.08); // un jeune plant reste droit
+  const c=new THREE.CatmullRomCurve3([new THREE.Vector3(0,0,0),new THREE.Vector3(lean*.5,h*.4,-lean*.3),new THREE.Vector3(-lean*.3,h*.75,lean*.4),new THREE.Vector3(lean*.2,h,0)]);
+  mesh(new THREE.TubeGeometry(c,24,r,8),PM.stem,parent);return c;
+}
+// Mûrissement : vert → orange → rouge vif (en teinte, pour éviter le brun d'un simple mélange).
+const ripeC=t=>new THREE.Color().setHSL(.28*(1-clamp(t,0,1)),.78,.42+.04*clamp(t,0,1));
+
+/* ---------- Salade : rosette qui s'épaissit, puis cœur qui se referme (pommaison) ---------- */
+function lettuce(g,s){
+  const n=Math.round(4+s.g*26);
+  for(let i=0;i<n;i++){
+    const age=1-i/n;                       // les premières feuilles sont dehors et plus grandes
+    const L=(.05+.22*Math.min(1,s.g*1.1))*(.45+.55*age);
+    const head=s.k==='pom'||s.k==='mur'?1:0;
+    const tilt=(.25+1.05*age)*(1-.35*head*(1-age));   // le cœur se redresse en fin de cycle
+    const m=age<.35&&head?PM.lettuceIn:PM.lettuce;
+    const lf=mesh(leafGeo(L*.75,L,.08,.15+.25*age),m,new THREE.Group());
+    attach(g,lf.parent,.02+.01*(1-age),i*2.39996,tilt);
+  }
+}
+
+/* ---------- Tomate : tige tuteurée, feuilles composées, grappes de fleurs puis de fruits ---------- */
+function compound(len,m){
+  const grp=new THREE.Group();
+  mesh(new THREE.CylinderGeometry(.006,.008,len,6),PM.stem,grp).position.y=len/2;
+  const fl=leafGeo(len*.18,len*.38,0,.3);
+  for(let k=1;k<=3;k++){const y=len*k/4;for(const sd of[-1,1]){const l=mesh(fl,m,grp);l.position.y=y;l.rotation.set(.2,0,sd*1.15);}}
+  mesh(fl,m,grp).position.y=len*.95;
+  return grp;
+}
+function tomato(g,s){
+  const H=.1+1.15*Math.min(1.1,s.g),young=s.g<.12;
+  stem(g,H,.004+.014*Math.min(1,s.g));
+  if(H>.5){const st=mesh(new THREE.CylinderGeometry(.008,.008,H+.15,6),PM.stake,g);st.position.set(.07,(H+.15)/2-.04,.03);}
+  // Jeune pousse : deux cotylédons et une ou deux petites vraies feuilles.
+  if(young){
+    for(const sd of[-1,1])attach(g,mesh(leafGeo(.012,.045,0,.1),PM.tomLeaf,new THREE.Group()),H*.7,sd*Math.PI/2,1.25);
+    attach(g,compound(.05+.4*s.g,PM.tomLeaf),H*.95,.8,.6);
+    return;
+  }
+  const nodes=Math.max(2,Math.floor(H/.14));
+  const flowers=['fleur','fruit','mur'].includes(s.k),fruits=['fruit','mur'].includes(s.k);
+  // Mûrissement : fruits verts pendant le grossissement, rouges à maturité.
+  const ripe=s.k==='mur'?1:s.k==='fruit'?Math.max(0,s.frac-.55)*1.6:0;
+  for(let i=0;i<nodes;i++){
+    const y=H*(.18+.8*i/nodes),yaw=i*2.4,size=(.18+.22*Math.min(1,s.g*1.4))*(1-.3*i/nodes);
+    attach(g,compound(size,PM.tomLeaf),y,yaw,1.05-.25*i/nodes);
+    if(i>=2&&i<nodes-1&&(flowers||fruits)&&(fruits||i%2===0)){
+      const tr=new THREE.Group(),out=yaw+Math.PI;
+      tr.position.set(Math.sin(out)*.06,y-.02,Math.cos(out)*.06);g.add(tr);
+      const nf=5+Math.floor(rnd()*3);
+      for(let f=0;f<nf;f++){
+        const p=new THREE.Vector3(Math.sin(out)*(.035+f*.03),-.035-f*.028,Math.cos(out)*(.035+f*.03)+(f%2?.025:-.025));
+        if(fruits&&(f<nf-1||s.k==='mur')){
+          // Les fruits du bout de grappe sont plus jeunes : plus petits et moins mûrs.
+          const r=(.03+.02*Math.min(1,s.k==='mur'?1:s.frac*1.3))*(1-.05*f),c=ripeC(ripe-(s.k==='mur'?f*.03:f*.12));
+          const fr=mesh(new THREE.SphereGeometry(r,16,12),pmat(c,{roughness:.3}),tr);fr.position.copy(p);
+        }else{const fl=mesh(new THREE.ConeGeometry(.018,.014,5),PM.yellow,tr);fl.position.copy(p);fl.rotation.x=Math.PI;}
+      }
+    }
+  }
+}
+
+/* ---------- Poivron : buisson qui fourche, grandes feuilles lisses, poivrons pendants ---------- */
+const pepGeo=(()=>{const pts=[[0,0],[.022,.004],[.038,.03],[.042,.07],[.04,.1],[.03,.122],[.01,.13],[0,.13]].map(([x,y])=>new THREE.Vector2(x,y));
+  const g=new THREE.LatheGeometry(pts,18);const p=g.attributes.position;
+  for(let i=0;i<p.count;i++){const x=p.getX(i),z=p.getZ(i),a=Math.atan2(z,x);const k=1+.12*Math.cos(a*3);p.setX(i,x*k);p.setZ(i,z*k);} // 3 lobes
+  g.computeVertexNormals();return g;})();
+function pepper(g,s){
+  const G=Math.min(1.1,s.g),H=.08+.62*G,young=s.g<.15,fork=young?H*.5:H*.3;
+  stem(g,fork,.004+.012*G,.005);
+  const flowers=['fleur','fruit','mur'].includes(s.k),fruits=['fruit','mur'].includes(s.k);
+  const ripe=s.k==='mur'?.5+.5*Math.min(1,s.frac*2):0; // vert d'abord, rouge en fin de récolte
+  const nb=young?1:4;
+  for(let b=0;b<nb;b++){
+    // Le poivron fourche : quatre branches qui s'écartent du tronc.
+    const lean=young?0:.42+.12*(b%2),br=new THREE.Group();br.position.y=fork;br.rotation.y=b*Math.PI/2+.4;g.add(br);
+    const arm=new THREE.Group();arm.rotation.x=lean;br.add(arm);
+    const bh=(H-fork)*(1+.12*(b%2));stem(arm,bh,.003+.008*G,.01);
+    const nl=young?2:Math.round(2+G*4);
+    for(let i=0;i<nl;i++){
+      const L=(.05+.12*Math.min(1,G*1.3))*(1-.25*i/nl);
+      attach(arm,mesh(leafGeo(L*.42,L,0,.2),PM.pepLeaf,new THREE.Group()),bh*(.3+.7*i/nl),i*2.4+b,1.1+.25*(i%2));
+    }
+    if(flowers&&!fruits)for(const h of[.5,.8]){const f=mesh(new THREE.ConeGeometry(.02,.016,5),PM.white,arm);f.position.set(.025,bh*h,.02);f.rotation.x=Math.PI-lean;}
+    if(fruits){
+      const sc=s.k==='mur'?1.25:.4+.85*s.frac,c=ripeC(ripe-.1*(b%2));
+      const fy=bh*.55,pf=mesh(pepGeo,pmat(c,{roughness:.22}),arm);pf.scale.setScalar(sc);
+      pf.position.set(.04,fy,.02);pf.rotation.set(Math.PI-lean,0,0); // pend vers le sol malgré la branche penchée
+      const cap=mesh(new THREE.CylinderGeometry(.006,.008,.03,6),PM.stem,arm);cap.position.set(.04,fy+.01,.02);cap.rotation.x=-lean;
+    }
+  }
+}
+
+// Une plante = un seul maillage (couleurs par sommet) : 12 plantes restent légères à afficher.
+function bake(g){
+  g.updateMatrixWorld(true);
+  const pos=[],nor=[],col=[];
+  g.traverse(o=>{
+    if(!o.isMesh)return;
+    const geo=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();
+    geo.applyMatrix4(o.matrixWorld);
+    const P=geo.attributes.position,N=geo.attributes.normal,c=o.material.color;
+    for(let i=0;i<P.count;i++){pos.push(P.getX(i),P.getY(i),P.getZ(i));nor.push(N.getX(i),N.getY(i),N.getZ(i));col.push(c.r,c.g,c.b);}
+  });
+  const out=new THREE.BufferGeometry();
+  out.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  out.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3));
+  out.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  return out;
+}
+const plantMat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.55,side:THREE.DoubleSide});
+const PSCALE={salade:.9,tomate:.4,poivron:.55}; // à l'échelle de la tour (une tomate adulte dépasse l'étage)
+let plantMeshes=[],plantGeo=null;
+function buildPlants(){
+  const s0=window.HT_PLANT;if(!s0)return;
+  const s={...s0,g:clamp(s0.day/s0.mat,0,1.1)};
+  plantMeshes.forEach(m=>scene.remove(m));if(plantGeo)plantGeo.dispose();
+  plantMeshes=[];plantGeo=null;
+  if(s.empty){wake();return;} // jour choisi avant la plantation : godets vides
+  seed={tomate:11,salade:23,poivron:37}[s.crop]||5;
+  const g=new THREE.Group();
+  ({salade:lettuce,tomate:tomato,poivron:pepper}[s.crop]||lettuce)(g,s);
+  plantGeo=bake(g);
+  // Les jeunes plants sont grossis un peu pour rester visibles de loin.
+  const k=(PSCALE[s.crop]||.6)*(1+.6*Math.max(0,1-s.g*3));
+  plantMeshes=SLOTS.map((sl,i)=>{
+    const m=new THREE.Mesh(plantGeo,plantMat);
+    m.position.set(sl.x,sl.y,sl.z);
+    m.rotation.order='YXZ';m.rotation.set(.22,Math.PI/2-sl.a,0); // penchée vers l'extérieur de la tour
+    m.scale.setScalar(k*(.9+.05*(i*7%5)));
+    m.castShadow=true;scene.add(m);return m;
+  });
+  wake();
+}
+document.addEventListener('ht:plant',buildPlants);
+
+/* ---------- Bouteilles de dosage et tuyaux ---------- */
+function dashTex(){
+  const c=document.createElement('canvas');c.width=64;c.height=4;const g=c.getContext('2d');
+  g.fillStyle='#fff';g.fillRect(0,0,64,4);g.fillStyle='rgba(255,255,255,.15)';g.fillRect(32,0,32,4);
+  const t=new THREE.CanvasTexture(c);t.wrapS=THREE.RepeatWrapping;t.repeat.set(10,1);return t;
+}
+const BOT={};
+[['a','A',-.9,0xe8a33d],['b','B',-.3,0x9b6bd6],['ph','pH',.3,0xe0605a],['eau','Eau',.9,0x5ab4e5]].forEach(([k,n,x,col])=>{
+  const z=1.05,mat=new THREE.MeshStandardMaterial({color:col,roughness:.25,transparent:true,opacity:.82});
+  add(new THREE.CylinderGeometry(.17,.17,.48,28),mat,x,.24,z);
+  add(new THREE.CylinderGeometry(.08,.14,.1,24),mat,x,.53,z);
+  const head=new THREE.MeshStandardMaterial({color:0x8a9590,roughness:.4,emissive:0x000000});
+  add(new THREE.CylinderGeometry(.075,.075,.09,20),head,x,.62,z);
+  label(n,x,.24,z+.2,.85);
+  const curve=new THREE.CatmullRomCurve3([new THREE.Vector3(x,.66,z),new THREE.Vector3(x,1.08,z-.1),new THREE.Vector3(x*.6,1.06,.55),new THREE.Vector3(x*.6,LID+.02,.42)]);
+  const tmat=new THREE.MeshStandardMaterial({color:0xb7bfbb,roughness:.4,map:dashTex(),emissive:0x000000});
+  add(new THREE.TubeGeometry(curve,48,.018,8),tmat,0,0,0);
+  BOT[k]={head,tmat};
+});
+
+/* ---------- Panneau solaire ---------- */
+function gridTex(){
+  const c=document.createElement('canvas');c.width=256;c.height=160;const g=c.getContext('2d');
+  g.fillStyle='#24467e';g.fillRect(0,0,256,160);g.strokeStyle='rgba(180,210,255,.35)';g.lineWidth=2;
+  for(let i=1;i<6;i++){g.beginPath();g.moveTo(i*256/6,0);g.lineTo(i*256/6,160);g.stroke();}
+  for(let j=1;j<4;j++){g.beginPath();g.moveTo(0,j*40);g.lineTo(256,j*40);g.stroke();}
+  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;
+}
+M.panel.map=gridTex();
+add(new THREE.CylinderGeometry(.04,.05,1.45,12),M.metal,-2.15,.72,-.75);
+const panel=add(new THREE.BoxGeometry(1.3,.04,.85),M.panel,-2.15,1.5,-.75);
+panel.rotation.set(.62,.35,0);
+add(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(-2.12,.05,-.72),new THREE.Vector3(-1.6,.03,-.5),new THREE.Vector3(-1.25,.3,-.3),new THREE.Vector3(-1.2,.75,-.2)]),32,.015,6),M.dark,0,0,0);
+
+/* ---------- Caméra en orbite : glisser 1:1, élan au relâchement, élastique en hauteur ---------- */
+const HOME={yaw:.62,pitch:.3,dist:9.2},P0=.04,P1=1.1;
+let yaw=HOME.yaw,pitch=HOME.pitch,dist=HOME.dist,vYaw=0,dragging=false,homing=false;
+function placeCam(){
+  cam.position.set(TARGET.x+dist*Math.cos(pitch)*Math.sin(yaw),TARGET.y+dist*Math.sin(pitch),TARGET.z+dist*Math.cos(pitch)*Math.cos(yaw));
+  cam.lookAt(TARGET);
+}
+const rubber=(o,d=1,c=.55)=>(o*d*c)/(d+c*Math.abs(o));
+let pid=null,sx=0,sy=0,y0=0,p0=0,hist=[];
+const cv=renderer.domElement;
+cv.addEventListener('pointerdown',e=>{
+  if(pid!=null)return; // ignore un deuxième doigt
+  pid=e.pointerId;cv.setPointerCapture(pid);dragging=true;homing=false;vYaw=0;
+  sx=e.clientX;sy=e.clientY;y0=yaw;p0=pitch;hist=[[performance.now(),e.clientX]];box.classList.add('drag');wake();
+});
+cv.addEventListener('pointermove',e=>{
+  if(e.pointerId!==pid)return;
+  yaw=y0-(e.clientX-sx)*.009;
+  if(e.pointerType==='mouse'||e.pointerType==='pen'){ // au doigt, le vertical reste au défilement de la page
+    const raw=p0+(e.clientY-sy)*.006;
+    pitch=raw<P0?P0-rubber(P0-raw):raw>P1?P1+rubber(raw-P1):raw;
+  }
+  hist.push([performance.now(),e.clientX]);if(hist.length>6)hist.shift();
+});
+const release=e=>{
+  if(e.pointerId!==pid)return;
+  pid=null;dragging=false;box.classList.remove('drag');
+  const a=hist[0],b=hist[hist.length-1],dt=Math.max(1,b[0]-a[0]);
+  vYaw=reduce.matches||performance.now()-b[0]>80?0:-(b[1]-a[1])/dt*.009; // rad/ms, hérite de la vitesse du doigt
+};
+cv.addEventListener('pointerup',release);cv.addEventListener('pointercancel',release);
+cv.addEventListener('dblclick',()=>{homing=true;vYaw=0;wake();});
+// Zoom au pincement du pavé tactile (ctrl+molette) uniquement : la molette seule fait défiler la page.
+cv.addEventListener('wheel',e=>{if(!e.ctrlKey)return;e.preventDefault();dist=clamp(dist*Math.exp(e.deltaY*.004),6,13);wake();},{passive:false});
+
+/* ---------- État en direct ---------- */
+let lvl=.75,lvlT=.75,mainOn=false,doses={},luxK=.5,t0=0;
+function readState(){
+  const s=window.HT_STATE;if(!s||!s.live)return;
+  const L=s.live.lvl;lvlT=Number.isFinite(L)?clamp(L/100,0,1):lvlT;
+  luxK=clamp((s.live.lux||0)/100,0,1);
+  mainOn=!!(s.pumps&&s.pumps.main);doses=s.pumps||{};
+  ACC=themeColors();
+  M.pump.emissive.set(mainOn?ACC:0x000000);M.pump.emissiveIntensity=mainOn?.55:0;M.pump.color.set(mainOn?ACC:0x8a9590);
+  for(const k in BOT){const on=!!doses[k];
+    BOT[k].head.emissive.set(on?ACC:0x000000);BOT[k].head.emissiveIntensity=on?.9:0;
+    BOT[k].tmat.color.set(on?ACC:0xb7bfbb);BOT[k].tmat.emissive.set(on?ACC:0x000000);BOT[k].tmat.emissiveIntensity=on?.35:0;}
+  sun.intensity=1.1+1.6*luxK;hemi.intensity=1.15+.35*luxK; // la nuit reste lisible
+  sun.color.setHSL(.1,.6,.82+.12*luxK);
+  wake();
+}
+document.addEventListener('ht:update',readState);
+
+/* ---------- Boucle de rendu : tourne seulement quand la vue est à l'écran ---------- */
+let visible=false,raf=0,last=0;
+function wake(){if(visible&&!raf){last=performance.now();raf=requestAnimationFrame(frame);}}
+function frame(now){
+  raf=0;if(!visible)return;
+  const dt=Math.min(64,now-last);last=now;t0+=dt;
+  if(!dragging){
+    if(homing){ // retour au cadrage d'origine, amorti critique
+      const k=1-Math.exp(-dt/110);
+      let dy=((HOME.yaw-yaw+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;
+      yaw+=dy*k;pitch+=(HOME.pitch-pitch)*k;dist+=(HOME.dist-dist)*k;
+      if(Math.abs(dy)<1e-3&&Math.abs(HOME.pitch-pitch)<1e-3)homing=false;
+    }else if(Math.abs(vYaw)>1e-6){yaw+=vYaw*dt;vYaw*=Math.pow(.997,dt);}
+    const pc=clamp(pitch,P0,P1);if(pc!==pitch)pitch+=(pc-pitch)*(1-Math.exp(-dt/90));
+  }
+  lvl+=(lvlT-lvl)*(1-Math.exp(-dt/350));
+  const h=Math.max(.01,(TH-.06)*lvl);water.scale.y=h;water.position.y=.03+h/2;
+  // Gouttes dans la colonne : montent si la pompe tourne (figées si mouvement réduit)
+  flow.visible=mainOn;
+  if(mainOn){
+    const sp=reduce.matches?0:.0009;
+    for(let i=0;i<NF;i++){const f=((i/NF)+t0*sp)%1;dummy.position.set(0,TB+.05+f*(TT-TB-.1),-.15);dummy.updateMatrix();flow.setMatrixAt(i,dummy.matrix);}
+    flow.instanceMatrix.needsUpdate=true;
+  }
+  if(!reduce.matches)for(const k in BOT)if(doses[k])BOT[k].tmat.map.offset.x-=dt*.0012;
+  placeCam();renderer.render(scene,cam);
+  const moving=dragging||homing||Math.abs(vYaw)>1e-6||Math.abs(lvlT-lvl)>1e-4||mainOn||Object.values(doses).some(Boolean);
+  if(moving)raf=requestAnimationFrame(frame);
+}
+function resize(){
+  const w=box.clientWidth,h=box.clientHeight;if(!w||!h)return;
+  renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();wake();
+}
+new ResizeObserver(resize).observe(box);
+new IntersectionObserver(([e])=>{visible=e.isIntersecting&&document.visibilityState==='visible';if(visible){resize();readState();wake();}},{threshold:0}).observe(box);
+document.addEventListener('visibilitychange',()=>{visible=document.visibilityState==='visible'&&box.offsetParent!==null;wake();});
+document.addEventListener('ht:view',()=>{requestAnimationFrame(()=>{visible=box.offsetParent!==null;resize();wake();});});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ACC=themeColors();readState();});
+
+placeCam();readState();buildPlants();
+window.HT3D_READY=true;document.dispatchEvent(new CustomEvent('ht:3d-ready'));
+}
+</script>
+</body>
+</html>
