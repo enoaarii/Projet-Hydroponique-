@@ -1,0 +1,13 @@
+hydro.env
+*.env
+calibration.json
+config.json
+hydrotour.db
+hydrotour.db.*
+file_attente.jsonl
+file_journal.jsonl
+rejets.jsonl
+etat.json
+journal.csv
+__pycache__/
+*.pyc
