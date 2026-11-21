@@ -1482,9 +1482,18 @@ function showPilot(j){
   $('#pi-cut').value=j.batt_coupure;$('#pi-res').value=j.batt_reprise;autoOn=!!j.auto;pilotWarn();
 }
 async function loadPilot(){try{showPilot(await(await fetch(apiBase+'/api/pilotage',{cache:'no-store'})).json());}catch(e){}}
+// Démonstration en ligne : aucun serveur à interroger, on affiche les réglages par défaut de la tour
+// et un étalonnage d'exemple, pour que les écrans se voient tels qu'ils sont sur le Raspberry.
+if(window.DEMO_EN_LIGNE){
+  showPilot({auto:1,cycle_on:15,cycle_off:15,batt_coupure:30,batt_reprise:35});
+  majEtalonnage({ph_mv:1877,ec_x:1.017,etape_ohm:1800,temp_eau_brut:24.1},
+                {ph_ref1:7,ph_mv1:1500,ph_ref2:4,ph_mv2:2032,ec_ref1:1413,ec_ref2:12880,
+                 ec_p:365,ec_cellule:0.489,ec_r1:340,etape_vide:2000,etape_plein:400,temp_eau_offset:0});
+}
 ['#pi-cut','#pi-res'].forEach(s=>$(s).addEventListener('input',pilotWarn));
 $('#pilot-form').addEventListener('submit',async e=>{
   e.preventDefault();
+  if(window.DEMO_EN_LIGNE){$('#pilot-msg').textContent='Indisponible dans la démonstration en ligne : sur la tour, ce bouton enregistre les réglages.';return;}
   const q=`auto=${$('#pi-auto').checked?1:0}&cycle_on=${+$('#pi-on').value}&cycle_off=${+$('#pi-off').value}`+
     `&batt_coupure=${+$('#pi-cut').value}&batt_reprise=${+$('#pi-res').value}`;
   try{
@@ -1648,7 +1657,7 @@ function render(){
   if(mode==='demo'){modeEl.className='badge demo';modeEl.textContent='Données de démonstration';}
   else if(online){modeEl.className='badge live';modeEl.textContent='En direct';}
   else{modeEl.className='badge off';modeEl.textContent='Hors ligne';}
-  $('#demo-box').hidden=mode!=='demo';$('#pilot-box').hidden=mode!=='api';
+  $('#demo-box').hidden=mode!=='demo';$('#pilot-box').hidden=mode!=='api'&&!window.DEMO_EN_LIGNE;
   $('#last').textContent=live?`Dernière mesure ${new Date(live.t).toLocaleTimeString('fr-FR')}`:'';
   watch();updateBanner();updateTiles();updateActs();chartHead();drawChart();drawLog();
   // État publié pour le modèle 3D (module séparé).
