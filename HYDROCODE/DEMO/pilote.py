@@ -24,9 +24,17 @@ REGLAGES = {
     "cycle_off": 15,       # minutes d'arrêt
     "batt_coupure": 30,    # % : la pompe s'arrête à ce niveau de batterie
     "batt_reprise": 35,    # % : elle reprend à ce niveau
-    "ph_v7": 1500.0,       # étalonnage pH : tension (mV) dans la solution tampon pH 7,00
-    "ph_v4": 2032.0,       #                 tension (mV) dans la solution tampon pH 4,00
-    "ec_k": 1.0,           # constante de la sonde EC DFRobot (K = 1)
+    "ph_ref1": 7.00,       # étalonnage pH, point 1 : pH de la solution tampon utilisée
+    "ph_mv1": 1500.0,      #                          tension mesurée dedans (mV)
+    "ph_ref2": 4.00,       # étalonnage pH, point 2 : pH de la seconde solution tampon
+    "ph_mv2": 2032.0,      #                          tension mesurée dedans (mV)
+    "ec_r1": 340.0,        # ohms : résistance R1 en série avec la sonde graphite (mesurée au multimètre)
+    "ec_p": 365.0,         # ohms : P = R1 + rL (rL : résistance de la broche D6 à l'état bas, environ 25 ohms)
+    "ec_cellule": 0.489,   # cm-1 : constante de cellule K de la sonde (étude, partie 7.5)
+    "ec_alpha": 0.02,      # par °C : variation de la conductivité avec la température (2 % par degré)
+    "ec_ref1": 1413.0,     # µS/cm : conductivité de la solution étalon du point 1
+    "ec_ref2": 12880.0,    # µS/cm : conductivité de la solution étalon du point 2
+    "temp_eau_offset": 0.0,  # °C : écart ajouté à la DS18B20 (thermomètre de référence moins sonde)
     "etape_vide": 2000.0,  # étalonnage du ruban : ohms réservoir vide
     "etape_plein": 400.0,  #                       ohms réservoir plein
 }
@@ -46,13 +54,72 @@ STOCK_BAS_L = 0.2
 
 # ---------- Conversions des valeurs brutes de l'Arduino ----------
 def ph_depuis_mv(mv, r):
-    return 7.0 + (mv - r["ph_v7"]) * (4.0 - 7.0) / (r["ph_v4"] - r["ph_v7"])
+    """pH à partir de la tension de la carte, par une droite passant par les deux points d'étalonnage.
+
+    La carte de la sonde donne une tension qui varie linéairement avec le pH. Deux solutions tampons
+    de pH connus (ph_ref1 et ph_ref2) donnent deux tensions (ph_mv1 et ph_mv2). La droite qui passe
+    par ces deux points s'écrit, pour une tension mv quelconque :
+
+        pH = ph_ref1 + (mv - ph_mv1) * (ph_ref2 - ph_ref1) / (ph_mv2 - ph_mv1)
+
+    Le second facteur est la pente de la droite, en pH par millivolt ; elle est négative, car la
+    tension monte quand le pH baisse. Les deux tampons peuvent valoir n'importe quoi (7,00 et 4,00,
+    mais aussi 6,86 et 4,01, ou 7,00 et 10,01) : seuls comptent les deux couples (pH, tension).
+    Si les deux tensions sont égales, l'étalonnage ne veut rien dire et on renvoie le premier pH.
+    """
+    if r["ph_mv2"] == r["ph_mv1"]:
+        return r["ph_ref1"]
+    pente = (r["ph_ref2"] - r["ph_ref1"]) / (r["ph_mv2"] - r["ph_mv1"])
+    return r["ph_ref1"] + (mv - r["ph_mv1"]) * pente
 
 
-def ec_depuis_mv(mv, temp, r):
-    """EC en µS/cm, ramenée à 25 °C (formule de la sonde DFRobot DFR0300 V2)."""
-    ms = 1000 * mv / 820 / 200 * r["ec_k"]
-    return ms / (1 + 0.0185 * ((25 if temp is None else temp) - 25)) * 1000
+def rapport_ec(s1, s2):
+    """x = S1 / S2 = U1 / U2 (rapport des deux tensions lues au point J), ou None si une somme est
+    inutilisable : nulle (pas de courant, sonde débranchée) ou à fond d'échelle (64 x 1023 = 65 472)."""
+    if not s1 or not s2 or s1 >= 65472 or s2 >= 65472:
+        return None
+    return s1 / s2
+
+
+def resistance_eau(x, r):
+    """Rw = R1 + P (x - 1), en ohms (rapport, partie 7.6 : x = (Rw + rL) / (R1 + rL))."""
+    return r["ec_r1"] + r["ec_p"] * (x - 1)
+
+
+def ec_depuis_sommes(s1, s2, temp, r):
+    """EC en µS/cm, ramenée à 25 °C, ou None si la mesure est inutilisable.
+    Trois temps (rapport, partie 7.7) :
+      x = S1 / S2 ;  Rw = R1 + P (x - 1) ;  sigma_T = K / Rw (K en cm-1, Rw en ohms : S/cm) ;
+      sigma_25 = sigma_T / (1 + alpha (T - 25)).
+    Le facteur 1e6 passe des S/cm aux µS/cm, unité utilisée partout dans le programme."""
+    x = rapport_ec(s1, s2)
+    if x is None:
+        return None
+    rw = resistance_eau(x, r)
+    if rw <= 0:
+        return None
+    sigma_t = r["ec_cellule"] / rw * 1e6
+    return sigma_t / (1 + r["ec_alpha"] * ((25 if temp is None else temp) - 25))
+
+
+def etalonnage_ec(x1, x2, sigma1=1413.0, sigma2=12880.0, r1=340.0):
+    """(P, K) à partir des rapports x1 et x2 mesurés dans deux solutions étalons (rapport, partie 7.7).
+    sigma1 et sigma2 en µS/cm (les conductivités des solutions réellement utilisées), r1 en ohms.
+      P = R1 (sigma2 - sigma1) / (sigma1 (x1 - 1) - sigma2 (x2 - 1))
+      K = sigma1 (R1 + P (x1 - 1))      (K en cm-1 une fois sigma en S/cm)
+    Renvoie None si le dénominateur est nul ou si le résultat n'a pas de sens (P ou K négatif)."""
+    den = sigma1 * (x1 - 1) - sigma2 * (x2 - 1)
+    if den == 0:
+        return None
+    p = r1 * (sigma2 - sigma1) / den
+    k = sigma1 * 1e-6 * (r1 + p * (x1 - 1))
+    return (p, k) if p > 0 and k > 0 else None
+
+
+def temperature_corrigee(temp, r):
+    """Température de l'eau corrigée : T = T_sonde + écart, l'écart venant de l'étalonnage
+    (température lue sur un thermomètre de référence moins température donnée par la sonde)."""
+    return None if temp is None else temp + r["temp_eau_offset"]
 
 
 def niveau_depuis_ohm(ohm, r):

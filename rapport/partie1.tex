@@ -1,0 +1,416 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{eno}
+\usepackage{float}
+\usepackage{needspace}
+\addto\captionsfrench{\def\tablename{Tableau}}
+\usepackage{tabularx}
+\usepackage{afterpage}
+\newcommand{\naturecalc}[2][7]{\par\Needspace{#1\baselineskip}\medskip\noindent\textbf{Nature du calcul :} #2.\par\nopagebreak}
+\usepackage{array}
+\usepackage{tikz}
+\usepackage{pdfpages}
+\usepackage{pdflscape}
+
+% ---------- Valeurs fixes du projet hydroponie ----------
+\enoformation{Licence << Sciences pour l'ingénieur >>}
+\enocontexte{Projet tutoré -- Tour hydroponique autonome}
+\enotype{Projet tutoré}
+\enoauteur{Enoaarii RAPARII}
+\enoemail{enoaarii.raparii@etudiant.upf.pf}
+\enotitre{Rapport de projet}
+\enoversion{Version 1.1 -- novembre 2026}
+
+\makeatletter
+\renewcommand{\pagedegarde}{%
+  \begin{titlepage}
+  \thispagestyle{garde}
+  \centering
+  \vspace*{1.2cm}
+  \includegraphics[width=6.6cm]{\eno@logo}\par
+  \vspace{2.6cm}
+  {\large \eno@formation\par}
+  \ifx\eno@contexte\@empty\else{\large\bfseries \eno@contexte\par}\fi
+  \vspace{2.2cm}
+  \begin{tcolorbox}[enhanced,sharp corners,boxrule=0.6pt,colframe=black,
+      colback=white,halign=center,left=6mm,right=6mm,top=7mm,bottom=7mm]
+    {\fontsize{30}{36}\selectfont\bfseries \eno@titre\par}
+  \end{tcolorbox}
+  \vfill
+  {\large\bfseries \eno@auteur\par}\vspace{0.25em}
+  \ifx\eno@email\@empty\else{\color{enoOrange}\eno@email\par}\fi
+  \vspace{1.6cm}
+  \ifx\eno@version\@empty\else{\large \eno@version\par}\fi
+  \vspace*{2.4cm}
+  \end{titlepage}
+  \setcounter{page}{1}}
+\makeatother
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\dimline}[1]{&\quad\text{\small analyse dimensionnelle : }\Bigl[\,#1\,\Bigr]}
+\newcounter{lex}
+\newcommand{\terme}[2]{\par\medskip\noindent\stepcounter{lex}\textbf{\thelex.\ #1.} #2\par}
+\newcommand{\ix}[1]{\textsubscript{#1}}
+
+\newcommand{\schemapaysage}[2][]{\afterpage{{\begin{landscape}\thispagestyle{empty}\centering\includegraphics[#1,height=0.93\textwidth,width=0.97\linewidth,keepaspectratio]{#2}\end{landscape}}}}
+
+\newcounter{annexe}\newcounter{schema}
+\newcommand{\schemacap}[2]{%
+ \ifcsname schn@#1\endcsname\else\stepcounter{schema}\expandafter\xdef\csname schn@#1\endcsname{\theschema}\fi
+ \par\vspace{4pt}\begin{center}\begin{minipage}{0.9\linewidth}\centering\small\textbf{Schéma \csname schn@#1\endcsname}\ -- #2\end{minipage}\end{center}}
+\newcommand{\schemapaysageC}[4][]{\afterpage{{\begin{landscape}\thispagestyle{empty}\centering\includegraphics[#1,height=0.84\textwidth,width=0.97\linewidth,keepaspectratio]{#2}\schemacap{#3}{#4}\end{landscape}}}}
+\newcommand{\annexeENO}[1]{\clearpage\refstepcounter{annexe}\phantomsection\section*{Annexe \theannexe{} : #1}\addcontentsline{toc}{section}{Annexe \theannexe{} : #1}}
+\newcommand{\annexefiche}[1]{\refstepcounter{annexe}\Needspace{6\baselineskip}\phantomsection\subsubsection*{Annexe \theannexe{} : #1}\addcontentsline{toc}{subsection}{Annexe \theannexe{} : #1}}
+\newcommand{\annexepaysage}[5][]{\clearpage{\begin{landscape}\thispagestyle{empty}\refstepcounter{annexe}\phantomsection\addcontentsline{toc}{section}{Annexe \theannexe{} : #3}{\centering\large\bfseries Annexe \theannexe{} : #3\par}\vspace{4pt}\centering\includegraphics[#1,height=0.80\textwidth,width=0.97\linewidth,keepaspectratio]{#2}\schemacap{#4}{#5}\end{landscape}}\clearpage}
+\newcommand{\pagesuite}[4][]{\clearpage{\begin{landscape}\thispagestyle{empty}\centering\includegraphics[#1,height=0.84\textwidth,width=0.97\linewidth,keepaspectratio]{#2}\schemacap{#3}{#4}\end{landscape}}}
+\begin{document}
+\pagedegarde
+
+\begin{remerciements}
+Je tiens à remercier tout particulièrement mon tuteur, \textbf{Monsieur Anthony Utahia}, qui ne refuse jamais de prendre le temps de répondre à mes questions, et qui me conseille et m'oriente tout au long de ce projet. Malgré un emploi du temps très chargé, il n'hésite pas à faire des heures supplémentaires, gratuitement, pour m'aider. Ce qu'il m'a imposé, comme l'installation solaire et la tour, m'a été bénéfique : vu le temps dont je disposais, cela pose un cadre et donne une direction à suivre. Sa disponibilité et ses conseils guident les choix présentés dans ce rapport.
+
+Ce rapport est le condensé de mon travail, et uniquement de mon travail. Je l'ai mené en autonomie, depuis le choix du matériel jusqu'aux programmes et aux essais, en trois mois seulement : je suis titulaire d'une licence de physique-chimie et je n'ai rejoint la SPI qu'en septembre 2026. Je remercie mes proches, qui m'ont soutenu pendant cette période dense.
+
+Je remercie aussi mon coéquipier, \textbf{Gabriel Piritua}, avec qui je partage ce projet. Il a la charge de l'armoire électrique et du chariot qui transportera tout le système. Son travail n'étant pas disponible pour l'instant, il n'apparaît pas dans ce rapport, ni dans les coûts : je ne présente que ce que j'ai moi-même réalisé.
+
+J'aborde ce projet comme un vrai défi, et c'est justement ce qui le rend si formateur. Travailler en autonomie me pousse à chercher l'information par moi-même, à lire des fiches techniques, à comprendre pourquoi un montage ne se comporte pas comme prévu et à trouver la bonne solution. Face à une difficulté, comme la perturbation de la sonde pH par la sonde EC, je dois la comprendre jusqu'au bout avant d'y répondre.
+
+Ce projet me permet d'acquérir des compétences concrètes et complémentaires :
+\begin{itemize}
+\item \textbf{en électronique} : capteurs analogiques, commande de puissance par MOSFET\ix{15}, bus I2C\ix{12}, conversion analogique-numérique et câblage ;
+\item \textbf{en programmation} : Python, Arduino, serveur web, base de données et interface web ;
+\item \textbf{en gestion de projet} : organisation, respect des délais, essais et documentation ;
+\item \textbf{en autonomie} : rechercher l'information, analyser un problème et le résoudre par moi-même.
+\end{itemize}
+Ces compétences sont directement utiles à mon ambition : devenir ingénieur en électronique. La tour hydroponique réunit, à petite échelle, le travail d'un ingénieur : concevoir un système complet, faire dialoguer le matériel et le logiciel, et le rendre fiable. Ce projet me rend plus autonome, plus rigoureux et encore plus motivé pour la suite de mes études.
+\end{remerciements}
+
+\sommaire
+
+% =====================================================================
+\clearpage
+\section*{Préambule}
+\addcontentsline{toc}{section}{Préambule}
+
+Avant de lire ce rapport, il faut connaître le contexte dans lequel il a été écrit, car il explique ses choix et ses limites.
+
+\textbf{Mon parcours.} Je suis titulaire d'une licence de physique-chimie. J'ai intégré la licence « Sciences pour l'ingénieur » (SPI) en septembre 2026, en troisième année. Ce cursus s'étale normalement sur trois ans d'électronique, d'informatique, d'automatique et de mécanique. Pour ce projet, je dois condenser trois ans de travail en trois mois. Je découvre donc en cours de route des notions qu'un étudiant de la SPI a déjà vues : le bus I2C\ix{12}, la commande par MOSFET\ix{15}, la conversion analogique-numérique, la programmation en Python et en Arduino, le serveur web.
+
+\textbf{Ce que cela change pour le projet.} Cette contrainte de temps pèse sur tout le rapport. Je consacre beaucoup de place à la recherche et à la démonstration des formules, parce que je dois comprendre chaque notion avant de m'en servir. Je privilégie les calculs et la conception, qui s'appuient sur ma formation de physicien, et je dis honnêtement ce qui est construit, ce qui est seulement calculé et ce qui reste à essayer : une partie du matériel n'est pas encore arrivée, et plusieurs essais ne sont pas faits. Je retiens des solutions simples et prudentes plutôt que des solutions optimales, et je fabrique moi-même certains éléments, comme la sonde de conductivité, quand le délai de livraison dépasse le temps dont je dispose.
+
+\textbf{Un projet à deux, une arrivée commune.} Le projet se mène à deux, avec mon coéquipier. Nous sommes tous les deux arrivés en troisième année de SPI cette année, après un parcours différent de celui des étudiants qui font la SPI depuis la première année. Nous avons donc, lui comme moi, trois mois pour acquérir ce que le cursus enseigne normalement en trois ans, et nous nous répartissons le travail : le sien (l'armoire électrique et le chariot) n'est pas disponible pour l'instant, et ce rapport ne présente que mon travail.
+
+% =====================================================================
+\clearpage
+\section*{Résumé}
+\addcontentsline{toc}{section}{Résumé}
+
+Imaginez un petit potager vertical qui se garde presque tout seul. Une tour d'un mètre de haut, fournie par mon tuteur, douze plants de laitue, et une eau qui monte en haut du tube avant de ruisseler sur les racines, comme une petite cascade qui coule par cycles de quinze minutes. De temps en temps, la tour goûte son eau : elle vérifie qu'elle n'est ni trop acide ni trop chargée en engrais, corrige quand il le faut, et envoie ses mesures sur un téléphone, où que l'on se trouve. Elle se nourrit du soleil, grâce à un panneau solaire et à deux batteries. C'est le projet que je mène depuis septembre 2026, dans le cadre de ma licence « Sciences pour l'ingénieur » à l'Université de la Polynésie française.
+
+\textbf{Ce qui est fait.} J'ai d'abord calculé le circuit d'eau : une pompe qui fait monter l'eau d'environ 1,2 m dans la tour (elle doit en fait fournir une hauteur de 2,6 m, pertes comprises), et un grand bac de \qty{152}{L} qui contient toute la solution nutritive. J'ai ensuite dimensionné l'alimentation solaire : un panneau de \qty{120}{Wc}, deux batteries de \qty{12}{V} (\qty{6}{Ah} et \qty{17}{Ah}, branchées en parallèle, soit \qty{23}{Ah} au total) et des fusibles, pour une consommation d'environ \qty{226}{Wh} par jour. J'ai conçu la sonde qui mesure la quantité d'engrais dans l'eau, avec comme électrodes deux simples mines de crayon à papier en graphite. J'ai écrit le programme qui décide à la place du jardinier, quand arroser, quand doser l'engrais, quand économiser la batterie : le Raspberry Pi décide, l'Arduino exécute. J'ai enfin construit le tableau de bord web, accessible depuis Internet derrière une page de connexion, qui permet de surveiller la tour et de la commander de loin.
+
+\textbf{Ce qui a déjà été essayé en vrai.} Le 1\textsuperscript{er} novembre, j'ai enregistré près d'une demi-heure de mesures avec la sonde pH, que j'ai étalonnée dans des solutions de référence : la chaîne complète fonctionne, de la sonde jusqu'au téléphone. Le 27 octobre, j'ai semé les premières laitues, et elles poussent : environ \qty{5}{cm} au 11 novembre, sous la seule lumière d'une fenêtre.
+
+\textbf{Ce qui reste à faire.} La commande de matériel passée chez Adafruit n'est pas encore arrivée, à cause des délais de livraison et des démarches administratives. La même raison m'a poussé à fabriquer moi-même la sonde de conductivité : elle n'est ni construite ni testée. Le câblage complet et les essais de tous les organes de la tour, pompes, niveaux et dosage, sont donc à faire. Ce rapport dit toujours honnêtement ce qui est vérifié, ce qui est seulement calculé ou écrit, et ce qui reste à essayer.
+
+\textbf{Ce que ce rapport ne couvre pas.} L'armoire électrique et le chariot qui transportera l'ensemble sont le travail de mon partenaire Gabriel Piritua, qui n'a pas pu fournir ses éléments pour l'instant. Ils sont donc absents de ce rapport, de même que leur coût.
+
+\textbf{Pour la suite du rapport.} Après le cahier des charges et l'introduction viennent cinq études, où je raconte ce que j'ai fait et les problèmes rencontrés au fur et à mesure, dans leur contexte : l'étude hydraulique, l'étude électrique, l'étude thermique, l'étude informatique (avec son tutoriel d'installation, destiné à quelqu'un qui part de zéro) et l'étude financière, avec ce que le système a coûté et ce qu'il peut rapporter. Viennent ensuite le suivi des plantes et le bilan.
+
+% =====================================================================
+\clearpage
+\section*{Mode d'emploi du rapport}
+\addcontentsline{toc}{section}{Mode d'emploi du rapport}
+
+Ce rapport est long, parce qu'il suit un projet entier, de la première idée jusqu'au prix de vente. Personne n'a besoin de tout lire dans l'ordre, alors voici comment s'y retrouver, un peu comme on choisit son chemin sur une carte selon l'endroit où l'on veut aller.
+
+\textbf{Pour comprendre ce qu'est ce projet.} Il suffit de lire le Résumé, le cahier des charges (partie~1), l'Introduction (partie~2) et le bilan final. On y trouve le but de la tour, la manière dont elle fonctionne dans les grandes lignes et l'état d'avancement, sans un seul calcul.
+
+\textbf{Comment le rapport est organisé.} Le rapport s'ouvre sur le cahier des charges (partie 1), qui dit ce que la tour doit faire, puis sur l'introduction (partie 2). Il est ensuite découpé en cinq études, suivies des annexes et de la bibliographie, regroupées à la fin. L'étude hydraulique réunit le circuit d'eau (partie 3) et la mécanique de la tour (partie 4). L'étude électrique est la partie 5, l'étude thermique la partie 6. L'étude informatique réunit les mesures, les sondes et la fabrication de la sonde EC (partie 7), la commande (partie 8), le dashboard de démonstration (partie 9) et le tutoriel d'installation (partie 10). L'étude financière réunit le matériel et son prix (partie 11) et le calcul des coûts et du retour sur investissement (partie 12). Le suivi des plantes (partie 13) et le bilan (partie 14) terminent le rapport. Les plans, les schémas officiels et les fiches techniques de tout le matériel sont dans les annexes numérotées, et la bibliographie est tout à la fin. Les schémas sont numérotés dans l'ordre où ils apparaissent (Schéma 1, 2, 3...) et se trouvent dans les parties où ils sont utiles.
+
+\textbf{Pour comprendre pourquoi chaque choix technique a été fait.} Il faut lire les parties d'études, dans l'ordre : le circuit d'eau, la mécanique de la tour, l'énergie solaire, la thermodynamique du système, les mesures et les sondes, puis la commande par ordinateur. Chaque partie commence par la question que je me suis posée, comme on ouvre une petite enquête, puis donne la réponse, et enfin ce qu'il reste à vérifier. La partie 13 suit la croissance des laitues.
+
+\textbf{Pour savoir ce que coûte un système comme celui-ci.} Les parties utiles sont le matériel (partie 11) et l'étude financière (partie 12). Elle donne l'investissement de départ, le coût annuel de fonctionnement, la valeur de la production de laitues, le temps de retour et le prix de revient d'une laitue. Les prix de vente en plusieurs formules ne sont pas étudiés dans cette version.
+
+\textbf{Pour installer le système chez soi.} Le tutoriel d'installation décrit tout, depuis une carte Raspberry Pi vierge jusqu'à l'accès depuis un téléphone, en passant par la création des comptes. Il est écrit pour quelqu'un qui n'a jamais utilisé ce genre de matériel : aucune connaissance préalable n'est nécessaire.
+
+\textbf{Comment lire les calculs.} Chaque fois qu'un résultat s'appuie sur un calcul, celui-ci est regroupé sous le titre « Détail du calcul ». Le résultat est donné en premier, avant le raisonnement qui y mène : on peut donc lire le résultat et sauter le détail sans perdre le fil, ou au contraire suivre le détail ligne par ligne pour vérifier. La formule est toujours écrite avant d'être utilisée, et chaque grandeur est présentée avec son unité. Les courts passages « À retenir » résument l'essentiel d'une sous-partie en quelques lignes, et les « Attention » signalent un piège que j'ai moi-même rencontré.
+
+\textbf{Comment lire l'état d'avancement.} Un tableau global, dans le bilan, indique pour chaque fonction ce qui est fait, ce qui a été vérifié avec le vrai matériel ou avec un Arduino simulé, et ce qui reste à faire. Les chiffres des parties d'études sont des calculs, tant que les mesures ne sont pas faites : le texte le dit à chaque fois. Je préfère dire honnêtement où j'en suis plutôt que de présenter comme acquis ce qui ne l'est pas.
+
+\textbf{Les lettres des formules.} Il y a plus de lettres que de grandeurs à nommer : une même lettre peut donc avoir un sens différent d'une partie à l'autre (par exemple $H$ pour la hauteur de la pompe ou pour l'irradiation, $K$ pour les pertes dans un tuyau ou pour la constante d'une sonde, $\alpha$ pour une pente, une absorption ou un coefficient de température). Dans chaque calcul, chaque lettre est redéfinie, avec son unité, à sa première apparition : seule cette définition compte. Les blocs « Détail du calcul » démontrent les formules ; on peut les sauter à la première lecture, car le résultat est écrit tout en haut du bloc.
+
+\textbf{Calculé ou mesuré ?} La plupart des chiffres des parties 3 à 6 sont des calculs fondés sur des fiches techniques et des hypothèses ; les mesures réelles disponibles sont dans la partie 8.8 (mesures du 1\textsuperscript{er} novembre), la partie 13 (suivi des laitues) et la partie 14 (montage du 12 novembre), et le bilan final (partie 14) indique ce qui reste à mesurer. Avant chaque « Détail du calcul », une ligne « Nature du calcul » dit s'il s'agit de théorie, de mesures ou d'une simulation.
+
+\textbf{Un dernier conseil.} Quand un mot technique semble obscur, il faut regarder le Lexique, juste avant l'Introduction : tous les mots importants y sont expliqués. Chaque entrée du Lexique est numérotée, et chaque fois qu'un mot technique du Lexique apparaît dans le texte, un petit numéro en bas du mot renvoie à son entrée : par exemple MOSFET\ix{15}, dont l'entrée porte le numéro 15. Et tous les prix de ce rapport sont donnés en XPF, le franc Pacifique.
+
+% =====================================================================
+\clearpage
+\section*{Lexique}
+\addcontentsline{toc}{section}{Lexique}
+
+Quelques mots reviennent sans cesse. Les voici en langage simple ; ils seront aussi expliqués dans le texte à leur première apparition.
+
+\terme{Hydroponie}{Culture de plantes sans terre. Les racines baignent dans de l'eau, ou sont arrosées par de l'eau, dans laquelle on a dissous les engrais dont la plante a besoin.}
+
+\terme{Solution nutritive}{L'eau enrichie en engrais dans laquelle vivent les racines. C'est le « repas » de la plante, qu'il faut garder bien dosé.}
+
+\terme{Tour hydroponique}{Un tube vertical percé de trous où l'on place les plants. L'eau est envoyée en haut, ruisselle le long du tube sur les racines, puis retombe dans un bac. On cultive beaucoup de plants sur très peu de place au sol.}
+
+\terme{pH}{Un nombre qui dit si l'eau est acide ou non, sur une échelle de 0 à 14. Autour de 7, l'eau est neutre ; en dessous, elle est acide ; au-dessus, elle est basique. La laitue se plaît entre environ 5,6 et 6,0, un peu acide.}
+
+\terme{EC (conductivité)}{Une mesure de la facilité avec laquelle l'eau laisse passer le courant électrique. Plus il y a d'engrais dissous, plus l'eau conduit : l'EC est donc une image de la quantité d'engrais, sans dire de quel engrais il s'agit. Elle s'exprime ici en millisiemens par centimètre (mS/cm).}
+
+\terme{Sonde}{L'objet que l'on plonge dans l'eau pour mesurer quelque chose : acidité (sonde pH), quantité d'engrais (sonde EC) ou température.}
+
+\terme{Étalonnage}{Régler une sonde en la plongeant dans des liquides dont on connaît la valeur exacte, comme on règle une balance avec un poids connu.}
+
+\terme{Pompe péristaltique}{Une petite pompe qui écrase un tuyau souple pour pousser le liquide, comme on presse un tube de dentifrice. Elle sert à doser très précisément l'engrais ou le correcteur de pH, goutte par goutte.}
+
+\terme{Raspberry Pi}{Un mini-ordinateur de la taille d'une carte bancaire. Dans la tour, c'est le cerveau : il décide quand arroser, quand ajouter de l'engrais, quand économiser la batterie.}
+
+\terme{Arduino}{Une petite carte électronique qui lit les capteurs et allume les pompes. Elle ne décide rien : elle exécute les ordres du Raspberry Pi.}
+
+\terme{Tableau de bord (dashboard)}{Une page web qui affiche les mesures de la tour, ses alertes et ses réglages, et permet de la commander à la main depuis un ordinateur ou un téléphone.}
+
+\terme{I2C}{Une façon pour plusieurs petits modules électroniques de parler à une même carte en partageant seulement deux fils. Chaque module possède une adresse, comme un numéro d'appartement. Les deux fils s'appellent SDA\ix{13} et SCL\ix{14}.}
+
+\terme{SDA (Serial Data)}{L'un des deux fils du bus I2C\ix{12}. Il transporte les données (les valeurs mesurées et les ordres) dans les deux sens, entre l'Arduino et les modules.}
+
+\terme{SCL (Serial Clock)}{L'autre fil du bus I2C\ix{12}. Il transporte l'horloge : des impulsions régulières envoyées par l'Arduino, qui cadencent la lecture des données sur le fil SDA\ix{13}. Les deux fils doivent rester séparés.}
+
+\terme{MOSFET}{Un interrupteur électronique commandé par un tout petit signal. Il permet à l'Arduino, qui travaille en 5 volts, d'allumer une pompe qui travaille en 12 volts.}
+
+\terme{Convertisseur analogique-numérique (ADS1115)}{Un composant qui transforme une tension mesurée par une sonde en un nombre que l'ordinateur peut lire, avec une grande finesse.}
+
+\terme{UBEC}{Un petit convertisseur qui transforme le 12 volts de la batterie en 5 volts stables, pour alimenter le Raspberry Pi.}
+
+\terme{Wc, Wh}{Le watt-crête (Wc) est la puissance maximale d'un panneau solaire en plein soleil. Le watt-heure (Wh) mesure une quantité d'énergie : un appareil de \qty{10}{W} qui fonctionne pendant \qty{2}{h} consomme \qty{20}{Wh}.}
+
+\terme{Régulateur MPPT}{Un appareil placé entre le panneau solaire et la batterie. Il tire le maximum de ce que le panneau produit et charge la batterie sans l'abîmer.}
+
+\terme{Tailscale et Funnel}{Un service qui permet d'atteindre la tour depuis Internet, avec une adresse sécurisée, sans toucher aux réglages de la box. Funnel\ix{20} est la fonction qui publie le tableau de bord sur cette adresse.}
+
+\terme{BOM (nomenclature)}{La liste de tout le matériel à acheter, avec les quantités et les prix.}
+
+\terme{INA260}{Un petit module qui mesure la tension et le courant de la batterie. L'Arduino le lit sur le bus I2C\ix{12} et le Raspberry en tire le pourcentage de charge pour décider de couper ou de relancer la pompe.}
+
+\terme{Capteur de niveau (eTape)}{Un ruban de 30 cm dont la résistance change avec la hauteur d'eau qui le mouille. En mesurant sa résistance, on connaît le niveau du réservoir.}
+
+\terme{DS18B20, DHT20}{Deux capteurs de température : le DS18B20\ix{24} est étanche et plonge dans l'eau ; le DHT20\ix{24} mesure la température et l'humidité de l'air.}
+
+\terme{Fusible}{Un fil calibré qui fond si le courant dépasse une valeur (son calibre, en ampères). Il coupe le circuit avant que les câbles ne chauffent.}
+
+\terme{Autonomie}{Le nombre d'heures ou de jours pendant lesquels la tour fonctionne sur ses batteries, sans aucun apport du soleil.}
+
+\terme{Profondeur de décharge (DoD)}{La part de la capacité d'une batterie qu'on accepte d'utiliser. Je prends 50 \% : au-delà, une batterie au plomb s'use beaucoup plus vite.}
+
+\terme{Constante de cellule $K$}{Le nombre qui relie la résistance de l'eau entre les deux électrodes d'une sonde à sa conductivité. Il ne dépend que de la forme de la sonde (distance entre électrodes, surface immergée), en cm$^{-1}$.}
+
+\terme{Courant alternatif}{Un courant qui change de sens en permanence. Pour mesurer la conductivité on inverse le sens du courant, car un courant toujours dans le même sens abîmerait les électrodes et fausserait la mesure.}
+
+\terme{Pas (du convertisseur)}{La plus petite variation de tension que le convertisseur sait distinguer. Plus il est petit, plus la mesure est fine.}
+
+\terme{Hystérésis}{Deux seuils différents pour couper et pour relancer (par exemple couper à 11,5 V et relancer à 12,6 V). Cela évite que l'appareil s'allume et s'éteigne sans cesse autour d'un seul seuil.}
+
+\terme{XPF}{Le franc Pacifique, la monnaie de la Polynésie française. Tous les prix de ce rapport sont donnés en XPF.}
+
+\input{partie_cdc}
+
+% =====================================================================
+\partieENO{Introduction et contexte}
+
+Avant d'entrer dans les calculs, cette partie pose le décor. Je commence par le but du projet et par ce qu'est l'hydroponie. Je fais ensuite un tour des grands systèmes qui existent, pour situer la tour parmi eux. J'explique après pourquoi c'est une tour que nous avons, fournie et imposée par mon tuteur, et pourquoi j'y cultive de la laitue. Je termine par ce que couvre exactement ce rapport, et par ce qu'il laisse volontairement de côté.
+
+\subsection{D'où vient le projet}
+
+Le projet part d'une idée simple : faire pousser des plantes sans terre, en laissant un système mesurer lui-même ce dont elles ont besoin. À l'origine, il est question de détecter les nutriments présents dans l'eau pour pouvoir ajuster sa composition, et de chercher le meilleur moyen de cultiver des plantes en hydroponie.
+
+\textbf{Une idée qui a plus de trois siècles.} Cultiver sans terre n'a rien de nouveau. Les premiers essais sérieux datent de 1699 : le naturaliste anglais John Woodward fait pousser de la menthe dans de l'eau et constate qu'elle se développe mieux dans une eau où l'on a mis un peu de terre que dans de l'eau distillée. Il en déduit, sans le savoir tout à fait, que la terre fournit à la plante des substances qu'elle absorbe par l'eau. Entre 1859 et 1875, les botanistes allemands Julius von Sachs et Wilhelm Knop mettent au point les premières recettes d'eau nutritive complètes : on sait alors faire vivre une plante entière avec des sels minéraux dissous. Vers 1929, William Gericke, à l'université de Berkeley, propose d'utiliser ces recettes pour produire des récoltes, et le mot « hydroponie » est proposé en 1937 par son collègue W. A. Setchell. En 1938, Hoagland et Arnon publient une solution nutritive de référence, dont des versions modifiées servent encore aujourd'hui. L'hydroponie, comme science, a donc environ 160 ans, et comme technique de culture, environ 90 ans (sources A et B en annexe).
+
+\textbf{Pourquoi s'y intéresser.} Trois avantages reviennent sans cesse, et je les ai gardés en tête pendant tout le projet. Je précise pour chacun jusqu'où il est solide.
+
+Le premier est le rendement. Une étude de l'université d'Arizona compare de la laitue cultivée en plein champ et de la laitue hydroponique en serre. Les auteurs trouvent environ \qty{3,9}{kg/m^2/an} au champ contre \qty{41}{kg/m^2/an} en hydroponie, soit à peu près onze fois plus par mètre carré (source C). Cela s'explique simplement : les racines baignent dans une eau déjà dosée, la plante ne dépense pas d'énergie à chercher sa nourriture, et on peut serrer les plants et enchaîner les cultures. Il faut toutefois rester prudent : ce chiffre vient d'un modèle de serre chauffée, éclairée et climatisée, dans un climat très sec. Il donne un ordre de grandeur, pas une promesse pour ma tour posée près d'une fenêtre.
+
+Le deuxième est la protection contre les maladies. Les cultures sans sol ont d'abord été développées pour échapper aux maladies qui vivent dans la terre (source D). Sans terre, on évite aussi les mauvaises herbes, et on traite moins (source E). Mais il y a une contrepartie que je ne veux pas cacher : quand l'eau est recyclée, certains organismes qui aiment l'humidité, comme le Pythium, peuvent s'y installer et se propager d'une plante à l'autre (sources D et F). La température de l'eau joue un rôle dans leur développement (source G). C'est une des raisons pour lesquelles la tour mesure la température de l'eau : une eau trop chaude est un risque pour les racines.
+
+Le troisième est la consommation d'eau. La même étude donne environ \qty{250}{L/kg} d'eau pour la laitue de plein champ et environ \qty{20}{L/kg} en hydroponie (source C). L'eau est recyclée en circuit fermé : celle que la plante n'a pas bue retourne au bac au lieu de s'infiltrer dans le sol.
+
+\naturecalc{théorie, à partir de valeurs tirées de la littérature ; rien de mesuré sur la tour}
+\begin{demonstration}[économie d'eau]
+\resultat{\text{économie} = 92\,\%}
+Je note $V_c$ le volume d'eau nécessaire pour produire un kilogramme de laitue au champ, en litres par kilogramme, et $V_h$ celui de l'hydroponie, dans la même unité. L'économie relative $E$ est la part d'eau qu'on ne consomme plus, rapportée à ce qu'on consommait au champ :
+\[
+E = \frac{V_c - V_h}{V_c}
+\]
+Avec $V_c = \qty{250}{L/kg}$ et $V_h = \qty{20}{L/kg}$ :
+\begin{align*}
+E &= \frac{\qty{250}{L/kg} - \qty{20}{L/kg}}{\qty{250}{L/kg}}\\
+E &= \frac{\qty{230}{L/kg}}{\qty{250}{L/kg}}\\
+E &= 0{,}92
+\end{align*}
+Soit \num{92}\,\% d'eau en moins.
+\end{demonstration}
+
+Là encore, une réserve honnête : la même étude montre que l'hydroponie en serre demande beaucoup plus d'énergie, surtout à cause de l'éclairage artificiel, environ 82 fois plus par kilogramme (source C). Dans mon cas, la lumière vient de la fenêtre et l'électricité du soleil par le panneau solaire, ce qui change l'équilibre.
+
+Je me suis aussi vite rendu compte d'une chose : une sonde ordinaire ne reconnaît pas chaque nutriment un par un. Elle mesure la quantité totale d'engrais dissous. C'est comme goûter une soupe : on sait si elle est trop salée, mais pas quel ingrédient en est responsable. Cette mesure suffit pourtant pour garder l'eau dans la bonne zone, à condition de mesurer aussi son acidité. C'est ce que fait la tour avec deux sondes, une pour le pH et une pour la conductivité.
+
+Le principe de l'hydroponie est celui d'un repas livré : au lieu de chercher sa nourriture dans la terre, la plante la reçoit directement dans l'eau, déjà prête. Cela suppose que l'eau soit toujours bien dosée. D'où l'intérêt d'une tour qui surveille ses mesures et corrige seule.
+
+\subsection{Un tour d'horizon des systèmes hydroponiques}
+
+Avant de choisir, il faut savoir ce qui existe. Il y a plusieurs grandes familles de systèmes hydroponiques. Elles diffèrent surtout par la manière dont l'eau arrive aux racines. Je les présente une par une avec une image du quotidien, puis je les compare dans un tableau.
+
+Le système à mèche est le plus simple. Une mèche, comme celle d'une bougie, plonge dans le bac et monte l'eau jusqu'au pied de la plante par capillarité. Il n'y a ni pompe ni électricité. En contrepartie, il ne convient qu'à de petites plantes qui boivent peu.
+
+La culture en eau profonde laisse les racines flotter directement dans un bain de solution nutritive, comme quelqu'un qui garderait les pieds dans une bassine. Un petit appareil qui fait des bulles apporte l'air dont les racines ont besoin pour respirer. C'est simple et efficace pour les salades, mais l'eau doit rester fraîche et bien oxygénée.
+
+La technique du film nutritif, appelée NFT, fait couler un mince filet d'eau le long de gouttières légèrement inclinées, comme un petit ruisseau. Les racines baignent dans ce filet. Elle est très utilisée pour les salades et les herbes. Si la pompe s'arrête, les racines sèchent très vite.
+
+Le flux et reflux fonctionne comme la marée : le bac se remplit d'eau, puis se vide, à intervalles réguliers. Les racines sont tour à tour baignées et à l'air. Il faut une minuterie fiable, et un système un peu plus compliqué à installer.
+
+Le goutte-à-goutte distribue l'eau plante par plante, comme une perfusion. Il convient bien aux grosses plantes qui ont besoin de beaucoup d'eau, comme la tomate. Les petites buses peuvent se boucher, ce qui demande de les surveiller.
+
+L'aéroponie suspend les racines dans l'air et les arrose d'un brouillard fin de solution nutritive, comme un brumisateur. La croissance y est très rapide et la consommation d'eau très faible, mais les buses sont fines et la moindre panne peut faire sécher les racines en quelques heures.
+
+La tour verticale combine plusieurs de ces idées. Une pompe monte l'eau par un tuyau placé au centre de la tour, jusqu'en haut. Là, un couvercle la répartit vers la paroi, d'où elle ruisselle le long des racines des plants disposés tout autour avant de retomber dans un bac. L'eau circule en circuit fermé et on cultive beaucoup de plants sur très peu de place.
+
+Le tableau 1, le \textbf{tableau comparatif des sept grands systèmes hydroponiques}, résume ces sept systèmes pour les comparer d'un seul regard. Son but et ce qu'il raconte sont expliqués juste en dessous.
+
+\begin{table}[H]
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{1.9cm}|Y|Y|Y|Y|}
+\hline
+\multicolumn{5}{|c|}{\textbf{Tableau comparatif des sept grands systèmes hydroponiques}} \\
+\hline
+\textbf{Système} & \textbf{Comment l'eau arrive aux racines} & \textbf{Ce qu'il lui faut} & \textbf{Points forts} & \textbf{Limites} \\
+\hline
+Mèche & Par capillarité, comme l'huile monte dans une mèche de bougie & Aucune électricité, aucune pompe & Très simple, aucune panne possible côté électrique & Petites plantes seulement \\
+\hline
+Eau profonde & Racines plongées dans un bain d'eau nutritive aéré & Une pompe à air, en continu & Simple, adapté aux salades & Oxygénation et température de l'eau à surveiller \\
+\hline
+NFT (film nutritif) & Mince filet d'eau qui coule dans une gouttière inclinée & Une pompe, en continu & Peu d'eau, adapté aux salades et aux herbes & Racines qui sèchent vite si la pompe s'arrête \\
+\hline
+Flux et reflux & Bac rempli puis vidé à intervalles réguliers, comme la marée & Une pompe et une minuterie & Souple, convient à plusieurs plantes & Minuterie et réglages à soigner \\
+\hline
+Goutte-à-goutte & Gouttes distribuées plante par plante, comme une perfusion & Une pompe et des petites buses & Adapté aux grosses plantes qui boivent beaucoup & Buses qui se bouchent \\
+\hline
+Aéroponie & Brouillard fin sur des racines suspendues dans l'air & Une pompe à haute pression, en continu & Croissance rapide, eau économisée & Buses fines, panne très risquée \\
+\hline
+Tour verticale & Eau montée par un tuyau central, répartie en haut par un couvercle, qui ruisselle le long des racines & Une pompe qui monte l'eau d'environ \qty{1,2}{m} (hauteur à fournir : \qty{2,6}{m} avec les pertes), par cycles de marche et d'arrêt & Beaucoup de plants sur peu de place, circuit fermé & Montée de l'eau à calculer, hauteur limitée \\
+\hline
+\end{tabularx}
+\caption{Tableau comparatif des sept grands systèmes hydroponiques.}
+\end{table}
+
+\textbf{À quoi sert ce tableau.} Il compare d'un seul regard les sept systèmes, pour comprendre pourquoi aucun n'est parfait et pourquoi la tour est un bon compromis. Chaque ligne décrit un système : son nom, la façon dont l'eau arrive aux racines, ce dont il a besoin pour fonctionner, ce qu'il fait bien et ce qu'il coûte en contrepartie.
+
+\textbf{Ce qu'il raconte.} Chaque point fort a sa contrepartie : l'aéroponie pousse très vite mais ne pardonne aucune panne, la mèche n'a besoin d'aucune électricité mais ne nourrit que de petites plantes. Tous les systèmes à pompe en continu (film nutritif, aéroponie, tour) sont exposés à la panne : sans pompe, plus d'eau pour les racines, d'où la surveillance et l'alimentation sûre de ma tour. La tour se distingue par sa place : beaucoup de plants sur très peu de surface avec un circuit fermé, au prix d'une eau à hisser en haut du tube, ce que j'ai chiffré dans l'étude hydraulique.
+
+Le schéma qui suit montre ce principe : un tuyau monte au centre de la tour, le couvercle répartit l'eau vers la paroi, elle ruisselle sur les racines puis retombe dans le bac.
+
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=0.85, >=stealth]
+  \definecolor{eauc}{RGB}{190,225,245}
+  \definecolor{plantec}{RGB}{70,150,70}
+  \definecolor{bleuc}{RGB}{30,60,150}
+  % bac
+  \draw[thick, fill=eauc] (0,0) rectangle (8,1.1);
+  \draw[thick] (0,1.1) rectangle (8,1.6);
+  % tour (tube PVC)
+  \draw[thick, fill=white] (2.6,1.6) rectangle (4.2,7.0);
+  % couvercle
+  \draw[thick, fill=gray!30] (2.45,7.0) rectangle (4.35,7.35);
+  \draw[thick, fill=gray!30] (3.2,7.35) rectangle (3.6,7.6);
+  % plants
+  \foreach \y in {2.7,3.9,5.1,6.3} {
+    \draw[fill=plantec, draw=plantec!60!black] (2.35,\y) ellipse (0.28 and 0.18);
+    \draw[fill=plantec, draw=plantec!60!black] (4.45,\y) ellipse (0.28 and 0.18);
+  }
+  % pompe (sous la tour, dans le bac)
+  \draw[thick, fill=white] (2.9,0.2) rectangle (3.9,0.75);
+  \node at (3.4,0.48) {\scriptsize P};
+  % tuyau de montee au centre de la tour
+  \draw[very thick, bleuc] (3.4,0.75) -- (3.4,7.0);
+  % eau projetee par le couvercle vers la paroi
+  \draw[->, bleuc] (3.4,6.85) -- (2.8,6.4);
+  \draw[->, bleuc] (3.4,6.85) -- (4.0,6.4);
+  % ruissellement le long de la paroi
+  \draw[->, bleuc] (2.8,6.2) -- (2.8,2.0);
+  \draw[->, bleuc] (4.0,6.2) -- (4.0,2.0);
+  % retour dans le bac
+  \draw[->, thick, bleuc] (2.8,1.95) -- (2.8,1.0);
+  \draw[->, thick, bleuc] (4.0,1.95) -- (4.0,1.0);
+  % etiquettes
+  \node[anchor=west] at (5.4,5.3) {\small tuyau de montée};
+  \node[anchor=west] at (5.4,4.85) {\small au centre de la tour};
+  \draw[thin] (5.35,5.1) -- (3.45,4.2);
+  \node[anchor=west] at (5.4,7.2) {\small couvercle répartiteur};
+  \draw[thin] (5.35,7.2) -- (4.4,7.2);
+  \node[anchor=east] at (1.9,4.4) {\small plants (4 niveaux)};
+  \node[anchor=east] at (1.9,3.4) {\small l'eau ruisselle};
+  \node[anchor=east] at (1.9,2.9) {\small sur les racines};
+  \node[anchor=east] at (-0.15,0.55) {\small bac principal};
+  \node[anchor=west] at (4.05,0.48) {\small pompe -M1};
+\end{tikzpicture}
+\caption{Principe de la tour : la pompe, au fond du bac, envoie l'eau par un tuyau qui monte au centre de la tour jusqu'au couvercle. Le couvercle la répartit vers la paroi, elle ruisselle sur les racines puis retombe dans le bac. Schéma simplifié : les douze plants ne sont pas tous représentés.}
+\end{figure}
+
+\begin{aretenir}
+Il n'existe pas de meilleur système dans l'absolu. Chacun convient à certaines plantes et à certaines contraintes. Choisir, c'est accepter ce que chaque système fait bien et ce qu'il fait moins bien.
+\end{aretenir}
+
+\subsection{Pourquoi une tour, et pourquoi de la laitue}
+
+Dans la liste précédente, je n'ai pas choisi la tour : elle nous a été imposée par notre tuteur, qui nous la fournit, et ce au vu des délais. Il en va de même pour l'alimentation par énergie solaire. Cette année, nous sommes arrivés en troisième année de licence, et nous n'avons eu que trois mois, de septembre à novembre, pour mener le projet de bout en bout. Dans un délai aussi court, on ne peut pas comparer plusieurs systèmes, en construire un de chaque sorte et mesurer lequel marche le mieux. Il fallait partir d'un système précis, et c'est la tour qui a été retenue.
+
+Je n'ai pas regretté ces contraintes. Avec si peu de temps, elles posent un cadre et donnent une direction à suivre : au lieu de me perdre à comparer toutes les possibilités, j'ai pu avancer tout de suite sur des choix précis. La tour a aussi de vrais atouts : peu de place au sol, une eau qui circule en circuit fermé, et un mécanisme assez simple à mesurer et à piloter. Elle impose aussi des contraintes, que les études de ce rapport détaillent : l'eau doit monter à environ un mètre, et la pompe doit tourner sans gaspiller la batterie.
+
+Le même manque de temps a guidé le choix de la plante. Une culture longue dépasserait largement la durée du projet. La laitue, elle, est prête environ un mois après son repiquage, et elle supporte très bien l'hydroponie. Elle me permet de voir pousser quelque chose pendant le projet. Les valeurs de pH et de conductivité utilisées par la tour sont donc celles de la laitue, tout en gardant celles de la tomate cerise et du poivron en réserve dans le tableau de bord, pour une future culture.
+
+\subsection{Ce que couvre ce rapport}
+
+\textbf{Périmètre de ce rapport.} Ce rapport inclut uniquement le travail que j'ai effectué. Le projet se mène à deux, et la part de mon partenaire, \textbf{Gabriel Piritua}, consiste à monter l'armoire électrique et à construire le chariot qui transportera tout le système. Son travail n'est pas disponible pour l'instant : il n'apparaît donc pas dans ce rapport, et son coût n'est pas compté. Quand il sera disponible, il pourra s'ajouter à cet ensemble.
+
+Mon travail, lui, va de la conception à la commande par ordinateur. Il comprend le calcul du circuit d'eau, le dimensionnement de l'alimentation solaire, la conception de la sonde de conductivité, la liste du matériel à acheter, le programme qui pilote la tour, le tableau de bord pour la surveiller, le suivi de la germination des laitues et enfin l'étude de ce que le système coûte et pourrait se vendre. Il comprend aussi un tutoriel pour que quelqu'un d'autre puisse l'installer.
+
+Mon tuteur est Monsieur Anthony Utahia. Il m'accompagne tout au long du projet, et c'est avec lui que je valide chaque grande décision.
+
+\Needspace{8\baselineskip}
+\begin{aretenir}
+Le projet est mené depuis septembre 2026. Il est en cours : certains éléments sont vérifiés sur la tour, d'autres sont calculés ou écrits mais pas encore essayés, et d'autres restent à construire. Ce rapport dit toujours dans quel état se trouve chaque élément.
+\end{aretenir}
+
+% ===== ETUDE HYDRAULIQUE =====
+\input{partie3_eau}
+\input{partie4}
+% ===== ETUDE ELECTRIQUE =====
+\input{partie5}
+% ===== ETUDE THERMIQUE =====
+\input{partie6}
+% ===== ETUDE INFORMATIQUE =====
+\input{partie_mesures}
+\input{partie8_a}
+\input{partie8_b}
+\input{partie8_c}
+\input{partie8_d}
+\input{partie8_e}
+\input{partie8_f}
+\input{partie13_deploiement}
+\input{partie_demo}
+\input{partie11}
+
+% ===== ETUDE FINANCIERE =====
+\input{partie2_mat}
+\input{partie10}
+% ===== PLANTES ET BILAN =====
+\input{partie9}
+\input{partie12}
+% ===== ANNEXES ET BIBLIOGRAPHIE =====
+\input{annexes_fin}
+\input{bibliographie}
+\end{document}

@@ -1,0 +1,112 @@
+% =====================================================================
+\clearpage
+\partieENO{L'étude financière}
+
+Cette partie répond à une question simple : combien coûte la tour, combien coûte son fonctionnement, et combien rapporte-t-elle ? Je commence par l'investissement de départ, repris de la partie 11. Je calcule ensuite les coûts annuels de fonctionnement, puis la valeur de la production de laitues. J'en déduis le temps de retour et le prix de revient d'une laitue. Plusieurs chiffres reposent sur des hypothèses : je les signale, parce qu'ils changeront avec les mesures et les vrais prix d'achat.
+
+\Needspace{8\baselineskip}\subsection{L'investissement de départ}
+
+Le matériel de la tour coûte \qty{84873}{XPF} (partie 11) : \qty{65953}{XPF} de matériel déjà disponible et \qty{18920}{XPF} à commander. S'y ajoute la livraison de la commande Adafruit par DHL Express, estimée à \qty{159,99}{USD}.
+
+\naturecalc{calcul de coût, à partir de prix relevés et d'hypothèses ; ce n'est pas une mesure}
+\begin{demonstration}[investissement total]
+\resultat{I = \qty{101863}{XPF}}
+Je convertis la livraison avec le taux de la partie 11 ($\qty{106,205}{XPF/USD}$) :
+\begin{align*}
+P_{liv} &= \qty{159,99}{USD} \times \qty{106,205}{XPF/USD}\\
+P_{liv} &\approx \qty{16992}{XPF}\\
+P_{liv} &\approx \qty{16990}{XPF}
+\end{align*}
+J'arrondis aux dix francs. L'investissement total est la somme du matériel et de la livraison :
+\begin{align*}
+I &= \qty{84873}{XPF} + \qty{16990}{XPF}\\
+I &= \qty{101863}{XPF}
+\end{align*}
+La part restant à débourser est $\qty{18920}{XPF} + \qty{16990}{XPF} = \qty{35910}{XPF}$. Les taxes d'importation en Polynésie ne sont pas comprises.
+\end{demonstration}
+
+\Needspace{8\baselineskip}\subsection{Les coûts de fonctionnement}
+
+L'électricité ne coûte rien : tout vient du panneau solaire. Les coûts sont les engrais, le correcteur de pH et le remplacement des batteries. L'eau du bac (\qty{2,3}{L/j}) est négligeable. Je ne chiffre pas les graines, la mousse de germination, les solutions d'étalonnage et le filament d'impression : leur coût est faible, mais je ne l'ai pas relevé.
+
+\naturecalc{calcul de coût, à partir de prix relevés et d'hypothèses ; ce n'est pas une mesure}
+\begin{demonstration}[coût annuel de fonctionnement]
+\resultat{C_f \approx \qty{12260}{XPF/an}}
+\textbf{Engrais.} La partie 5 estime à \qty{13,6}{mL/j} le volume de solution mère A, et autant de B. Sur un an :
+\begin{align*}
+V_{A} &= \qty{13,6}{mL/j} \times \qty{365}{j/an} = \qty{4964}{mL/an} \approx \qty{4,96}{L/an}
+\end{align*}
+Un lot d'engrais A et B de \qty{1}{L} chacun coûte \qty{12,90}{EUR}, soit $\qty{12,90}{EUR} \times \qty{119,332}{XPF/EUR} \approx \qty{1540}{XPF}$ (prix relevé en France, hors livraison jusqu'en Polynésie). Il faut donc $4{,}96$ lots par an :
+\begin{align*}
+C_{eng} &= 4{,}96 \times \qty{1540}{XPF}\\
+C_{eng} &\approx \qty{7640}{XPF/an}
+\end{align*}
+\textbf{Correcteur de pH.} \qty{6}{mL/j}, soit $\qty{6}{mL/j} \times \qty{365}{j/an} = \qty{2190}{mL/an} = \qty{2,19}{L/an}$. Je suppose un prix de \qty{950}{XPF} le litre (hypothèse, à remplacer par le vrai prix) :
+\begin{align*}
+C_{pH} &= \qty{2,19}{L/an} \times \qty{950}{XPF/L} \approx \qty{2080}{XPF/an}
+\end{align*}
+\textbf{Batteries.} Je suppose une durée de vie de 4 ans pour les deux batteries au plomb, de prix \qty{7320}{XPF} et \qty{2850}{XPF} :
+\begin{align*}
+C_{bat} &= \frac{\qty{7320}{XPF} + \qty{2850}{XPF}}{4\ \text{ans}} = \frac{\qty{10170}{XPF}}{4\ \text{ans}} \approx \qty{2540}{XPF/an}
+\end{align*}
+Le total est la somme des trois :
+\begin{align*}
+C_f &= \qty{7640}{XPF/an} + \qty{2080}{XPF/an} + \qty{2540}{XPF/an}\\
+C_f &= \qty{12260}{XPF/an}
+\end{align*}
+\end{demonstration}
+
+\Needspace{8\baselineskip}\subsection{La valeur de la production}
+
+La tour porte 12 laitues. Une laitue reste en tour environ 32 jours ; je compte 3 jours de nettoyage entre deux cultures, soit 35 jours par cycle. Les plants suivants sont semés en pépinière pendant que les précédents poussent, donc la tour ne reste jamais vide.
+
+\naturecalc{calcul de coût, à partir de prix relevés et d'hypothèses ; ce n'est pas une mesure}
+\begin{demonstration}[laitues par an et valeur de la production]
+\resultat{R \approx \qty{47640}{XPF/an}}
+Je note $n_c$ le nombre de cycles par an et $N$ le nombre de laitues par an. Un cycle dure \qty{35}{j} :
+\begin{align*}
+n_c &= \frac{\qty{365}{j/an}}{\qty{35}{j}} \approx 10{,}4 \qquad\text{(je retiens 10 cycles)}\\
+N &= 10 \times 12 = 120\ \text{laitues/an}
+\end{align*}
+Le prix indicatif d'une laitue à Tahiti est d'environ \qty{397}{XPF} (valeur moyenne relevée sur internet, à confirmer au marché). La valeur de la production est :
+\begin{align*}
+R &= N \times p = 120 \times \qty{397}{XPF}\\
+R &= \qty{47640}{XPF/an}
+\end{align*}
+Ce n'est pas un revenu : c'est la valeur des laitues au prix du marché, qu'elles soient vendues ou mangées. Le rendement réel sera connu à la première récolte.
+\end{demonstration}
+
+\Needspace{8\baselineskip}\subsection{Temps de retour et prix de revient}
+
+\naturecalc{calcul de coût, à partir de prix relevés et d'hypothèses ; ce n'est pas une mesure}
+\begin{demonstration}[temps de retour et prix de revient d'une laitue]
+\resultat{T_r \approx \qty{2,9}{ans}\quad;\quad p_r \approx \qty{272}{XPF/laitue}}
+Le gain annuel est la valeur de la production moins les coûts de fonctionnement :
+\begin{align*}
+G &= R - C_f = \qty{47640}{XPF/an} - \qty{12260}{XPF/an}\\
+G &= \qty{35380}{XPF/an}
+\end{align*}
+Le temps de retour est l'investissement divisé par le gain annuel :
+\begin{align*}
+T_r &= \frac{I}{G} = \frac{\qty{101863}{XPF}}{\qty{35380}{XPF/an}} \approx \qty{2,9}{ans}
+\end{align*}
+Si l'on ne compte que ce qu'il reste à débourser (\qty{35910}{XPF}), puisque le reste du matériel est déjà acheté :
+\begin{align*}
+T_r' &= \frac{\qty{35910}{XPF}}{\qty{35380}{XPF/an}} \approx \qty{1,0}{an}
+\end{align*}
+Pour le prix de revient, j'amortis l'investissement sur 5 ans (hypothèse) :
+\begin{align*}
+a &= \frac{\qty{101863}{XPF}}{5\ \text{ans}} \approx \qty{20370}{XPF/an}\\
+p_r &= \frac{a + C_f}{N} = \frac{\qty{20370}{XPF/an} + \qty{12260}{XPF/an}}{120\ \text{laitues/an}}\\
+p_r &\approx \qty{272}{XPF/laitue}
+\end{align*}
+Le seuil de rentabilité est le nombre de laitues $N_s$ pour lequel la valeur égale les coûts, $N_s\,p = a + C_f$ :
+\begin{align*}
+N_s &= \frac{\qty{32630}{XPF/an}}{\qty{397}{XPF}} \approx 82{,}2 \longrightarrow 83\ \text{laitues/an}
+\end{align*}
+\end{demonstration}
+
+\begin{aretenir}
+La tour coûte \qty{101863}{XPF} (livraison comprise, hors taxes d'importation) et environ \qty{12260}{XPF} par an à faire fonctionner. Elle produit environ 120 laitues par an, d'une valeur de \qty{47640}{XPF} au prix indicatif de \qty{397}{XPF}. Le prix de revient d'une laitue est d'environ \qty{272}{XPF}, et la tour est rentable à partir de 83 laitues par an. Ces chiffres sont un temps de retour théorique estimé et un prix de revient minimal : ils ne comptent ni les graines, ni la mousse de germination, ni les solutions d'étalonnage, ni le filament d'impression, et ils supposent que les 12 emplacements sont occupés toute l'année sans perte de plants. Si les batteries vivent à \qty{35}{\celsius}, leur durée tombe vers $4 \times 0{,}42 \approx \qty{1,7}{ans}$ (partie 6.7) : le coût des batteries passe à environ \qty{6050}{XPF/an}, le coût annuel à environ \qty{15770}{XPF}, le temps de retour à environ \qty{3,2}{ans} et le prix de revient à environ \qty{300}{XPF} par laitue. L'intérêt réel de ce projet reste pédagogique : le résultat dépend du prix de vente, du rendement mesuré et de la température de l'eau (partie 6).
+\end{aretenir}
+

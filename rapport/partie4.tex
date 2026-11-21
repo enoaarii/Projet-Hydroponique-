@@ -1,0 +1,136 @@
+% =====================================================================
+\clearpage
+\partieENO{La mécanique}
+
+Cette partie regarde la tour comme un objet qui doit tenir debout, porter l'eau et les plantes, et résister au vent. Je commence par la structure et ses masses. Je calcule ensuite la disposition des 12 trous de plantation. Je termine par la stabilité : le vent peut-il renverser la tour, et que faire quand le bac est presque vide ? Aucune dimension du bac n'a encore été mesurée avec précision : les valeurs marquées « hypothèse » sont à remplacer par des mesures.
+
+\Needspace{8\baselineskip}\subsection{La structure et les masses}
+
+La tour est un tube de PVC de \qty{1}{m} de haut, de diamètre extérieur \qty{159}{mm} et de diamètre intérieur \qty{144}{mm}. Il se tient dans le bac de \qty{152}{L}. Le couvercle répartiteur, imprimé en 3D en PETG, ferme le haut. Je veux connaître la masse du tube pour savoir ce que le bac doit porter.
+
+\naturecalc{théorie (dimensions du tube mesurées ; dimensions du bac, masses et vent : hypothèses à mesurer)}
+\begin{demonstration}[masse du tube de PVC]
+\resultat{m_t \approx \qty{5,0}{kg}}
+Je note $D_e$ le diamètre extérieur du tube, en mètres (\qty{0,159}{m}), $D_i$ son diamètre intérieur, en mètres (\qty{0,144}{m}), $H$ sa hauteur, en mètres (\qty{1}{m}), $\rho$ la masse volumique du PVC, en kg/m$^3$ (environ \qty{1400}{kg/m^3}), $A$ l'aire de la couronne de PVC, en m$^2$, et $m_t$ la masse du tube, en kg. L'aire d'un disque de diamètre $D$ vaut $\pi D^2/4$. L'aire de la couronne est la différence entre le disque extérieur et le disque intérieur :
+\begin{align*}
+A &= \frac{\pi D_e^2}{4} - \frac{\pi D_i^2}{4}\\
+A &= \frac{\pi}{4}\left(D_e^2 - D_i^2\right)\\
+A &= \frac{\pi}{4}\left((\qty{0,159}{m})^2 - (\qty{0,144}{m})^2\right)\\
+A &= \frac{\pi}{4} \times \qty{0,004545}{m^2}\\
+A &\approx \qty{0,00357}{m^2}
+\end{align*}
+Le volume du PVC est l'aire multipliée par la hauteur, et la masse est la masse volumique multipliée par le volume :
+\begin{align*}
+V &= A \, H = \qty{0,00357}{m^2} \times \qty{1}{m} = \qty{0,00357}{m^3}\\
+m_t &= \rho \, V\\
+m_t &= \qty{1400}{kg/m^3} \times \qty{0,00357}{m^3}\\
+m_t &\approx \qty{5,0}{kg}
+\end{align*}
+J'arrondis à un chiffre après la virgule. Le volume intérieur du tube vaut $\pi D_i^2 H / 4 \approx \qty{16,3}{L}$ : c'est la place disponible pour les racines.
+\end{demonstration}
+
+Je retiens pour la suite une masse de la tour à vide de \qty{7,3}{kg}, en comptant \qty{5,0}{kg} de tube, \qty{0,3}{kg} de couvercle et \qty{2,0}{kg} de plants, de paniers et de film d'eau (hypothèses à peser). Le bac vide pèse \qty{8}{kg} (hypothèse à peser).
+
+\Needspace{8\baselineskip}\subsection{Les trous de plantation}
+
+La tour porte 12 plants, répartis sur 4 niveaux de 3 plants. Les trois trous d'un niveau sont à \ang{120} les uns des autres, et chaque niveau est décalé de \ang{60} par rapport au précédent, pour que les feuilles ne se gênent pas. Les niveaux sont espacés de \qty{20}{cm}. Les trous reçoivent des paniers de \qty{50}{mm} de diamètre (hypothèse, à confirmer avec les paniers achetés). Je vérifie que la paroi reste assez solide entre deux trous d'un même niveau.
+
+\naturecalc{théorie (dimensions du tube mesurées ; dimensions du bac, masses et vent : hypothèses à mesurer)}
+\begin{demonstration}[largeur de paroi restante entre deux trous]
+\resultat{e \approx \qty{117}{mm}}
+Je note $D_e$ le diamètre extérieur du tube, en mètres (\qty{0,159}{m}), $P_e$ son périmètre extérieur, en mètres, $n$ le nombre de trous par niveau (sans unité, ici 3), $d_t$ le diamètre d'un trou, en mètres (\qty{0,050}{m}), et $e$ la largeur de paroi pleine entre deux trous voisins, en mètres. Le périmètre d'un cercle est $\pi$ fois son diamètre :
+\begin{align*}
+P_e &= \pi D_e\\
+P_e &= \pi \times \qty{0,159}{m}\\
+P_e &\approx \qty{0,4995}{m}
+\end{align*}
+Les $n$ trous occupent $n\,d_t$ de ce périmètre (en comptant le trou sur l'arc extérieur). Il reste $P_e - n\,d_t$, partagé en $n$ intervalles égaux :
+\begin{align*}
+e &= \frac{P_e - n\,d_t}{n}\\
+e &= \frac{\qty{0,4995}{m} - 3 \times \qty{0,050}{m}}{3}\\
+e &= \frac{\qty{0,3495}{m}}{3}\\
+e &\approx \qty{0,1165}{m}
+\end{align*}
+soit environ \qty{117}{mm}, en arrondissant au millimètre. La paroi pleine entre deux trous vaut plus de deux fois le diamètre d'un trou : le tube reste rigide.
+\end{demonstration}
+
+\Needspace{8\baselineskip}\subsection{La stabilité de la tour face au vent}
+
+\subsubsection*{Ce que je cherche et ce que je suppose}
+
+Je cherche à savoir si une rafale peut renverser le bac et la tour, et à partir de quelle quantité d'eau la tour est sûre. Le vent pousse la tour avec une force, qui crée un moment de renversement autour de l'arête basse du bac. Le poids du bac et de l'eau crée un moment inverse, qui le retient. La tour est sûre quand le moment qui retient vaut au moins deux fois celui qui renverse. Ce calcul ne concerne que la tour (tube, plants, bac et eau). Le panneau solaire porté par sa structure métallique et l'armoire électrique, placés en hauteur, offrent une surface au vent supplémentaire que je n'ai pas encore calculée : un second calcul sur l'installation complète, avec la fixation réelle au sol ou au plateau, est à faire avant de laisser le montage dehors par grand vent.
+
+Je suppose une rafale de $v = \qty{15}{m/s}$ (environ \qty{54}{km/h}, hypothèse pour les alizés de Tahiti), une masse volumique de l'air $\rho_a = \qty{1,2}{kg/m^3}$ et un coefficient de traînée d'un cylindre $C_d = 1{,}2$. Le bac a pour largeur $b = \qty{0,40}{m}$ et pour hauteur $h_b = \qty{0,40}{m}$ (hypothèses à mesurer).
+
+\naturecalc{théorie (dimensions du tube mesurées ; dimensions du bac, masses et vent : hypothèses à mesurer)}
+\begin{demonstration}[force du vent sur le tube]
+\resultat{F = \tfrac{1}{2}\,\rho_a\, C_d\, S\, v^2 \approx \qty{25,8}{N}}
+Je note $F$ la force du vent, en newtons, $S$ la surface que le tube présente au vent, en m$^2$, et $v$ la vitesse du vent, en m/s. La pression dynamique d'un écoulement d'air est l'énergie cinétique par unité de volume :
+\begin{align*}
+q &= \frac{1}{2}\,\rho_a\, v^2
+\end{align*}
+Une masse d'air $m$ qui se déplace à la vitesse $v$ a l'énergie cinétique $\tfrac{1}{2} m v^2$. En divisant par son volume $V$, on obtient $\tfrac{1}{2} (m/V) v^2 = \tfrac{1}{2} \rho_a v^2$, en joules par mètre cube, c'est-à-dire en pascals. La force est cette pression, multipliée par la surface au vent et par le coefficient de traînée $C_d$ qui dit quelle part de la pression s'applique réellement sur l'objet :
+\begin{align*}
+F &= C_d\, S\, q = \frac{1}{2}\,\rho_a\, C_d\, S\, v^2
+\end{align*}
+La surface au vent d'un cylindre est son diamètre multiplié par sa hauteur :
+\begin{align*}
+S &= D_e \, H = \qty{0,159}{m} \times \qty{1}{m} = \qty{0,159}{m^2}
+\end{align*}
+Application :
+\begin{align*}
+F &= \frac{1}{2} \times \qty{1,2}{kg/m^3} \times 1{,}2 \times \qty{0,159}{m^2} \times (\qty{15}{m/s})^2\\
+F &= \frac{1}{2} \times \qty{1,2}{kg/m^3} \times 1{,}2 \times \qty{0,159}{m^2} \times \qty{225}{m^2/s^2}\\
+F &\approx \qty{25,8}{N}
+\end{align*}
+J'arrondis à un chiffre après la virgule. L'unité est bien le newton : $\unit{kg/m^3} \times \unit{m^2} \times \unit{m^2/s^2} = \unit{kg\,m/s^2}$.
+\end{demonstration}
+
+\naturecalc{théorie (dimensions du tube mesurées ; dimensions du bac, masses et vent : hypothèses à mesurer)}
+\begin{demonstration}[moments et masse minimale]
+\resultat{m_{\min} = \dfrac{4\, F\, \left(h_b + H/2\right)}{g\, b} \approx \qty{23,6}{kg}}
+Je note $M_v$ le moment du vent autour de l'arête basse du bac, en N$\cdot$m, $M_p$ le moment du poids, en N$\cdot$m, $m$ la masse totale (bac, tour et eau), en kg, $g = \qty{9,81}{m/s^2}$ l'accélération de la pesanteur, et $n_s$ le coefficient de sécurité (sans unité). La force du vent s'applique au milieu du tube, à la hauteur $h_b + H/2$ au-dessus du sol, avec $H = \qty{1}{m}$. Un moment est une force multipliée par son bras de levier :
+\begin{align*}
+M_v &= F\left(h_b + \frac{H}{2}\right)\\
+M_v &= \qty{25,8}{N} \times \left(\qty{0,40}{m} + \qty{0,50}{m}\right)\\
+M_v &\approx \qty{23,2}{N\,m}
+\end{align*}
+Le poids $m g$ s'applique au centre du bac, à la distance $b/2$ de l'arête :
+\begin{align*}
+M_p &= m\, g\, \frac{b}{2}
+\end{align*}
+Je veux $M_p \ge n_s\, M_v$ avec $n_s = 2$. J'isole $m$ :
+\begin{align*}
+m\, g\, \frac{b}{2} &\ge 2\, M_v\\
+m &\ge \frac{4\, M_v}{g\, b}\\
+m_{\min} &= \frac{4 \times \qty{23,2}{N\,m}}{\qty{9,81}{m/s^2} \times \qty{0,40}{m}}\\
+m_{\min} &\approx \qty{23,6}{kg}
+\end{align*}
+Le bac vide et la tour pèsent $\qty{8}{kg} + \qty{7,3}{kg} = \qty{15,3}{kg}$. Il manque donc $\qty{23,6}{kg} - \qty{15,3}{kg} \approx \qty{8,3}{kg}$, soit environ \qty{8}{L} d'eau pour atteindre la sécurité. Avec le bac plein ($m = \qty{15,3}{kg} + \qty{152}{kg} = \qty{167,3}{kg}$), le coefficient de sécurité est :
+\begin{align*}
+n_s &= \frac{M_p}{M_v} = \frac{\qty{167,3}{kg} \times \qty{9,81}{m/s^2} \times \qty{0,20}{m}}{\qty{23,2}{N\,m}} \approx 14
+\end{align*}
+\end{demonstration}
+
+\naturecalc{théorie (dimensions du tube mesurées ; dimensions du bac, masses et vent : hypothèses à mesurer)}
+\begin{demonstration}[angle de basculement du bac presque vide]
+\resultat{\theta_c = \arctan\!\left(\dfrac{b/2}{h_G}\right) \approx \ang{20,5}}
+Je note $h_G$ la hauteur du centre de gravité, en mètres, et $\theta_c$ l'angle d'inclinaison à partir duquel le poids passe de l'autre côté de l'arête, en degrés. Le centre de gravité est la moyenne des positions pondérées par les masses. Le bac (\qty{8}{kg}) a son centre à \qty{0,20}{m} et la tour (\qty{7,3}{kg}) à \qty{0,90}{m} (\qty{0,40}{m} de bac plus \qty{0,50}{m} de demi-tour) :
+\begin{align*}
+h_G &= \frac{m_b \times \qty{0,20}{m} + m_{tour} \times \qty{0,90}{m}}{m_b + m_{tour}}\\
+h_G &= \frac{\qty{8}{kg} \times \qty{0,20}{m} + \qty{7,3}{kg} \times \qty{0,90}{m}}{\qty{15,3}{kg}}\\
+h_G &\approx \qty{0,534}{m}
+\end{align*}
+Quand on incline le bac d'un angle $\theta$ autour de l'arête, le poids passe de l'autre côté quand la verticale du centre de gravité dépasse l'arête. Dans le triangle rectangle de côtés $b/2$ et $h_G$ :
+\begin{align*}
+\tan \theta_c &= \frac{b/2}{h_G}\\
+\theta_c &= \arctan\!\left(\frac{\qty{0,20}{m}}{\qty{0,534}{m}}\right)\\
+\theta_c &\approx \ang{20,5}
+\end{align*}
+Ce seuil est inférieur au seuil de détection de chute de l'Arduino (\ang{35}, partie 8) : un bac presque vide qui bascule est donc déjà tombé quand la sécurité se déclenche. Il vaut mieux ne jamais le laisser vide.
+\end{demonstration}
+
+\begin{aretenir}
+Le tube de PVC pèse environ \qty{5,0}{kg}, et la paroi entre deux trous de plantation reste large de \qty{117}{mm}. Une rafale de \qty{15}{m/s} pousse la tour avec environ \qty{26}{N}. Le bac plein résiste largement (coefficient 14). Presque vide, il peut se renverser : il faut au moins \qty{8}{L} d'eau dedans pour garder un coefficient de 2, et lester le bac si le niveau doit descendre plus bas. Les dimensions du bac et les masses sont des hypothèses à mesurer.
+\end{aretenir}
+

@@ -1,0 +1,182 @@
+% =====================================================================
+%  eno.sty : le format ENO (cours, TD, rapports)  -  Enoaarii RAPARII
+%  Compilation : pdflatex (2 passes pour le Sommaire et n/N)
+% =====================================================================
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{eno}[2026/11/02 Format ENO]
+
+% ---------- Langue, police, page ----------
+\RequirePackage[T1]{fontenc}
+\RequirePackage[utf8]{inputenc}
+\RequirePackage{lmodern}
+\RequirePackage[provide=*,french]{babel}
+\RequirePackage[a4paper,top=2.6cm,bottom=2.6cm,left=2.5cm,right=2.5cm,headheight=14pt,headsep=1cm]{geometry}
+\RequirePackage{amsmath,amssymb,mathtools}
+\RequirePackage[locale=FR]{siunitx}
+\RequirePackage{graphicx}
+\RequirePackage[dvipsnames]{xcolor}
+\RequirePackage{tikz}
+\usetikzlibrary{babel}
+\RequirePackage{booktabs,array,tabularx}
+\RequirePackage{enumitem}
+\RequirePackage[most]{tcolorbox}
+\RequirePackage{fancyhdr}
+\RequirePackage{lastpage}
+\RequirePackage{titlesec}
+\RequirePackage{tocloft}
+\RequirePackage{caption}
+\RequirePackage{csquotes}
+\RequirePackage[hidelinks]{hyperref}
+
+% ---------- Couleurs du format ----------
+\definecolor{enoBleu}{RGB}{44,95,158}      % sous-parties, theoremes, cadre de garde
+\definecolor{enoCadre}{RGB}{31,78,140}     % bordure du bloc titre de garde
+\definecolor{enoRouge}{RGB}{192,40,40}     % demonstrations
+\definecolor{enoVert}{RGB}{46,125,70}      % propositions, A retenir
+\definecolor{enoOrange}{RGB}{214,110,30}   % email de la garde
+\definecolor{enoGris}{RGB}{110,110,110}    % surtitre, sous-titre, en-tete
+\definecolor{enoFilet}{RGB}{185,185,185}   % filet de l'en-tete
+
+% ---------- Texte aere ----------
+\linespread{1.22}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.75em}
+\setlength{\jot}{1.1em}   % espace entre les lignes d'un align : une formule par ligne, aeree
+\AtBeginDocument{%
+  \setlength{\abovedisplayskip}{1.1em}\setlength{\belowdisplayskip}{1.1em}%
+  \setlength{\abovedisplayshortskip}{0.9em}\setlength{\belowdisplayshortskip}{0.9em}}
+\setlist[itemize]{label=\textbullet,leftmargin=1.6em,itemsep=0.35em,topsep=0.4em}
+\setlist[enumerate]{leftmargin=1.8em,itemsep=0.35em,topsep=0.4em}
+
+% ---------- Infos du document ----------
+\newcommand{\enoformation}[1]{\def\eno@formation{#1}}   % ex. Licence << Sciences pour l'ingenieur >>
+\newcommand{\enocontexte}[1]{\def\eno@contexte{#1}}     % ligne en gras sous la formation
+\newcommand{\enotype}[1]{\def\eno@type{#1}}             % surtitre gris : Cours, TD n°2, Projet tutore...
+\newcommand{\enotitre}[1]{\def\eno@titre{#1}}           % grand titre
+\newcommand{\enosoustitre}[1]{\def\eno@soustitre{#1}}   % sous-titre gris
+\newcommand{\enoauteur}[1]{\def\eno@auteur{#1}}
+\newcommand{\enoemail}[1]{\def\eno@email{#1}}
+\newcommand{\enoversion}[1]{\def\eno@version{#1}}       % ex. Version 1.0 -- novembre 2026
+\newcommand{\enologo}[1]{\def\eno@logo{#1}}
+\enoformation{}\enocontexte{}\enotype{Cours}\enotitre{Titre}\enosoustitre{}
+\enoauteur{Enoaarii RAPARII}\enoemail{enoaarii.raparii@etudiant.upf.pf}
+\enoversion{}\enologo{logo_upf.png}
+
+% ---------- En-tete / pied de page ----------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize\color{enoGris}\eno@type\ -- \eno@titre}
+\fancyhead[R]{\footnotesize\color{enoGris}\eno@auteur}
+\fancyfoot[R]{\small\thepage/\pageref*{LastPage}}
+\renewcommand{\headrule}{\vspace{-4pt}{\color{enoFilet}\rule{\headwidth}{0.4pt}}}
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyhead[L]{\footnotesize\color{enoGris}\eno@type\ -- \eno@titre}%
+  \fancyhead[R]{\footnotesize\color{enoGris}\eno@auteur}%
+  \fancyfoot[R]{\small\thepage/\pageref*{LastPage}}}
+
+\fancypagestyle{garde}{%
+  \fancyhf{}%
+  \fancyhead[L]{\footnotesize\color{enoGris}\eno@type\ -- \eno@titre}%
+  \fancyhead[R]{\footnotesize\color{enoGris}\eno@auteur}}
+
+% ---------- Parties (noir) et sous-parties (bleu) ----------
+\titleformat{\section}{\normalfont\LARGE\bfseries\color{black}}{\thesection}{0.9em}{}
+\titlespacing*{\section}{0pt}{0.4em}{1.1em}
+\titleformat{\subsection}{\normalfont\Large\bfseries\color{enoBleu}}{\thesubsection}{0.8em}{}
+\titlespacing*{\subsection}{0pt}{1.5em}{0.7em}
+\titleformat{\subsubsection}{\normalfont\large\bfseries\color{black}}{\thesubsubsection}{0.7em}{}
+\titlespacing*{\subsubsection}{0pt}{1.1em}{0.5em}
+% chaque partie commence sur une nouvelle page
+\newcommand{\partieENO}[1]{\clearpage\section{#1}}
+
+% ---------- Sommaire ----------
+\addto\captionsfrench{\renewcommand{\contentsname}{Sommaire}}
+\renewcommand{\cfttoctitlefont}{\normalfont\LARGE\bfseries}
+\renewcommand{\cftaftertoctitle}{\vspace{0.6em}}
+\renewcommand{\cftsecfont}{\bfseries}
+\renewcommand{\cftsecpagefont}{\bfseries}
+\renewcommand{\cftsecleader}{\bfseries\cftdotfill{\cftdotsep}}
+\renewcommand{\cftsubsecfont}{\color{enoBleu}}
+\renewcommand{\cftsubsecpagefont}{\color{enoBleu}}
+\renewcommand{\cftdotsep}{1.5}
+\setlength{\cftbeforesecskip}{0.45em}
+\setlength{\cftsubsecindent}{1.6em}
+\setlength{\cftsubsecnumwidth}{2.3em}
+\newcommand{\sommaire}{\clearpage\tableofcontents\clearpage}
+
+% ---------- Page de garde ----------
+\newcommand{\pagedegarde}{%
+  \begin{titlepage}
+  \thispagestyle{garde}
+  \centering
+  \vspace*{1.2cm}
+  \includegraphics[width=6.6cm]{\eno@logo}\par
+  \vspace{2.6cm}
+  {\large \eno@formation\par}
+  \ifx\eno@contexte\@empty\else{\large\bfseries \eno@contexte\par}\fi
+  \vspace{2.2cm}
+  % bloc titre : bordure bleue, fond transparent
+  \begin{tcolorbox}[enhanced,sharp corners,boxrule=0.6pt,colframe=black,
+      colback=white,halign=center,left=6mm,right=6mm,top=5mm,bottom=5mm]
+    {\Large\color{enoGris}\eno@type\par}\vspace{0.35em}
+    {\fontsize{30}{36}\selectfont\bfseries \eno@titre\par}
+    \ifx\eno@soustitre\@empty\else\vspace{0.45em}{\large\color{enoGris}\eno@soustitre\par}\fi
+  \end{tcolorbox}
+  \vfill
+  {\large\bfseries \eno@auteur\par}\vspace{0.25em}
+  \ifx\eno@email\@empty\else{\color{enoOrange}\eno@email\par}\fi
+  \vspace{1.6cm}
+  \ifx\eno@version\@empty\else{\large \eno@version\par}\fi
+  \vspace*{2.4cm}
+  \end{titlepage}
+  \setcounter{page}{1}}
+
+% ---------- Remerciements ----------
+\newenvironment{remerciements}{\clearpage\section*{Remerciements}}{\par\bigskip\hfill\textit{\eno@auteur}\par}
+
+% ---------- Blocs : aucun cadre, aucune barre, aucun fond, tout en noir ----------
+\tcbset{enobox/.style={enhanced,breakable,frame hidden,interior hidden,boxrule=0pt,
+   left=0pt,right=0pt,top=0pt,bottom=0pt,boxsep=0pt,
+   before skip=1.2em,after skip=1.2em,
+   fonttitle=\bfseries,coltitle=black,colframe=black,
+   attach title to upper={\par\vspace{0.4em}},title={}}}
+
+% Theoreme (bleu)
+\newtcolorbox[auto counter]{theoreme}[1][]{enobox=enoBleu,
+   title={Théorème~\thetcbcounter\ifx\relax#1\relax\else\ (#1)\fi}}
+% Proposition (vert)
+\newtcolorbox[auto counter]{proposition}[1][]{enobox=enoVert,
+   title={Proposition~\thetcbcounter\ifx\relax#1\relax\else\ (#1)\fi}}
+% Definition (noir)
+\newtcolorbox[auto counter]{definition}[1][]{enobox=black,
+   title={Définition~\thetcbcounter\ifx\relax#1\relax\else\ (#1)\fi}}
+% Demonstration (rouge) : resultat en haut, puis detail du calcul
+\newtcolorbox{demonstration}[1][]{enobox=enoRouge,
+   title={Détail du calcul\ifx\relax#1\relax\else\ : #1\fi}}
+% Exemple / Exercice (gris fonce)
+\newtcolorbox{exemple}[1][]{enobox=enoGris,
+   title={Exemple\ifx\relax#1\relax\else\ : #1\fi}}
+% A retenir : simple barre verte a gauche, fond transparent
+\newtcolorbox{aretenir}[1][À retenir]{enhanced,breakable,frame hidden,interior hidden,boxrule=0pt,
+   left=0pt,right=0pt,top=0pt,bottom=0pt,boxsep=0pt,before skip=1.2em,after skip=1.2em,
+   fonttitle=\bfseries,coltitle=black,title={#1},attach title to upper={\par\vspace{0.3em}}}
+% Attention : barre rouge a gauche
+\newtcolorbox{attention}[1][Attention]{enhanced,breakable,frame hidden,interior hidden,boxrule=0pt,
+   left=0pt,right=0pt,top=0pt,bottom=0pt,boxsep=0pt,before skip=1.2em,after skip=1.2em,
+   fonttitle=\bfseries,coltitle=black,title={#1},attach title to upper={\par\vspace{0.3em}}}
+
+% Resultat en tete de demonstration : formule encadree, seule sur sa ligne
+\newcommand{\resultat}[1]{%
+  {\centering{\bfseries Résultat :}~$\displaystyle #1$\par}\vspace{0.8em}}
+
+% Etapes numerotees en pastilles bleues
+\DeclareRobustCommand{\pastille}[1]{\tikz[baseline=(n.base)]\node[circle,fill=enoBleu,text=white,
+   inner sep=1.4pt,minimum size=1.15em,font=\footnotesize\bfseries](n){#1};}
+\newlist{etapes}{enumerate}{1}
+\setlist[etapes]{label=\pastille{\arabic*},leftmargin=2.2em,itemsep=0.5em}
+
+% Legendes de figures : << Figure n -- texte >>
+\captionsetup{labelsep=endash,labelfont=bf,textfont={color=enoGris},font=small}
+
+\endinput

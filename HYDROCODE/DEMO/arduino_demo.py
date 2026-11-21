@@ -2,7 +2,7 @@
 
 Le serveur de démo (server.py) est celui de la vraie tour : seule la carte change. Cette classe simule
 une tour qui vit (pH qui monte, EC qui baisse, eau qui s'évapore, soleil, batterie) et renvoie des valeurs
-BRUTES (millivolts, ohms) : les conversions, l'étalonnage, la jauge de batterie et le pilote
+BRUTES (millivolts, ohms, sommes de la sonde EC) : les conversions, l'étalonnage, la jauge de batterie et le pilote
 (cycle de la pompe, coupure batterie, dosage) sont donc exactement ceux de la vraie tour.
 Les pompes font réellement réagir la simulation : l'engrais fait monter l'EC, le pH- fait baisser le pH.
 """
@@ -91,16 +91,46 @@ class Arduino:
 
     # ---------- Capteurs (valeurs brutes, comme la vraie carte) ----------
     def lire_analogiques(self, avec_ec=True):
+        """Mêmes valeurs brutes que la vraie carte : millivolts pour le pH, ohms pour le ruban,
+        et les deux sommes S1 et S2 pour la sonde EC en graphite."""
         self._avancer()
         r = pl.REGLAGES
         ph = self.ph + random.gauss(0, 0.01)
-        mv_ph = r["ph_v7"] + (ph - 7.0) * (r["ph_v4"] - r["ph_v7"]) / (4.0 - 7.0)
-        mv_ec = None
-        if avec_ec:
-            ec = self.ec + random.gauss(0, 3)
-            mv_ec = ec * (1 + 0.0185 * (self.temp_eau - 25)) * 820 * 200 / 1e6 / r["ec_k"]
+        # On part du pH voulu et on remonte à la tension, en inversant la droite d'étalonnage.
+        pente = (r["ph_ref2"] - r["ph_ref1"]) / (r["ph_mv2"] - r["ph_mv1"])
+        mv_ph = r["ph_mv1"] + (ph - r["ph_ref1"]) / pente
+        s1, s2 = self._sommes_ec() if avec_ec else (None, None)
         ohm = r["etape_vide"] - (self.niveau + random.gauss(0, 0.2)) / 100 * (r["etape_vide"] - r["etape_plein"])
-        return {"ph_mv": mv_ph, "ec_mv": mv_ec, "etape_ohm": ohm}
+        return {"ph_mv": mv_ph, "ec_s1": s1, "ec_s2": s2, "etape_ohm": ohm}
+
+    def _sommes_ec(self):
+        """Les deux sommes de la mesure EC, reconstruites à l'envers du calcul de pilote.py.
+
+        Le programme du Pi fait, dans l'ordre : x = S1/S2, puis Rw = R1 + P (x - 1),
+        puis sigma_T = K / Rw, ramenée à 25 °C. Ici on part de l'EC voulue et on remonte :
+          sigma_T = sigma_25 (1 + alpha (T - 25))   conductivité à la température de l'eau
+          Rw = K / sigma_T                          résistance de l'eau entre les mines
+          x = (Rw + rL) / (R1 + rL) = (Rw - R1 + P) / P   puisque P = R1 + rL
+        Chaque somme vaut 64 lectures du convertisseur 10 bits, donc au plus 64 x 1023 = 65 472.
+        On fixe S2 et on en déduit S1, en restant sous ce maximum."""
+        r = pl.REGLAGES
+        ec = max(1.0, self.ec + random.gauss(0, 3))            # µS/cm à 25 °C
+        sigma_t = ec * (1 + r["ec_alpha"] * (self.temp_eau - 25)) * 1e-6   # S/cm
+        rw = r["ec_cellule"] / sigma_t                          # ohms
+        x = (rw - r["ec_r1"] + r["ec_p"]) / r["ec_p"]
+        s2 = 20000 if x >= 1 else int(60000 / max(x, 0.05))
+        s2 = min(s2, 65000)
+        s1 = int(round(x * s2))
+        if s1 > 65472:                                          # saturation, comme sur la vraie carte
+            s1, s2 = 65472, int(round(65472 / x))
+        return s1, s2
+
+    def mesurer_ec(self):
+        """Comme la vraie carte : les deux sommes brutes de la sonde EC, ou None."""
+        return self._sommes_ec()
+
+    def mesurer_ec_sur(self, essais=2):
+        return self._sommes_ec()
 
     def lire_temp_eau(self):
         return round(self.temp_eau, 1)

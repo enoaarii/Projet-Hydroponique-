@@ -546,6 +546,7 @@ input:focus{outline:0;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,t
         <button id="csv-raw" class="btn primary" type="button">Télécharger les mesures (CSV)</button>
         <button id="csv-day" class="btn" type="button">Télécharger le résumé par jour (CSV)</button>
       </div>
+      <p id="csv-msg" class="cap" role="status"></p>
     </div>
   </section>
 
@@ -1152,6 +1153,12 @@ async function drawSummary(){
 // CSV « à la française » : point-virgule et virgule décimale, pour qu'Excel l'ouvre directement en colonnes.
 const csvNum=(v,d)=>v==null||Number.isNaN(v)?'':v.toFixed(d).replace('.',',');
 function saveCsv(name,lines){
+  // Dans la démonstration en ligne, le lecteur de page interdit de livrer un fichier :
+  // on le dit au lieu de ne rien faire. Sur la tour, DEMO_EN_LIGNE n'existe pas.
+  if(window.DEMO_EN_LIGNE){
+    $('#csv-msg').textContent='Téléchargement indisponible dans la démonstration en ligne. Sur la tour, ce bouton enregistre le fichier CSV.';
+    return;
+  }
   const blob=new Blob(['﻿'+lines.map(l=>l.join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
@@ -1492,6 +1499,10 @@ $('#pilot-form').addEventListener('submit',async e=>{
    écrire le retour) et data-type (comment formuler ce retour). */
 document.querySelectorAll('[data-etal]').forEach(b=>b.addEventListener('click',async()=>{
   const msg=$(b.dataset.msg), champ=b.dataset.champ?$(b.dataset.champ):null;
+  if(window.DEMO_EN_LIGNE){
+    msg.textContent='Indisponible dans la démonstration en ligne : il n\'y a pas de Raspberry derrière cette page. Sur la tour, ce bouton enregistre l\'étalonnage.';
+    return;
+  }
   let q=b.dataset.etal||'';
   if(champ){
     const v=champ.value.trim().replace(',','.');

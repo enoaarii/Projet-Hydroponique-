@@ -1,0 +1,110 @@
+% =====================================================================
+\clearpage
+\partieENO{Tutoriel : installer le cerveau sur un Raspberry Pi 3 B}
+
+Ce tutoriel s'adresse à quelqu'un qui n'a jamais utilisé un Raspberry Pi. Il part d'une carte vierge et va jusqu'à l'accès depuis un téléphone. Je commence par ce qu'il faut avoir. J'explique ensuite comment préparer la carte mémoire, comment se connecter au Pi à distance, comment installer le programme, comment le faire démarrer seul, puis comment y accéder de l'extérieur. Les commandes sont à taper telles quelles, dans le terminal du Pi, l'une après l'autre. Le programme complet de la tour (dossier \texttt{code}) n'est pas encore entièrement testé sur le vrai matériel : le fichier d'installation détaillé du projet (\texttt{INSTALL\_PI.md}) reste à écrire, et les noms exacts des dépendances sont à confirmer avec lui.
+
+\Needspace{8\baselineskip}\subsection{Ce qu'il faut}
+
+Il faut un Raspberry Pi 3 Model B, une carte microSD de \qty{16}{Go} ou plus, une alimentation \qty{5}{V} capable de fournir au moins \qty{2,5}{A} (dans la tour, c'est le convertisseur de \qty{3}{A}), un ordinateur avec un lecteur de carte, un réseau Wi-Fi, et un Arduino Uno R3 avec son câble USB. Le Pi 3 B se connecte en Wi-Fi sur la bande \qty{2,4}{GHz} seulement.
+
+\Needspace{8\baselineskip}\subsection{Préparer la carte mémoire}
+
+Le système du Raspberry Pi vit sur la carte microSD. Je télécharge sur l'ordinateur le logiciel gratuit Raspberry Pi Imager, je l'ouvre, je choisis le modèle « Raspberry Pi 3 », puis le système « Raspberry Pi OS Lite » (sans bureau graphique, plus léger : la tour n'a pas d'écran), puis ma carte microSD. Avant d'écrire, je clique sur les réglages pour renseigner un nom pour le Pi (par exemple \texttt{hydrotour}), un nom d'utilisateur et un mot de passe, le nom et le mot de passe de mon Wi-Fi, et je coche l'activation de SSH, qui permet de prendre la main à distance. Ensuite j'écris la carte, je la place dans le Pi et je l'alimente. Le premier démarrage dure environ deux minutes.
+
+\Needspace{8\baselineskip}\subsection{Se connecter au Pi}
+
+Depuis un ordinateur sur le même Wi-Fi, j'ouvre un terminal (sous Windows, le programme « Terminal » ou « PowerShell ») et je tape la commande ci-dessous, en remplaçant \texttt{utilisateur} par le nom choisi à l'étape précédente. Au premier essai, le terminal demande de confirmer l'empreinte : je tape \texttt{yes}, puis le mot de passe.
+
+\begin{verbatim}
+ssh utilisateur@hydrotour.local
+\end{verbatim}
+
+Si le nom \texttt{hydrotour.local} n'est pas reconnu, je cherche l'adresse du Pi dans la liste des appareils de ma box et je la tape à la place du nom. Une fois connecté, je mets le système à jour, ce qui peut prendre plusieurs minutes.
+
+\begin{verbatim}
+sudo apt update
+sudo apt full-upgrade -y
+sudo reboot
+\end{verbatim}
+
+\Needspace{8\baselineskip}\subsection{Installer le programme}
+
+Après le redémarrage, je me reconnecte. J'installe les outils de base, je crée un dossier pour la tour et un environnement Python isolé, puis j'installe les bibliothèques dont le programme a besoin : Flask pour le serveur web, et pyserial pour parler à l'Arduino.
+
+\begin{verbatim}
+sudo apt install -y python3-pip python3-venv
+mkdir ~/hydrotour
+python3 -m venv ~/hydrotour/venv
+source ~/hydrotour/venv/bin/activate
+pip install flask pyserial
+\end{verbatim}
+
+Je copie ensuite les fichiers du projet (\texttt{cerveau.py}, \texttt{server.py}, \texttt{hydrotour.html}) depuis mon ordinateur vers le Pi. Cette commande se tape sur l'ordinateur, pas sur le Pi, depuis le dossier qui contient les fichiers.
+
+\begin{verbatim}
+scp cerveau.py server.py hydrotour.html utilisateur@hydrotour.local:~/hydrotour/
+\end{verbatim}
+
+Je branche l'Arduino au Pi avec le câble USB. Je vérifie que le Pi le voit : la commande suivante doit afficher un nom comme \texttt{/dev/ttyACM0}.
+
+\begin{verbatim}
+ls /dev/ttyACM*
+\end{verbatim}
+
+Je teste le programme à la main, avant de l'automatiser. S'il tourne, je peux ouvrir le dashboard depuis un téléphone sur le même Wi-Fi, à l'adresse \texttt{http://hydrotour.local:5000}, puis arrêter le programme avec les touches Ctrl et C.
+
+\begin{verbatim}
+cd ~/hydrotour
+source venv/bin/activate
+python3 server.py
+\end{verbatim}
+
+\Needspace{8\baselineskip}\subsection{Le faire démarrer seul}
+
+Pour que la tour redémarre toute seule après une coupure de courant, je crée un service. J'ouvre un fichier avec l'éditeur de texte \texttt{nano}, en remplaçant \texttt{utilisateur} par le nom choisi :
+
+\begin{verbatim}
+sudo nano /etc/systemd/system/hydrotour.service
+\end{verbatim}
+
+J'y écris le texte suivant, j'enregistre avec Ctrl et O puis Entrée, et je quitte avec Ctrl et X.
+
+\begin{verbatim}
+[Unit]
+Description=HydroTour
+After=network.target
+
+[Service]
+User=utilisateur
+WorkingDirectory=/home/utilisateur/hydrotour
+ExecStart=/home/utilisateur/hydrotour/venv/bin/python server.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+\end{verbatim}
+
+Puis j'active le service et je regarde s'il tourne.
+
+\begin{verbatim}
+sudo systemctl daemon-reload
+sudo systemctl enable --now hydrotour
+systemctl status hydrotour
+\end{verbatim}
+
+\Needspace{8\baselineskip}\subsection{Y accéder de l'extérieur}
+
+Pour surveiller la tour depuis l'université, j'installe Tailscale\ix{20} sur le Pi, puis sur mon téléphone. Tailscale\ix{20} crée un réseau privé entre mes appareils, sans toucher aux réglages de la box. Sur le Pi, la première commande installe le programme, la seconde affiche un lien à ouvrir pour connecter le Pi à mon compte.
+
+\begin{verbatim}
+curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up
+\end{verbatim}
+
+Je change le mot de passe du dashboard dès la première connexion (bloc « Accès » des paramètres). Raspberry Pi Connect permet en plus d'ouvrir un terminal sur le Pi depuis un navigateur.
+
+\begin{attention}
+Un Pi qui redémarre tout seul ou qui affiche un éclair jaune manque de courant. Utilise une alimentation de \qty{5}{V} et \qty{2,5}{A} au moins, et, dans la tour, un câble court et épais (au moins \qty{0,5}{mm^2}) entre le convertisseur et le Pi (partie 5).
+\end{attention}
+

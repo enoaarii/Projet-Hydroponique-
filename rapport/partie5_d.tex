@@ -1,0 +1,47 @@
+
+\Needspace{8\baselineskip}\subsection{La tension réellement présente sur le réseau \qty{12}{V}}
+
+Je me demande si le régulateur délivre un \qty{12}{V} stable à la tour. La réponse décide du choix du convertisseur et de la tolérance des pompes. Je pars de la fiche du régulateur : sa sortie « charge » est reliée à la batterie, et il ne contient pas de convertisseur de tension qui régule cette sortie. Je cherche donc la tension $U_{bus}$ du réseau, en volts, en fonction de la tension $U_{bat}$ de la batterie, en volts. Je vérifie ensuite que chaque récepteur accepte toute la plage possible.
+
+\naturecalc{théorie (formule démontrée, valeurs de fiches techniques et hypothèses ; rien de mesuré)}
+\begin{demonstration}[tension du réseau et plage de fonctionnement]
+\resultat{U_{bus} = U_{bat} \quad \text{avec} \quad \qty{11,5}{V} \leq U_{bus} \leq \qty{14,4}{V}}
+Les récepteurs (pompes, carte MOSFET\ix{15}, convertisseur UBEC\ix{17}) et la batterie sont reliés aux mêmes deux fils. Deux points reliés par un fil sans résistance sont au même potentiel, donc la différence de potentiel entre les deux fils est la même pour tous :
+\begin{align*}
+U_{pompes} &= U_{MOSFET} = U_{UBEC}\\
+U_{pompes} &= U_{bus}
+\end{align*}
+Le fil entre la batterie et le réseau a une résistance $R_c$ (en ohms) très faible et traverse un courant $I$ (en ampères). La loi d'Ohm donne la chute de tension dans ce fil :
+\[
+\Delta U = R_c \times I
+\]
+La résistance d'un fil de cuivre de longueur $L$ (en mètres), de section $S$ (en \unit{mm^2}) et de résistivité $\rho = \qty{0,0172}{\ohm.mm^2/m}$ vaut :
+\begin{align*}
+R_c &= \rho \times \frac{L}{S}\\
+R_c &= \qty{0,0172}{\ohm.mm^2/m} \times \frac{\qty{1}{m}}{\qty{4}{mm^2}}\\
+R_c &\approx \qty{0,0043}{\ohm}
+\end{align*}
+Pour un fil de \qty{4}{mm^2} et \qty{1}{m} de longueur totale (aller et retour) et un courant de \qty{10}{A} :
+\begin{align*}
+\Delta U &= \qty{0,0043}{\ohm} \times \qty{10}{A}\\
+\Delta U &= \qty{0,043}{V}
+\end{align*}
+Cette chute est négligeable devant \qty{12}{V}, d'où $U_{bus} = U_{bat}$ à \qty{0,05}{V} près.
+
+La tension de la batterie n'est pas fixe : le régulateur la fait monter à \qty{14,4}{V} pendant l'absorption, la maintient à \qty{13,8}{V}, et coupe la sortie à \qty{11,5}{V} (reconnexion à \qty{12,6}{V}). Les écarts par rapport au \qty{12}{V} nominal valent :
+\begin{align*}
+\frac{\qty{14,4}{V} - \qty{12}{V}}{\qty{12}{V}} &= \frac{\qty{2,4}{V}}{\qty{12}{V}} = +\,20\,\%\\
+\frac{\qty{11,5}{V} - \qty{12}{V}}{\qty{12}{V}} &= \frac{-\qty{0,5}{V}}{\qty{12}{V}} \approx -\,4,2\,\%
+\end{align*}
+La tension du réseau varie donc de $-4,2\,\%$ à $+20\,\%$ autour de \qty{12}{V}. La largeur de la plage vaut :
+\[
+\Delta U_{plage} = \qty{14,4}{V} - \qty{11,5}{V} = \qty{2,9}{V}
+\]
+\end{demonstration}
+
+Il en découle une condition de choix : chaque récepteur doit accepter au moins \qtyrange{11,5}{14,4}{V}. Pour les pompes à \qty{12}{V} et la carte MOSFET\ix{15} (\qtyrange{3}{24}{V}), la plage est acceptée par la carte ; pour les pompes, je mesurerai le courant à \qty{14,4}{V} (mesure M1) car un moteur à courant continu tourne plus vite et consomme plus quand la tension monte. Pour le convertisseur UBEC\ix{17}, la fiche du modèle choisi doit annoncer une plage d'entrée qui contient \qtyrange{11,5}{14,4}{V} : c'est ce critère, et non la valeur \qty{12}{V}, qui fixe le choix. Enfin, le régulateur coupe la sortie à \qty{11,5}{V} : en dessous, tout le réseau s'éteint, y compris le Raspberry Pi, et ne se rallume qu'à \qty{12,6}{V}. Cet écart de \qty{1,1}{V} évite les redémarrages en boucle.
+
+\begin{aretenir}
+Brancher une batterie de \qty{12}{V} sur le régulateur ne donne pas un \qty{12}{V} régulé : le réseau suit la batterie, entre \qty{11,5}{V} et \qty{14,4}{V}. C'est donc la plage d'entrée de chaque récepteur qu'il faut vérifier.
+\end{aretenir}
+

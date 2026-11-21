@@ -1,0 +1,100 @@
+% =====================================================================
+% PARTIE : LE DEPLOIEMENT DU 20 NOVEMBRE 2026
+\clearpage
+\partieENO{Le déploiement du 20 novembre 2026}
+
+Cette partie est le compte rendu de la journée du 20 novembre 2026, au cours de laquelle la sonde de conductivité est passée de la conception à la mesure réelle. Je commence par la commande de mesure ajoutée au programme de l'Arduino, celle que la partie 7.6 annonçait comme restant à écrire. Je présente ensuite le calcul et l'étalonnage installés sur le Raspberry, puis la chaîne de compilation montée sur le Raspberry lui-même, qui permet de reprogrammer l'Arduino sans débrancher le câble. Je donne la première mesure obtenue dans l'eau. Je décris ensuite le nouvel écran d'étalonnage du dashboard. Je termine par le dépôt GitHub qui réunit tout le code, et par les problèmes rencontrés dans la journée avec la solution retenue pour chacun.
+
+% ---------------------------------------------------------------------
+\Needspace{8\baselineskip}\subsection{La commande de mesure dans l'Arduino}
+
+La partie 7.6 explique pourquoi la mesure doit se faire entièrement dans l'Arduino : une phase dure environ \qty{130}{\micro s}, alors qu'un aller-retour par le câble USB dure plusieurs millisecondes. Cette commande est maintenant écrite et installée.
+
+Elle s'ajoute au programme \texttt{HydroTour\_Firmata} sous la forme d'une fonctionnalité Firmata, c'est-à-dire d'un morceau de programme qui répond à un numéro de commande qui lui est propre. J'ai pris le numéro \texttt{0x0E}, qui fait partie des numéros laissés libres par la norme Firmata pour les commandes que chacun ajoute. Le Raspberry envoie trois octets, le début de message, le numéro de la commande, la fin de message. L'Arduino répond par les deux sommes $S_1$ et $S_2$, chacune découpée en trois paquets de sept bits, parce que Firmata ne transporte que des octets de sept bits.
+
+À la réception, l'Arduino met D5 et D6 en sortie, fait soixante-quatre fois les deux phases, puis remet les deux broches en entrée pour déconnecter la sonde. Dans chaque phase, il attend \qty{20}{\micro s} que la tension se stabilise, lit l'entrée A0 et ajoute la lecture à la somme de cette phase. Les deux phases ont exactement la même durée, une attente et une conversion analogique, si bien que le courant moyen dans l'eau est nul, condition posée à la partie 7.4. La mesure complète dure environ \qty{17}{ms}, et la sonde reste déconnectée le reste du temps.
+
+\Needspace{8\baselineskip}\subsection{Le calcul et l'étalonnage sur le Raspberry}
+
+Le Raspberry reçoit les deux sommes et fait le reste, dans l'ordre démontré à la partie 7.7. Il calcule d'abord le rapport $x = S_1/S_2$, puis la résistance de l'eau $R_w = R_1 + P\,(x-1)$, puis la conductivité $\sigma_T = K/R_w$, qu'il ramène enfin à \qty{25}{\celsius} avec le coefficient $\alpha$. Ces calculs sont dans \texttt{pilote.py}, avec la démonstration de chaque formule en commentaire, et les valeurs de départ sont $R_1 = \qty{340}{\ohm}$, $P = \qty{365}{\ohm}$, $K = \qty{0,489}{cm^{-1}}$ et $\alpha = \qty{0,02}{\per\celsius}$.
+
+La sonde EC perturbant la sonde pH, la carte de cette dernière est coupée pendant la mesure, par la sortie 4 de la carte 8 MOSFET\ix{15}, et le pH n'est pas lu dans les cinq secondes qui suivent. La mesure de l'EC a lieu une fois par minute, le pH toutes les dix secondes, conformément à la partie 7.6.
+
+L'étalonnage à deux solutions est fait depuis le dashboard. Le Raspberry garde, pour chaque solution, sa conductivité et le rapport $x$ mesuré dedans, puis calcule $P$ et $K$ dès que les deux points sont connus. Si le résultat n'a pas de sens, c'est-à-dire si $P$ ou $K$ est négatif, il refuse l'étalonnage et demande de recommencer.
+
+\Needspace{8\baselineskip}\subsection{Compiler et téléverser depuis le Raspberry}
+
+Reprogrammer l'Arduino depuis l'ordinateur obligerait à débrancher le câble USB du Raspberry, à le brancher sur l'ordinateur, puis à le remettre. J'ai donc installé sur le Raspberry \texttt{arduino-cli}, qui est l'environnement Arduino sans fenêtres, avec le compilateur AVR et la bibliothèque \texttt{ConfigurableFirmata}. Le Raspberry compile désormais le programme et le téléverse lui-même, par le câble déjà en place.
+
+\begin{verbatim}
+curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh \
+  | BINDIR=~/outils sh
+~/outils/arduino-cli core install arduino:avr
+~/outils/arduino-cli lib install ConfigurableFirmata
+\end{verbatim}
+
+La compilation se fait sans arrêter la tour, puisqu'elle ne touche à rien. Le téléversement, lui, demande d'arrêter le service \texttt{hydrotour} le temps de l'opération, car ce service occupe le port USB en permanence. Les pompes se coupent alors d'elles-mêmes par la sécurité des trente secondes.
+
+\begin{verbatim}
+~/outils/arduino-cli compile --fqbn arduino:avr:uno HydroTour_Firmata
+sudo systemctl stop hydrotour
+~/outils/arduino-cli upload -p /dev/ttyACM0 --fqbn arduino:avr:uno HydroTour_Firmata
+sudo systemctl start hydrotour
+\end{verbatim}
+
+Le programme occupe \qty{13110}{octets} de mémoire programme sur les \qty{32256}{} disponibles, soit \qty{40}{\percent}, et \qty{906}{octets} de mémoire vive sur \qty{2048}{}, soit \qty{44}{\percent}. L'ancien programme compilé, \texttt{HydroTour\_Firmata\_uno.hex}, est conservé : il suffit de le téléverser pour revenir en arrière.
+
+\Needspace{8\baselineskip}\subsection{La première mesure}
+
+Sonde en l'air, les deux sommes valent \num{65467} et \num{65470}, c'est-à-dire presque le maximum de \num{65472}. C'est le résultat attendu : sans eau entre les mines, le courant ne passe pas.
+
+Sonde dans l'eau du réservoir, la chaîne complète a donné sa première valeur le 20 novembre 2026 à \qty{13}{h}\,\qty{21}{min}, heure de Tahiti :
+
+\begin{verbatim}
+2026-11-20T23:21:34Z {'ph': 7.67, 'ec': 1438, 'temp_air': 31.0,
+                      'humidite': 70.9, 'lux': 2.0}
+\end{verbatim}
+
+Cette valeur de \qty{1438}{\micro S\per cm} est obtenue avec l'étalonnage de départ, et non avec un étalonnage mesuré : elle montre que la chaîne fonctionne de bout en bout, pas qu'elle est juste. La sonde DS18B20\ix{24} de l'eau n'étant pas encore branchée, le calcul suppose \qty{25}{\celsius} et n'applique donc aucune correction de température. L'étalonnage à deux solutions reste à faire, et c'est lui qui donnera la justesse annoncée à la partie 7.8.
+
+\Needspace{8\baselineskip}\subsection{Le nouvel écran d'étalonnage}
+
+L'écran d'étalonnage du dashboard ne proposait que quatre boutons, avec des valeurs figées : pH \num{7,00}, pH \num{4,00}, réservoir vide et réservoir plein. Je l'ai découpé en quatre sous-sections, une par sonde, et j'ai rendu les valeurs libres.
+
+Pour le pH, les deux solutions tampons ne sont plus imposées. La conversion passe maintenant par la droite qui joint les deux points d'étalonnage, ce qui permet d'utiliser n'importe quel couple de tampons, par exemple \num{6,86} et \num{4,01}, ou \num{7,00} et \num{10,01} :
+
+\[ \mathrm{pH} = \mathrm{pH}_1 + (U - U_1)\,\frac{\mathrm{pH}_2 - \mathrm{pH}_1}{U_2 - U_1} \]
+
+Pour l'EC, la conductivité de chaque solution étalon se saisit en \unit{\micro S\per cm} au lieu d'être figée à \qty{1,413}{mS\per cm} et \qty{12,88}{mS\per cm}. Pour le niveau d'eau, les deux boutons sont conservés. Pour la température, une sous-partie nouvelle permet de saisir la température lue sur un thermomètre de référence : le programme enregistre l'écart avec la sonde et l'ajoute à toutes les mesures suivantes.
+
+Chaque sous-section affiche en permanence la valeur brute lue par le capteur, la tension pour le pH, le rapport $x$ pour l'EC, la résistance pour le ruban, et l'étalonnage actuellement en mémoire. Chacune donne enfin son protocole en étapes numérotées, pour qu'il n'y ait pas à revenir au rapport pour étalonner.
+
+L'étalonnage du pH déjà enregistré dans la base n'est pas perdu : au premier démarrage, le programme recopie les anciennes valeurs dans la nouvelle forme, une seule fois.
+
+\Needspace{8\baselineskip}\subsection{Le dépôt GitHub}
+
+Tout le code du projet est désormais sur GitHub, ce qui donne une sauvegarde hors du Raspberry et de mon ordinateur, et permet de suivre ce qui change d'une version à l'autre.
+
+\textbf{Adresse :} \url{https://github.com/enoaarii/Projet-Hydroponique-}
+
+Le dossier \texttt{HYDROCODE/} contient le code réellement installé sur la tour : le programme de l'Arduino et son binaire de secours, les quatre programmes Python du Raspberry, le dashboard, les outils de diagnostic et d'essai, et la copie de démonstration. Le dossier \texttt{archive\_premiere\_version/} contient la première architecture, celle du programme unique \texttt{cerveau.py} décrit à la partie 8.12 : elle est gardée pour mémoire et n'est pas installée. Les dossiers \texttt{etudes/}, \texttt{documents/} et \texttt{resume/} contiennent les sources des études, les PDF compilés et les résumés.
+
+Les fichiers qui contiennent des secrets ou des données ne sont jamais envoyés : le fichier d'identifiants, la clé de session, la base de données et les fichiers d'étalonnage sont exclus par le fichier \texttt{.gitignore}. Le travail se fait sur une branche séparée, puis la branche est fusionnée dans la branche principale une fois relue.
+
+Pour récupérer tout le code sur une machine neuve, une seule commande suffit.
+
+\begin{verbatim}
+git clone https://github.com/enoaarii/Projet-Hydroponique-.git
+\end{verbatim}
+
+\Needspace{8\baselineskip}\subsection{Les problèmes rencontrés et leurs solutions}
+
+Quatre problèmes ont occupé la journée. Je les donne avec leur symptôme, leur cause et la correction retenue, parce que les trois derniers sont du genre à se reproduire.
+
+\textbf{Le code du dépôt ne correspondait pas à celui de la tour.} J'avais d'abord écrit la sonde EC dans \texttt{cerveau.py}, le programme de la première architecture, avec un Arduino commandé par lignes de texte. Or la tour tourne avec \texttt{server.py}, \texttt{pilote.py}, \texttt{arduino.py} et Firmata. Téléverser le programme écrit pour la première architecture aurait fait perdre la mesure de la batterie, la pression, l'écran, l'horloge et la page de connexion. La relecture de la partie 8.12 de ce rapport a tranché : seule la version actuelle est installée. J'ai donc repris le travail sur le code réellement en service, et rangé la première version dans \texttt{archive\_premiere\_version/}.
+
+\textbf{Deux versions différentes du même fichier.} Le fichier \texttt{arduino.py} du Raspberry faisait \qty{19118}{octets}, celui de mon ordinateur \qty{20052}{octets}. Le Raspberry tournait donc avec une version antérieure à mes améliorations de l'écran. J'ai comparé les empreintes des deux fichiers pour en être sûr, puis déployé la version récente, qui apporte l'écran en plus de la sonde. C'est le dépôt GitHub qui empêche désormais ce genre d'écart.
+
+\textbf{La réponse de la mesure EC n'arrivait jamais.} Le programme du Raspberry demandait la mesure et n'obtenait rien, une seconde durant, puis abandonnait. En parlant à l'Arduino directement, sans passer par la bibliothèque, la réponse arrivait pourtant bien, en quelques millisecondes. La cause est dans la bibliothèque \texttt{pyfirmata2} : lorsqu'elle reçoit un message dont le numéro ne lui est pas connu, elle l'abandonne en plein milieu sans aller jusqu'à sa fin, puis lit la suite de ce message comme si c'étaient de nouvelles commandes. Le flux se décale, et la réponse suivante est perdue. Or les modules du bus I2C\ix{12} n'étant pas tous branchés, l'Arduino envoyait justement des messages de texte pour signaler ses erreurs de lecture. J'ai reproduit le défaut hors de la tour pour en être certain : sans gestionnaire de texte, la réponse disparaît ; avec, elle arrive. La correction tient en deux points, traiter les messages de texte, ce qui empêche le flux de se décaler, et réessayer une fois la mesure si la réponse manque malgré tout.
+
+\textbf{Un essai qui ne prouvait rien.} Mon premier programme d'essai n'avait reçu aucune réponse, ce qui m'a fait croire un moment que l'Arduino était en cause. En réalité, il n'appelait pas la fonction qui lance le fil de lecture du port série, donc il ne pouvait rien recevoir, quoi que l'Arduino réponde. La leçon vaut d'être notée : un essai qui échoue n'accuse le matériel que si l'on a vérifié d'abord l'essai lui-même. C'est le dialogue direct avec l'Arduino, sans bibliothèque, qui a permis de trancher.

@@ -1,0 +1,207 @@
+
+\Needspace{8\baselineskip}\subsection{Le dimensionnement des batteries}
+
+\subsubsection*{LiFePO4 ou plomb AGM : les deux cas}
+
+Le cahier des charges indique des batteries LiFePO4, alors que la version 1 de l'étude les supposait au plomb AGM. Les deux technologies se comportent très différemment ; le tableau donne les valeurs retenues pour chacune.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Grandeur} & \textbf{LiFePO4} & \textbf{Plomb AGM} \\
+\hline
+Tension nominale de calcul $U_B$ & \qty{12,8}{V} & \qty{12,0}{V} \\
+\hline
+Profondeur de décharge admise (DoD\ix{27}) & 80\,\% & 50\,\% \\
+\hline
+Rendement énergétique charge et décharge & 0,95 & 0,85 \\
+\hline
+Courant de charge admis (usage courant) & $0{,}5\,C$ & $0{,}25\,C$ \\
+\hline
+Tension de charge (absorption) & \qtyrange{14,2}{14,6}{V} & \qtyrange{14,4}{14,7}{V} \\
+\hline
+Tension de maintien (floating) & aucune ou \qty{13,6}{V} & \qtyrange{13,5}{13,8}{V} \\
+\hline
+Tension au repos, batterie pleine & environ \qty{13,4}{V} & environ \qty{12,8}{V} \\
+\hline
+Tension au repos, batterie vide & environ \qty{12,0}{V} & environ \qty{11,9}{V} (à 50\,\%) \\
+\hline
+Protection interne (BMS) & oui, en général & non \\
+\hline
+Énergie nominale (\qty{23}{Ah}) & \qty{294,4}{Wh} & \qty{276,0}{Wh} \\
+\hline
+Énergie utilisable (\qty{23}{Ah}) & \qty{235,5}{Wh} & \qty{138,0}{Wh} \\
+\hline
+\end{tabular}
+\caption{Comparaison des deux technologies de batterie, pour \qty{23}{Ah} au total.}
+\end{table}
+
+\begin{attention}
+À vérifier avant tout raccordement. Il faut lire sur l'étiquette de chaque batterie sa technologie (LiFePO4, « Lithium Iron Phosphate », ou « SLA, AGM, Lead Acid »). Mettre en parallèle deux technologies différentes est interdit : les tensions de charge, les courbes de décharge et les protections sont différentes, et l'une des deux serait surchargée ou détruite. Si les deux batteries ne sont pas de la même technologie, il faut n'en utiliser qu'une, ou en remplacer une. Il faut aussi régler le régulateur MPPT\ix{19} sur le type de batterie réel (profil lithium ou plomb).
+\end{attention}
+
+\naturecalc{théorie (formule démontrée, valeurs de fiches techniques et hypothèses ; rien de mesuré)}
+\begin{demonstration}[énergie utilisable d'une batterie]
+\resultat{E_u = U_B\, C\; \mathrm{DoD\ix{27}}}
+Je note $C$ la capacité, en ampères-heures, $U_B$ la tension moyenne, en volts, $I$ le courant, en ampères, $\Delta t$ la durée, en heures, et DoD\ix{27} la profondeur de décharge admise (sans unité). Une capacité $C$ délivrée sous la tension moyenne $U_B$ correspond à l'énergie : avec $P = U_B\, I$ et $C = I\,\Delta t$, et $E = P\,\Delta t$ (même raisonnement que pour un composant),
+\begin{align*}
+E_{nom} &= U_B\, I\,\Delta t\\
+E_{nom} &= U_B\, C
+\end{align*}
+On ne s'autorise à prélever que la fraction DoD\ix{27}, pour préserver la durée de vie :
+\begin{align*}
+E_u &= U_B\, C\; \mathrm{DoD}
+\end{align*}
+Deux batteries de même tension en parallèle additionnent leurs capacités (les courants s'additionnent à tension égale) :
+\begin{align*}
+C &= C_1 + C_2\\
+C &= \qty{6}{Ah} + \qty{17}{Ah}\\
+C &= \qty{23}{Ah}
+\end{align*}
+Application aux deux technologies :
+\begin{align*}
+E_{u,LFP} &= \qty{12,8}{V} \times \qty{23}{Ah} \times 0{,}80 = \qty{235,5}{Wh}\\
+E_{u,AGM} &= \qty{12,0}{V} \times \qty{23}{Ah} \times 0{,}50 = \qty{138,0}{Wh}
+\end{align*}
+\end{demonstration}
+
+\subsubsection*{L'autonomie de nuit}
+
+La nuit compte 14 heures sans production utile (de 17 h à 7 h, hypothèse prudente pour juin). Pendant cette période, la circulation tourne 7 fois \qty{15}{min} (à 17 h, 17 h 30, 21 h, 0 h, 3 h, 6 h et 6 h 30). Elle représente donc $t_{c,nuit} = 7 \times \qty{0,25}{h} = \qty{1,75}{h}$ de marche. C'est le même programme que dans la partie 5.3 : il compte $\qty{6}{h}$ de marche entre 6 h et 18 h et $\qty{0,75}{h}$ la nuit (21 h, 0 h, 3 h), soit $\qty{6,75}{h}$ par jour. Ici, la nuit est comptée de 17 h à 7 h, donc elle contient en plus les marches de 17 h, 17 h 30, 6 h et 6 h 30 (4 fois \qty{0,25}{h}) : $\qty{0,75}{h} + \qty{1,00}{h} = \qty{1,75}{h}$. Le total journalier reste le même.
+
+\naturecalc{théorie (formule démontrée, valeurs de fiches techniques et hypothèses ; rien de mesuré)}
+\begin{demonstration}[énergie consommée la nuit]
+\resultat{E_n \approx \qty{89,8}{Wh}\ \Rightarrow\ \dfrac{E_n}{E_u} = 65\,\%\ \text{(AGM)}\ \text{ou}\ 38\,\%\ \text{(LiFePO4)}}
+Pendant les 14 heures, l'électronique et le régulateur consomment en permanence ; la pompe consomme en plus pendant \qty{1,75}{h}, avec ses pertes MOSFET\ix{15} :
+\begin{align*}
+E_n &= (P_{12,e} + P_{MPPT}) \times \qty{14}{h} + (P_c + P_1) \times t_{c,nuit}\\
+E_n &= (\qty{3,825}{W} + \qty{0,192}{W}) \times \qty{14}{h} + (\qty{19}{W} + \qty{0,154}{W}) \times \qty{1,75}{h}\\
+E_n &= \qty{56,24}{Wh} + \qty{33,52}{Wh}\\
+E_n &= \qty{89,76}{Wh}\\
+E_n &\approx \qty{89,8}{Wh}
+\end{align*}
+Part de l'énergie utilisable consommée la nuit :
+\begin{align*}
+\frac{E_n}{E_{u,LFP}} &= \frac{\qty{89,8}{Wh}}{\qty{235,5}{Wh}} = 38\,\%\\
+\frac{E_n}{E_{u,AGM}} &= \frac{\qty{89,8}{Wh}}{\qty{138,0}{Wh}} = 65\,\%
+\end{align*}
+La profondeur de décharge réelle au matin, rapportée à l'énergie nominale, vaut $\qty{89,8}{Wh}/\qty{294,4}{Wh} = 30\,\%$ en LiFePO4 ou $\qty{89,8}{Wh}/\qty{276,0}{Wh} = 33\,\%$ en AGM. La nuit passe donc, dans les deux cas, sans dépasser la profondeur de décharge admise.
+\end{demonstration}
+
+\subsubsection*{Les jours sans soleil}
+
+\naturecalc{théorie (formule démontrée, valeurs de fiches techniques et hypothèses ; rien de mesuré)}
+\begin{demonstration}[autonomie sans aucune production]
+\resultat{N_0 = \dfrac{E_u}{E_j} \approx \qty{0,61}{j}\ \text{(AGM)}\ \text{ou}\ \qty{1,04}{j}\ \text{(LiFePO4)}}
+Je note $N_0$ le nombre de jours que tient la batterie sans aucune production (sans unité de temps autre que le jour). Chaque jour, la tour consomme $E_j$ : le nombre de jours est l'énergie utilisable divisée par la consommation d'un jour.
+\begin{align*}
+N_0 &= \frac{E_u}{E_j}\\
+N_{0,LFP} &= \frac{\qty{235,5}{Wh}}{\qty{226,7}{Wh/j}} \approx \qty{1,04}{j}\\
+N_{0,AGM} &= \frac{\qty{138,0}{Wh}}{\qty{226,7}{Wh/j}} \approx \qty{0,61}{j}
+\end{align*}
+\end{demonstration}
+
+\naturecalc{théorie (formule démontrée, valeurs de fiches techniques et hypothèses ; rien de mesuré)}
+\begin{demonstration}[autonomie par jours très couverts]
+\resultat{N_c = \dfrac{E_u}{E_j - E_c} \approx \qty{1,0}{j}\ \text{(AGM)}\ \text{ou}\ \qty{1,9}{j}\ \text{(LiFePO4)}}
+Un jour très couvert apporte encore environ $H_c = \qty{1,2}{kWh/m^2/j}$ (hypothèse). Je note $E_c$ la production de ce jour, en Wh/j, $D$ le déficit journalier, en Wh/j, et $N_c$ le nombre de jours couverts consécutifs supportés en partant de batteries pleines. Le déficit est la consommation moins la production, et le nombre de jours est l'énergie utilisable divisée par le déficit :
+\begin{align*}
+D &= E_j - E_c\\
+N_c &= \frac{E_u}{D}
+\end{align*}
+Cas LiFePO4 ($PR = 0{,}703$) :
+\begin{align*}
+E_{c,LFP} &= \qty{120}{W} \times \qty{1,2}{h/j} \times 0{,}703 \approx \qty{101,2}{Wh/j}\\
+D_{LFP} &= \qty{226,7}{Wh/j} - \qty{101,2}{Wh/j} = \qty{125,5}{Wh/j}\\
+N_{c,LFP} &= \frac{\qty{235,5}{Wh}}{\qty{125,5}{Wh/j}} \approx \qty{1,9}{j}
+\end{align*}
+Cas plomb AGM ($PR = 0{,}629$) :
+\begin{align*}
+E_{c,AGM} &= \qty{120}{W} \times \qty{1,2}{h/j} \times 0{,}629 = \qty{90,6}{Wh/j}\\
+D_{AGM} &= \qty{226,7}{Wh/j} - \qty{90,6}{Wh/j} = \qty{136,1}{Wh/j}\\
+N_{c,AGM} &= \frac{\qty{138,0}{Wh}}{\qty{136,1}{Wh/j}} \approx \qty{1,0}{j}
+\end{align*}
+\end{demonstration}
+
+\textbf{Interprétation.} Les batteries couvrent largement la nuit, mais pas une longue période couverte. Le programme du Raspberry Pi doit donc prévoir un \textbf{mode sobriété} déclenché sur la tension de la batterie mesurée par l'INA260\ix{22} (par exemple sous \qty{12,9}{V} au repos en LiFePO4) : circulation réduite à \qty{10}{min} par heure le jour, nuit inchangée. La consommation descend alors vers \qty{150}{Wh/j} : la circulation tourne $12 \times \qty{10}{min} = \qty{2}{h}$ le jour et \qty{0,75}{h} la nuit, soit \qty{2,75}{h}, d'où $\qty{19}{W} \times \qty{2,75}{h} = \qty{52,25}{Wh/j}$ pour la pompe, auxquels s'ajoutent \qty{91,81}{Wh/j} d'électronique, \qty{0,42}{Wh/j} de pertes MOSFET\ix{15}, \qty{0,96}{Wh/j} de doseuses et \qty{4,61}{Wh/j} d'autoconsommation du MPPT\ix{19}, ce qui fait $\qty{150,05}{Wh/j}$.
+
+\naturecalc{théorie (formule démontrée, valeurs de fiches techniques et hypothèses ; rien de mesuré)}
+\begin{demonstration}[capacité pour deux jours sans soleil]
+\resultat{C_{2j} = \dfrac{2\,E_j}{U_B\,\mathrm{DoD\ix{27}}} \approx \qty{76}{Ah}\ \text{(AGM)}\ \text{ou}\ \qty{44}{Ah}\ \text{(LiFePO4)}}
+Pour tenir $N = 2$ jours sans soleil, il faut une énergie utilisable $E_u = N\,E_j$. D'après la démonstration de l'énergie utilisable, $E_u = U_B\, C\,\mathrm{DoD}$, d'où la capacité nécessaire :
+\begin{align*}
+N\,E_j &= U_B\, C_{2j}\,\mathrm{DoD}\\
+C_{2j} &= \frac{N\,E_j}{U_B\,\mathrm{DoD}}
+\end{align*}
+\begin{align*}
+C_{2j,LFP} &= \frac{2 \times \qty{226,7}{Wh}}{\qty{12,8}{V} \times 0{,}80} \approx \qty{44}{Ah}\\
+C_{2j,AGM} &= \frac{2 \times \qty{226,7}{Wh}}{\qty{12,0}{V} \times 0{,}50} \approx \qty{76}{Ah}
+\end{align*}
+La batterie de \qty{23}{Ah} est donc trop petite pour deux jours sans soleil complet : le mode sobriété est indispensable.
+\end{demonstration}
+
+\subsubsection*{La mise en parallèle de deux batteries de capacités différentes}
+
+\naturecalc{théorie (formule démontrée, valeurs de fiches techniques et hypothèses ; rien de mesuré)}
+\begin{demonstration}[partage du courant entre deux batteries en parallèle]
+\resultat{I_k = I\,\dfrac{C_k}{C_1 + C_2}}
+Chaque batterie se modélise par une force électromotrice $E_k$ en série avec une résistance interne $R_k$. Je note $I_k$ le courant de la batterie $k$, en ampères, et $I = I_1 + I_2$ le courant total. En parallèle, elles ont la même tension $U$ aux bornes :
+\begin{align*}
+U &= E_1 - R_1 I_1 = E_2 - R_2 I_2
+\end{align*}
+Si les deux batteries sont au même état de charge, $E_1 = E_2$, donc :
+\begin{align*}
+R_1 I_1 &= R_2 I_2
+\end{align*}
+Avec $I = I_1 + I_2$, on a $I_2 = I - I_1$, donc $R_1 I_1 = R_2 (I - I_1)$ et :
+\begin{align*}
+I_1 &= I\,\frac{R_2}{R_1 + R_2}\\
+I_2 &= I\,\frac{R_1}{R_1 + R_2}
+\end{align*}
+Pour une même technologie, la résistance interne est à peu près inversement proportionnelle à la capacité, $R_k = r/C_k$ ($r$ constante). Je remplace :
+\begin{align*}
+I_1 &= I\,\frac{r/C_2}{r/C_1 + r/C_2}
+\end{align*}
+Je multiplie haut et bas par $C_1 C_2/r$ :
+\begin{align*}
+I_1 &= I\,\frac{C_1}{C_1 + C_2}
+\end{align*}
+Chaque batterie prend une part du courant proportionnelle à sa capacité : elles se chargent et se déchargent au même régime ($I_k/C_k$ identique).
+
+Courant de circulation : si l'on relie deux batteries dont les tensions diffèrent de $\Delta E = E_1 - E_2$, sans charge extérieure, la loi des mailles donne :
+\begin{align*}
+I_{circ} &= \frac{E_1 - E_2}{R_1 + R_2}
+\end{align*}
+\end{demonstration}
+
+\naturecalc{théorie (formule démontrée, valeurs de fiches techniques et hypothèses ; rien de mesuré)}
+\begin{demonstration}[partage du courant de charge et courant de circulation]
+\resultat{I_{B1} \approx \qty{2,32}{A},\quad I_{B2} \approx \qty{6,58}{A},\quad I_{circ} \approx \qty{3,7}{A}}
+Je note $I_{ch}$ le courant de charge maximal sortant du régulateur, en ampères. La puissance maximale du panneau, réduite par le rendement du régulateur, charge la batterie sous la tension $U_B$ :
+\begin{align*}
+I_{ch} &= \frac{P_c\, k_{MPPT}}{U_B}\\
+I_{ch} &= \frac{\qty{120}{W} \times 0{,}95}{\qty{12,8}{V}}\\
+I_{ch} &\approx \qty{8,9}{A}
+\end{align*}
+(Avec $U_B = \qty{12,0}{V}$ en plomb AGM, le même calcul donne $\qty{120}{W} \times 0{,}95/\qty{12,0}{V} = \qty{9,5}{A}$.) D'après la démonstration précédente, le courant de chaque batterie vaut :
+\begin{align*}
+I_{B1} &= \qty{8,9}{A} \times \frac{\qty{6}{Ah}}{\qty{23}{Ah}} \approx \qty{2,32}{A}\\
+I_{B2} &= \qty{8,9}{A} \times \frac{\qty{17}{Ah}}{\qty{23}{Ah}} \approx \qty{6,58}{A}
+\end{align*}
+Le régime de charge de chaque batterie vaut $\qty{2,32}{A}/\qty{6}{Ah} = \qty{6,58}{A}/\qty{17}{Ah} \approx 0{,}39\,C$. En LiFePO4, $0{,}39\,C$ est inférieur à $0{,}5\,C$ : c'est acceptable. En plomb AGM, $0{,}39\,C$ est supérieur à $0{,}25\,C$ (et à $0{,}41\,C$ avec \qty{9,5}{A}) : la charge est un peu trop forte en plein soleil, ce qui accélère le vieillissement. Il faut alors limiter le courant de charge à environ $0{,}25 \times \qty{23}{Ah} \approx \qty{5,8}{A}$ si le régulateur le permet (à vérifier dans sa notice), ou accepter un vieillissement plus rapide.
+
+Courant de circulation si l'on relie les batteries avec $\Delta E = \qty{0,3}{V}$ d'écart. Je suppose $R_{B1} = \qty{60}{m\ohm}$ pour la batterie de \qty{6}{Ah} (hypothèse, sans fiche technique : à mesurer), donc, par proportion inverse à la capacité, $R_{B2} = \qty{60}{m\ohm} \times 6/17 \approx \qty{21}{m\ohm}$ :
+\begin{align*}
+I_{circ} &= \frac{\qty{0,3}{V}}{\qty{0,060}{\ohm} + \qty{0,021}{\ohm}}\\
+I_{circ} &\approx \qty{3,7}{A}
+\end{align*}
+Un faible écart de tension provoque déjà un courant important : d'où les précautions qui suivent.
+\end{demonstration}
+
+\textbf{Précautions de mise en parallèle.} Je commence par exiger la même technologie et la même tension nominale, ce qui est obligatoire. Ensuite, je charge chaque batterie séparément jusqu'à pleine charge, puis je vérifie au multimètre un écart de tension inférieur à \qty{0,05}{V} avant de les relier. Je place un fusible par batterie ($F_{B1}$, $F_{B2}$), au plus près de la borne $+$ : un court-circuit interne d'une batterie ne doit pas être alimenté par l'autre. J'utilise des câbles de même section et de même longueur entre chaque batterie et le bus. Je fais le raccordement « en diagonale » : le $+$ du bus est pris sur une batterie et le $-$ sur l'autre, pour équilibrer les chutes de tension. En LiFePO4, chaque batterie a son BMS : si l'un coupe, toute la charge passe dans l'autre (voir le choix des fusibles, partie 5.7). Enfin, je remplace les deux batteries ensemble en fin de vie.
+
+\begin{aretenir}
+Capacité totale \qty{23}{Ah}. Énergie utilisable : \qty{138,0}{Wh} en plomb AGM (DoD\ix{27} 50\,\%), \qty{235,5}{Wh} en LiFePO4 (DoD\ix{27} 80\,\%). La nuit consomme \qty{89,8}{Wh}, soit 65\,\% (AGM) ou 38\,\% (LiFePO4) de l'énergie utilisable. Autonomie sans soleil : \qty{0,6}{j} (AGM) ou \qty{1,0}{j} (LiFePO4) ; par jours très couverts : \qty{1,0}{j} ou \qty{1,9}{j}. Un mode sobriété piloté par la tension de la batterie est nécessaire. La technologie réelle des deux batteries doit être lue sur leurs étiquettes : jamais deux technologies différentes en parallèle.
+\end{aretenir}

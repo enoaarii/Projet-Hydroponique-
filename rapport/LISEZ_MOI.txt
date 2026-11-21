@@ -1,0 +1,10 @@
+Sources LaTeX du rapport HydroTour v6.6
+
+Fichier principal : partie1.tex
+Compilation (3 passes pour le sommaire et les references) :
+  pdflatex partie1.tex
+  pdflatex partie1.tex
+  pdflatex partie1.tex
+
+Resultat attendu : partie1.pdf, 276 pages.
+Les images sont dans img/, les schemas PDF a la racine et dans eagle/.

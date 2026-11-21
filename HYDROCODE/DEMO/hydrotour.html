@@ -329,6 +329,12 @@ html:has(.sheet[open]){overflow:hidden}
 .sum small{display:block;color:var(--muted);font-size:11.5px}
 
 .cap{margin:6px 0 0;color:var(--muted);font-size:12.5px}
+/* Étalonnage : un point par ligne, les champs de saisie alignés entre eux. */
+.etal-proto{margin:6px 0 0;padding-left:20px;color:var(--muted);font-size:12.5px}
+.etal-proto li{margin:2px 0}
+.etal-points{display:grid;gap:8px;justify-items:start;margin-top:8px}
+.etal-points .row{align-items:center}
+.etal-points label{display:inline-flex;align-items:center;gap:8px;font-size:14px}
 .acts{list-style:none;margin:0;padding:0}
 .acts li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:.5px solid var(--sep)}
 .acts li:first-child{border-top:0}
@@ -540,6 +546,7 @@ input:focus{outline:0;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,t
         <button id="csv-raw" class="btn primary" type="button">Télécharger les mesures (CSV)</button>
         <button id="csv-day" class="btn" type="button">Télécharger le résumé par jour (CSV)</button>
       </div>
+      <p id="csv-msg" class="cap" role="status"></p>
     </div>
   </section>
 
@@ -595,14 +602,69 @@ input:focus{outline:0;box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,t
         <p id="pilot-warn" class="cap"></p>
         <p id="pilot-msg" class="cap" role="status"></p>
         <h3 style="margin-top:18px">Étalonnage des sondes</h3>
-        <p>Plonge la sonde pH dans la solution tampon (ou vide puis remplis le réservoir), attends une minute que la mesure se stabilise, puis appuie sur le bouton correspondant.</p>
-        <div class="row">
-          <button class="btn" type="button" data-etal="ph=7">pH 7,00</button>
-          <button class="btn" type="button" data-etal="ph=4">pH 4,00</button>
-          <button class="btn" type="button" data-etal="niveau=vide">Réservoir vide</button>
-          <button class="btn" type="button" data-etal="niveau=plein">Réservoir plein</button>
+        <p>Chaque sonde s'étalonne séparément, en suivant le protocole de sa sous-section. Les mesures arrivent toutes les 10 s, sauf l'EC, mesurée une fois par minute.</p>
+
+        <h4 style="margin:16px 0 2px">pH</h4>
+        <ol class="etal-proto">
+          <li>Rince la sonde à l'eau claire, puis secoue-la sans l'essuyer.</li>
+          <li>Plonge-la dans le premier tampon, sans toucher le fond du flacon.</li>
+          <li>Attends que la tension ci-dessous soit stable, au moins une minute.</li>
+          <li>Saisis le pH du tampon dans « Tampon 1 », puis appuie sur Enregistrer.</li>
+          <li>Recommence de l'étape 1 avec le second tampon, dans « Tampon 2 ».</li>
+        </ol>
+        <p class="cap">Tension lue en ce moment : <b id="etal-ph-brut">—</b>. En mémoire : <span id="etal-ph-cal">—</span>.</p>
+        <div class="etal-points">
+          <div class="row"><label>Tampon 1 <input id="etal-ph1" type="number" step="0.01" min="0" max="14" value="7.00" inputmode="decimal" style="width:80px"></label>
+            <button class="btn" type="button" data-etal="ph=1" data-champ="#etal-ph1" data-msg="#etal-ph-msg" data-type="ph">Enregistrer</button></div>
+          <div class="row"><label>Tampon 2 <input id="etal-ph2" type="number" step="0.01" min="0" max="14" value="4.00" inputmode="decimal" style="width:80px"></label>
+            <button class="btn" type="button" data-etal="ph=2" data-champ="#etal-ph2" data-msg="#etal-ph-msg" data-type="ph">Enregistrer</button></div>
         </div>
-        <p id="etal-msg" class="cap" role="status"></p>
+        <p id="etal-ph-msg" class="cap" role="status"></p>
+
+        <h4 style="margin:16px 0 2px">Conductivité (EC)</h4>
+        <ol class="etal-proto">
+          <li>Rince la sonde à l'eau claire, puis secoue-la.</li>
+          <li>Plonge les deux mines de graphite dans la première solution étalon.</li>
+          <li>Attends deux minutes, soit deux mesures, et vérifie que le rapport x ne bouge plus.</li>
+          <li>Saisis la conductivité de la solution, en µS/cm, puis appuie sur Enregistrer.</li>
+          <li>Recommence de l'étape 1 avec la seconde solution. P et K sont calculés dès ce second point.</li>
+        </ol>
+        <p class="cap">Rapport x mesuré en ce moment : <b id="etal-ec-brut">—</b>. En mémoire : <span id="etal-ec-cal">—</span>.</p>
+        <div class="etal-points">
+          <div class="row"><label>Solution 1 <span><input id="etal-ec1" type="number" step="1" min="1" max="200000" value="1413" inputmode="numeric" style="width:90px"> µS/cm</span></label>
+            <button class="btn" type="button" data-etal="ec=1" data-champ="#etal-ec1" data-msg="#etal-ec-msg" data-type="ec">Enregistrer</button></div>
+          <div class="row"><label>Solution 2 <span><input id="etal-ec2" type="number" step="1" min="1" max="200000" value="12880" inputmode="numeric" style="width:90px"> µS/cm</span></label>
+            <button class="btn" type="button" data-etal="ec=2" data-champ="#etal-ec2" data-msg="#etal-ec-msg" data-type="ec">Enregistrer</button></div>
+        </div>
+        <p id="etal-ec-msg" class="cap" role="status"></p>
+
+        <h4 style="margin:16px 0 2px">Niveau d'eau</h4>
+        <ol class="etal-proto">
+          <li>Vide le réservoir, pompe à l'arrêt.</li>
+          <li>Attends que la résistance ci-dessous soit stable, puis appuie sur « Réservoir vide ».</li>
+          <li>Remplis le réservoir jusqu'au niveau de service.</li>
+          <li>Attends de nouveau, puis appuie sur « Réservoir plein ».</li>
+        </ol>
+        <p class="cap">Résistance lue en ce moment : <b id="etal-niv-brut">—</b>. En mémoire : <span id="etal-niv-cal">—</span>.</p>
+        <div class="row">
+          <button class="btn" type="button" data-etal="niveau=vide" data-msg="#etal-niv-msg" data-type="niveau">Réservoir vide</button>
+          <button class="btn" type="button" data-etal="niveau=plein" data-msg="#etal-niv-msg" data-type="niveau">Réservoir plein</button>
+        </div>
+        <p id="etal-niv-msg" class="cap" role="status"></p>
+
+        <h4 style="margin:16px 0 2px">Température de l'eau</h4>
+        <ol class="etal-proto">
+          <li>Plonge un thermomètre de référence juste à côté de la sonde DS18B20.</li>
+          <li>Attends au moins cinq minutes, que les deux affichent une valeur stable.</li>
+          <li>Saisis la température du thermomètre, puis appuie sur Enregistrer.</li>
+          <li>L'écart entre les deux est enregistré, et ajouté à toutes les mesures suivantes.</li>
+        </ol>
+        <p class="cap">Sonde en ce moment : <b id="etal-temp-brut">—</b>. En mémoire : <span id="etal-temp-cal">—</span>.</p>
+        <div class="row">
+          <label>Thermomètre <span><input id="etal-temp" type="number" step="0.1" min="-5" max="60" inputmode="decimal" style="width:80px"> °C</span></label>
+          <button class="btn" type="button" data-etal="" data-param="temperature" data-champ="#etal-temp" data-msg="#etal-temp-msg" data-type="temperature">Enregistrer</button>
+        </div>
+        <p id="etal-temp-msg" class="cap" role="status"></p>
       </div>
       <div id="srv-box">
         <h3>Connexion au serveur</h3>
@@ -918,6 +980,7 @@ async function connect(base){
 // Alertes du pilote (batterie, niveau, dosage...) et son journal, renvoyés par /api/latest.
 function srvState(j){
   srvAlerts=j.alertes||[];autoOn=j.auto!==false;
+  majEtalonnage(j.brut||{},j.etalonnage||{});
   (j.evenements||[]).slice().reverse().forEach(e=>{
     const k=e.t+e.texte;if(srvKeys.has(k))return;srvKeys.add(k);
     const t=Date.parse(e.t);
@@ -1090,6 +1153,12 @@ async function drawSummary(){
 // CSV « à la française » : point-virgule et virgule décimale, pour qu'Excel l'ouvre directement en colonnes.
 const csvNum=(v,d)=>v==null||Number.isNaN(v)?'':v.toFixed(d).replace('.',',');
 function saveCsv(name,lines){
+  // Dans la démonstration en ligne, le lecteur de page interdit de livrer un fichier :
+  // on le dit au lieu de ne rien faire. Sur la tour, DEMO_EN_LIGNE n'existe pas.
+  if(window.DEMO_EN_LIGNE){
+    $('#csv-msg').textContent='Téléchargement indisponible dans la démonstration en ligne. Sur la tour, ce bouton enregistre le fichier CSV.';
+    return;
+  }
   const blob=new Blob(['﻿'+lines.map(l=>l.join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
@@ -1424,12 +1493,52 @@ $('#pilot-form').addEventListener('submit',async e=>{
     showPilot(j);$('#pilot-msg').textContent='Enregistré.';render();
   }catch(err){$('#pilot-msg').textContent='Serveur injoignable.';}
 });
+/* ---------- Étalonnage : une sous-section par sonde ----------
+   Chaque bouton porte : data-etal (le capteur et le numéro du point), data-champ (le champ de
+   saisie, s'il y en a un), data-param (le nom du paramètre, « valeur » par défaut), data-msg (où
+   écrire le retour) et data-type (comment formuler ce retour). */
 document.querySelectorAll('[data-etal]').forEach(b=>b.addEventListener('click',async()=>{
+  const msg=$(b.dataset.msg), champ=b.dataset.champ?$(b.dataset.champ):null;
+  if(window.DEMO_EN_LIGNE){
+    msg.textContent='Indisponible dans la démonstration en ligne : il n\'y a pas de Raspberry derrière cette page. Sur la tour, ce bouton enregistre l\'étalonnage.';
+    return;
+  }
+  let q=b.dataset.etal||'';
+  if(champ){
+    const v=champ.value.trim().replace(',','.');
+    if(v===''||Number.isNaN(Number(v))){msg.textContent='Saisis d\'abord une valeur.';return;}
+    q+=(q?'&':'')+(b.dataset.param||'valeur')+'='+encodeURIComponent(v);
+  }
+  msg.textContent='Enregistrement...';
   try{
-    const r=await fetch(`${apiBase}/api/etalonner?${b.dataset.etal}`,{method:'POST'}),j=await r.json();
-    $('#etal-msg').textContent=r.ok?`Enregistré : ${b.textContent} = ${fmt(Object.values(j)[0],0)} ${b.dataset.etal.startsWith('ph')?'mV':'ohms'}.`:j.erreur;
-  }catch(err){$('#etal-msg').textContent='Serveur injoignable.';}
+    const r=await fetch(`${apiBase}/api/etalonner?${q}`,{method:'POST'}),j=await r.json();
+    if(!r.ok){msg.textContent=j.erreur||'Refusé par le serveur.';return;}
+    const n=(b.dataset.etal.match(/=(\d)/)||[])[1];
+    if(b.dataset.type==='ph')
+      msg.textContent=`Point ${n} enregistré : tampon pH ${fmt(j['ph_ref'+n],2)} à ${fmt(j['ph_mv'+n],0)} mV.`;
+    else if(b.dataset.type==='ec')
+      msg.textContent=`Point ${n} enregistré : ${fmt(j['ec_ref'+n],0)} µS/cm, x = ${fmt(j['ec_x'+n],3)}.`
+        +(j.ec_p?` Sonde étalonnée : P = ${fmt(j.ec_p,1)} ohms, K = ${fmt(j.ec_cellule,4)} cm-1.`
+                :' Fais maintenant l\'autre solution.');
+    else if(b.dataset.type==='temperature')
+      msg.textContent=`Écart enregistré : ${j.temp_eau_offset>0?'+':''}${fmt(j.temp_eau_offset,2)} °C `
+        +`(sonde à ${fmt(j.temp_eau_brut,2)} °C).`;
+    else
+      msg.textContent=`Enregistré : ${b.textContent} = ${fmt(Object.values(j)[0],0)} ohms.`;
+  }catch(err){msg.textContent='Serveur injoignable.';}
 }));
+/* Valeurs brutes et étalonnages en mémoire, rafraîchis à chaque /api/latest. */
+function majEtalonnage(brut,cal){
+  const t=(id,v)=>{const e=$(id);if(e)e.textContent=v;};
+  t('#etal-ph-brut',brut.ph_mv==null?'—':fmt(brut.ph_mv,0)+' mV');
+  t('#etal-ec-brut',brut.ec_x==null?'—':'x = '+fmt(brut.ec_x,3));
+  t('#etal-niv-brut',brut.etape_ohm==null?'—':fmt(brut.etape_ohm,0)+' ohms');
+  t('#etal-temp-brut',brut.temp_eau_brut==null?'—':fmt(brut.temp_eau_brut,2)+' °C');
+  t('#etal-ph-cal',cal.ph_mv1==null?'—':`pH ${fmt(cal.ph_ref1,2)} à ${fmt(cal.ph_mv1,0)} mV, pH ${fmt(cal.ph_ref2,2)} à ${fmt(cal.ph_mv2,0)} mV`);
+  t('#etal-ec-cal',cal.ec_cellule==null?'—':`P = ${fmt(cal.ec_p,1)} ohms, K = ${fmt(cal.ec_cellule,4)} cm-1, R1 = ${fmt(cal.ec_r1,0)} ohms`);
+  t('#etal-niv-cal',cal.etape_vide==null?'—':`vide ${fmt(cal.etape_vide,0)} ohms, plein ${fmt(cal.etape_plein,0)} ohms`);
+  t('#etal-temp-cal',cal.temp_eau_offset==null?'—':`${cal.temp_eau_offset>0?'+':''}${fmt(cal.temp_eau_offset,2)} °C`);
+}
 
 /* ---------- Stock de nutriments A et B (litres) : saisi au changement de légume ---------- */
 let stock={};

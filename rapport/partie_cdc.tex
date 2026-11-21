@@ -1,0 +1,99 @@
+% =====================================================================
+% PARTIE 1 : LE CAHIER DES CHARGES
+\clearpage
+\partieENO{Le cahier des charges}
+
+Avant de calculer ou de construire quoi que ce soit, il faut dire ce que la tour doit faire, dans quelles limites, et à quoi l'on reconnaîtra qu'elle y arrive. C'est le rôle du cahier des charges. Je commence par le besoin et le contexte du projet (1.1), puis je fixe les objectifs de la tour (1.2). Je liste ensuite les contraintes qui s'imposent à moi (1.3) et je les traduis en exigences chiffrées (1.4). Je précise ce qui reste en dehors du projet (1.5), puis les critères qui permettront de valider le résultat (1.6). Chaque exigence renvoie à la partie du rapport où elle est étudiée.
+
+\subsection{Le besoin}
+
+Le point de départ est simple : faire pousser des plantes sans terre, dans une eau dont le système contrôle lui-même la composition. Dans une tour d'hydroponie, les racines reçoivent une solution d'eau et d'engrais qui circule en boucle. Si l'eau est trop acide, ou trop pauvre ou trop riche en engrais, les plantes souffrent. Aujourd'hui, ce contrôle se fait à la main, avec des appareils de mesure portables, et il suppose que quelqu'un passe tous les jours.
+
+Le besoin est donc le suivant : une tour qui \textbf{mesure} la qualité de son eau, qui \textbf{corrige} seule ce qui doit l'être, qui \textbf{fonctionne sans prise de courant}, grâce au soleil, et qui permet de \textbf{surveiller} la culture à distance. Le projet est mené à l'Université de la Polynésie française (UPF), à Tahiti, dans le cadre de la licence « Sciences pour l'ingénieur ». Mon tuteur, Monsieur Anthony Utahia, fournit la tour et valide les grandes décisions.
+
+\begin{aretenir}
+La tour doit pouvoir se garder presque seule : elle mesure son eau, la corrige, se nourrit du soleil et envoie ses mesures sur un téléphone.
+\end{aretenir}
+
+\subsection{Les objectifs}
+
+Je traduis le besoin en cinq fonctions que la tour doit remplir. Je mets la protection au même niveau que l'arrosage, car une pompe qui tourne à vide ou une batterie vidée à fond peuvent abîmer le matériel pour de bon.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.15}
+
+Le tableau suivant relie chaque fonction à la partie du rapport où elle est étudiée.
+
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{2.4cm}|Y|>{\raggedright\arraybackslash}p{2.6cm}|}
+\hline
+\textbf{Fonction} & \textbf{Ce que la tour doit faire} & \textbf{Étudié dans} \\
+\hline
+Faire circuler l'eau & Monter l'eau en haut du tube, la répartir sur les racines et la ramener au bac, par cycles & Parties 3 et 4 \\
+\hline
+Mesurer & Lire en continu le pH, la conductivité (EC), les températures de l'eau et de l'air, l'humidité, la lumière, le niveau du bac et l'état de la batterie & Partie 7 \\
+\hline
+Corriger & Ajouter l'engrais ou le correcteur de pH par petites doses, selon la plante cultivée & Partie 8 \\
+\hline
+S'alimenter seule & Fonctionner avec un panneau solaire et des batteries, sans réseau électrique & Partie 5 \\
+\hline
+Se protéger et se montrer & Couper les organes en cas de danger, et afficher les mesures sur un tableau de bord web et sur un écran & Parties 8 et 9 \\
+\hline
+\end{tabularx}
+\end{center}
+
+\subsection{Les contraintes}
+
+Le cahier des charges ne dit pas seulement ce que l'on veut : il dit aussi ce que l'on n'a pas le droit de changer. Je distingue les contraintes qui viennent du projet, celles qui viennent du site, et celles qui viennent du matériel.
+
+\textbf{Les contraintes du projet.} La tour est fournie et imposée par mon tuteur : c'est un tube de PVC vertical d'un mètre, de \qty{144}{mm} de diamètre intérieur, qui porte douze plants. L'alimentation par énergie solaire est imposée aussi. Le délai est court : trois mois, de septembre à novembre 2026, pour mener le projet de bout en bout. Cette durée interdit de comparer plusieurs systèmes ; elle impose aussi une plante à cycle court, la laitue, prête environ un mois après son repiquage.
+
+\textbf{Les contraintes du site.} La tour est installée à l'UPF, à Tahiti : climat chaud et humide, eau qui se réchauffe vite, soleil abondant mais irrégulier. Le calcul de l'énergie se fait sur le mois le moins ensoleillé, et non sur la moyenne de l'année, pour que la tour tienne en toute saison.
+
+\textbf{Les contraintes du matériel.} Une partie du matériel est déjà disponible (Arduino Uno, Raspberry Pi, sonde de pH, kit de capteurs), le reste est commandé à l'étranger, avec des délais de livraison qui peuvent dépasser la durée du projet. C'est pour cela que je fabrique moi-même la sonde de conductivité. Enfin, le travail de mon coéquipier, Gabriel Piritua (armoire électrique et chariot), est hors de ce rapport : le cahier des charges ne couvre que ma part.
+
+\subsection{Les exigences chiffrées}
+
+Je donne maintenant à chaque fonction une valeur à atteindre. Ces valeurs viennent des calculs et des choix détaillés dans les parties d'études ; le tableau les rassemble pour qu'on puisse les lire d'un seul regard.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{2.7cm}|Y|>{\raggedright\arraybackslash}p{2.4cm}|}
+\hline
+\textbf{Sujet} & \textbf{Exigence} & \textbf{Étudié dans} \\
+\hline
+Culture & Douze plants de laitue dans la tour d'un mètre ; récolte environ un mois après le repiquage & Partie 13 \\
+\hline
+Eau & pH entre 5,6 et 6,0 ; conductivité entre \qty{1200}{\micro S/cm} et \qty{1600}{\micro S/cm} ; alarme si le pH sort de 5,2 à 6,5 ou si l'EC sort de \qty{800}{\micro S/cm} à \qty{2200}{\micro S/cm} & Parties 8 et 13 \\
+\hline
+Réservoir & Un bac unique de \qty{152}{L}, qui contient toute la solution nutritive ; arrêt de la pompe quand le niveau passe sous \qty{15}{\percent} & Parties 3 et 8 \\
+\hline
+Arrosage & Pompe de circulation par cycles de \qty{15}{min} de marche et \qty{15}{min} d'arrêt le jour, réglables, et quelques marches seulement la nuit (\qty{6,75}{h} par jour au total) & Parties 3 et 8 \\
+\hline
+Mesures & Une lecture du pH toutes les \qty{10}{s} ; une lecture de l'EC par minute ; les deux sondes jamais alimentées en même temps & Partie 7 \\
+\hline
+Énergie & Panneau de \qty{120}{Wc} et deux batteries de \qty{12}{V} en parallèle (\qty{23}{Ah}) ; consommation d'environ \qty{227}{Wh/j} couverte au pire mois, avec \qty{6,75}{h} de pompe par jour & Partie 5 \\
+\hline
+Sécurité & Si le Raspberry ne répond plus pendant \qty{30}{s}, l'Arduino coupe toutes les pompes ; coupure quand la batterie est basse ; nombre de doses par jour limité & Partie 8 \\
+\hline
+Surveillance & Tableau de bord web consultable à distance après connexion, et écran sur la tour & Parties 8 et 9 \\
+\hline
+Coût & Environ \qty{101863}{XPF} de matériel, livraison comprise, et environ \qty{12260}{XPF} par an de fonctionnement & Parties 11 et 12 \\
+\hline
+\end{tabularx}
+\end{center}
+
+\begin{attention}
+Ces valeurs sont les exigences que je me fixe, pas des résultats mesurés. La plupart sont calculées à partir de fiches techniques et d'hypothèses. Le bilan (partie 14) dit, fonction par fonction, ce qui a déjà été vérifié sur la tour et ce qui reste à essayer.
+\end{attention}
+
+\subsection{Ce qui est hors du projet}
+
+Pour que le cahier des charges reste réaliste, je dis aussi ce que je ne traite pas. L'armoire électrique et le chariot sont le travail de mon coéquipier. Les plantes à cycle long, comme la tomate cerise et le poivron, sont prévues dans le tableau de bord, mais je ne les essaie qu'après le projet. Les prix de vente en plusieurs formules ne sont pas étudiés dans cette version.
+
+\subsection{Les critères de validation}
+
+Une exigence n'a de valeur que si l'on sait comment la vérifier. Pour chaque fonction, je prévois une façon de conclure que la tour répond au besoin. Pour l'eau, la tour tient le pH et la conductivité dans leurs plages pendant plusieurs jours, sans que je touche à quoi que ce soit. Pour l'énergie, la batterie ne descend jamais sous son seuil de coupure pendant une semaine, y compris par temps couvert. Pour la sécurité, une panne simulée (câble USB débranché, réservoir presque vide) coupe bien les pompes. Pour la surveillance, les mesures arrivent sur le téléphone depuis l'extérieur du réseau de l'université. Enfin, pour la culture, les douze plants arrivent à la récolte.
+
+\begin{aretenir}
+Le cahier des charges se résume en une phrase : une tour solaire de douze plants de laitue qui mesure son eau, la corrige seule, se protège, et se surveille à distance. Les parties suivantes montrent comment chaque exigence est calculée, construite et vérifiée.
+\end{aretenir}

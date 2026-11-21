@@ -1,0 +1,155 @@
+% ---------------------------------------------------------------------
+\Needspace{8\baselineskip}\subsection{Essais}
+
+Le matériel n'est pas encore disponible pendant l'écriture du programme. J'organise donc les essais en deux temps : d'abord tout vérifier sur ordinateur, ensuite préparer un essai complet à faire dès que la tour sera câblée. Je veux que cet essai se fasse d'un coup et qu'il indique, pour chaque échec, la piste à vérifier. Depuis le 1er novembre, une partie du matériel est en service (parties 8.7 et 8.8). Cette sous-partie présente les essais réalisés sans matériel et le défaut qu'ils révèlent, puis la procédure d'essai sur la tour. Elle fait enfin le point sur ce qui est déjà vérifié sur la tour et ce qui reste à confirmer.
+
+\subsubsection*{Essais réalisés sans matériel}
+
+Pour tester sans matériel, je simule l'Arduino. Une simulation trop simple ne prouverait rien : j'écris donc un faux Arduino qui répond aux vrais messages Firmata, pour que le code de communication soit réellement exercé, octet par octet. Voici ce que je vérifie sur ordinateur :
+
+\begin{itemize}
+\item \textbf{Conversions} : pH 7,00 à \qty{1500}{mV} et 4,00 à \qty{2032}{mV} ; \qty{1413}{\micro S/cm} pour la solution d'étalonnage ; niveau \qty{50}{\percent} à mi-course.
+\item \textbf{Décisions} : scénario complet du pilote (doses espacées de \qty{10}{min}, coupure à \qty{29}{\percent}, reprise au soleil après 5 min, nouvel arrêt sans soleil, reprise à \qty{36}{\percent}, conseils sous \qty{30}{\percent} et \qty{35}{\percent}, stock bas).
+\item \textbf{Dialogue avec l'Arduino} : un faux Arduino répond aux vrais messages Firmata (I2C\ix{12}, OneWire) ; il permet de vérifier la lecture de chaque capteur et l'ordre d'allumage des sondes.
+\item \textbf{Dashboard} : réglages, conseils, doses manuelles, journal et alertes, testés dans un navigateur avec le serveur et l'Arduino simulé.
+\end{itemize}
+
+Ces essais font apparaître un défaut, corrigé depuis : quand l'EC reste trop basse, le pH n'est jamais corrigé ; les doses alternent maintenant entre engrais et pH$-$.
+
+\subsubsection*{Procédure d'essai sur la tour}
+
+Je choisis de tester tout le matériel d'un coup plutôt qu'élément par élément : le script donne un résultat pour chaque élément, ce qui permet de tout câbler puis de repérer aussitôt ce qui ne répond pas. Les essais des pompes demandent une confirmation, car seul l'opérateur peut voir si une pompe tourne vraiment.
+
+Le script \texttt{essai\_materiel.py} teste tout le matériel d'un coup, avant de lancer le pilotage. Il affiche pour chaque élément OK ou ÉCHEC, avec un conseil de réparation. Il commence par les modules I2C\ix{12} : chaque module répond-il à son adresse ? Il passe ensuite aux capteurs, dont les valeurs sont à comparer avec la réalité (thermomètre, main sur le capteur de lumière\ldots). Il teste alors l'alternance pH / EC, en mesurant le pH sonde EC éteinte puis allumée. Il vérifie l'écran OLED, qui doit afficher « ESSAI HYDROTOUR », puis les pompes : chacune tourne de \qty{2}{s} à \qty{5}{s} et l'opérateur confirme. Il termine par la sécurité : le Raspberry se tait volontairement, et la pompe doit s'arrêter seule après \qty{30}{s}.
+
+Le guide \texttt{ESSAIS.md} détaille ensuite l'étalonnage et les vérifications du pilotage (cycle court, coupure de la batterie forcée, mode manuel).
+
+\subsubsection*{Ce qui est vérifié et ce qui reste à vérifier}
+
+Je préfère lister honnêtement ce qui n'a pas encore été vérifié. Certains points ne peuvent être confirmés qu'avec le vrai matériel, comme le temps de retour de la sonde pH ou le débit réel des doseuses.
+
+\textbf{Vérifié sur la tour (1er novembre) :}
+
+\begin{itemize}
+\item la compilation et le téléversement de \texttt{HydroTour\_Firmata}, et le dialogue Firmata avec le Raspberry ;
+\item la lecture du DHT20\ix{24}, du BMP280 et de l'horloge, et l'affichage de l'écran ;
+\item la lecture et l'étalonnage de la sonde pH (branchée provisoirement sur A1) ;
+\item l'enregistrement des mesures, le dashboard et l'export des données ;
+\item l'accès depuis Internet, la page de connexion et le refus de \texttt{/api/data} par Internet.
+\end{itemize}
+
+\textbf{Points à confirmer sur le vrai matériel :}
+
+\begin{itemize}
+\item l'ADS1115\ix{16}, puis la sonde pH sur celui-ci, la sonde EC et le ruban de niveau ;
+\item la carte 8 MOSFET\ix{15}, les pompes et la sécurité des \qty{30}{s} ;
+\item la lecture de la DS18B20\ix{24} ;
+\item le sens du courant de l'INA260\ix{22} (charge positive au soleil) ;
+\item le temps de retour du pH après la lecture de l'EC (\qty{5}{s} prévues) ;
+\item le débit réel des doseuses, pour ajuster la durée des doses ;
+\item l'étalonnage du ruban, et la cause des lignes à l'heure incohérente (partie 8.8) ;
+\item l'essai complet avec \texttt{essai\_materiel.py}, une fois tout câblé.
+\end{itemize}
+
+% ---------------------------------------------------------------------
+\Needspace{8\baselineskip}\subsection{Synthèse de l'étude informatique}
+
+Pour faire le point, je reprends chaque fonction de la tour avec la solution retenue et son état d'avancement. Je tiens à distinguer ce qui est vérifié sur la tour, ce qui est écrit et testé sur ordinateur, et ce qui reste à essayer : cela montre exactement où en est le projet et par où continuer. Cette sous-partie rassemble dans un tableau les fonctions de la tour, les solutions retenues et leur état, puis dresse le bilan du programme.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{|l|Y|l|}
+\hline
+\textbf{Fonction} & \textbf{Solution retenue} & \textbf{État} \\
+\hline
+Répartition des rôles & Raspberry : décisions en Python ; Arduino : ConfigurableFirmata & vérifié sur la tour \\
+\hline
+Mesures de l'air et heure & DHT20\ix{24}, BMP280 et horloge sur le bus I2C\ix{12} & vérifié sur la tour \\
+\hline
+Mesure du pH & ADS1115\ix{16} 16 bits ; en attendant, entrée A1 de l'Arduino (10 bits) & provisoire \\
+\hline
+Étalonnage & boutons pH 7, pH 4, vide, plein dans le dashboard & pH fait \\
+\hline
+Supervision & dashboard web, alertes, journal, écran OLED & vérifié sur la tour \\
+\hline
+Accès à distance & Tailscale\ix{20} Funnel\ix{20} ; identifiant, mot de passe et captcha & en service \\
+\hline
+Sécurité de liaison & coupure des pompes après \qty{30}{s} sans message & à essayer \\
+\hline
+Commande des pompes & carte 8 MOSFET\ix{15} I2C\ix{12}, sorties 0 à 3 & à essayer \\
+\hline
+Mesures EC et niveau & EC : sonde fabriquée sur D5, D6 et A0 ; niveau : ADS1115\ix{16} 16 bits & à essayer \\
+\hline
+Perturbation pH / EC & sonde pH coupée par la sortie 4, sonde EC alimentée par D5 et D6 & à essayer \\
+\hline
+Arrosage & cycle réglable, arrêt si réservoir sous \qty{15}{\percent} & écrit, testé \\
+\hline
+Protection de la batterie & coupure \qty{30}{\percent}, reprise \qty{35}{\percent} ou au soleil (\qty{1,5}{A} et \qty{60}{\percent}) & écrit, testé \\
+\hline
+Dosage & cibles selon légume et stade, doses de \qty{3}{s} / \qty{2}{s}, \qty{10}{min} d'écart, 12 par jour & écrit, testé \\
+\hline
+\end{tabularx}
+\caption{Fonctions de la tour, solutions retenues et état.}
+\end{table}
+
+« Vérifié sur la tour » signifie essayé avec le vrai matériel le 1er novembre ; « écrit, testé » signifie vérifié sur ordinateur avec un Arduino simulé. Les essais suivants, guidés par \texttt{essai\_materiel.py}, valideront le reste au fur et à mesure du câblage.
+
+Le programme est prêt à piloter la tour seule : il arrose, nourrit les plantes selon leur stade, protège sa batterie et prévient quand il a besoin d'une intervention. Les réglages se font depuis le dashboard, sans toucher au code, et chaque décision est expliquée dans le journal. Depuis novembre, la tour se surveille aussi depuis n'importe où, derrière une page de connexion, et les premières mesures réelles confirment que la chaîne complète fonctionne, de la sonde jusqu'au téléphone.
+
+% ---------------------------------------------------------------------
+\Needspace{8\baselineskip}\subsection{Organisation des fichiers}
+
+Pour qu'une autre personne puisse reprendre le projet, je rassemble chaque fichier avec son rôle. Je fais en sorte que le dossier \texttt{SERVEUR} se suffise à lui-même : il suffit de le copier sur le Raspberry pour que tout fonctionne. Cette sous-partie donne la liste des fichiers du projet avec le rôle de chacun, puis les commandes pour installer et lancer la tour. Tous ces fichiers sont depuis le 20 novembre 2026 sur le dépôt GitHub du projet, dont la partie 9.6 donne l'adresse et le contenu.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabularx}{\textwidth}{|l|Y|}
+\hline
+\textbf{Fichier} & \textbf{Rôle} \\
+\hline
+\texttt{ARDUINO/HydroTour\_Firmata} & programme de l'Arduino : ConfigurableFirmata et sécurité de \qty{30}{s} \\
+\hline
+\texttt{SERVEUR/server.py} & programme principal : boucle de mesure, base de données, dashboard, écran \\
+\hline
+\texttt{SERVEUR/pilote.py} & décisions : cycle, batterie, soleil, dosage, alertes ; conversions \\
+\hline
+\texttt{SERVEUR/arduino.py} & dialogue avec l'Arduino et lecture de chaque capteur \\
+\hline
+\texttt{SERVEUR/hydrotour.html} & dashboard ; contient aussi le tableau des légumes \\
+\hline
+\texttt{SERVEUR/essai\_materiel.py} & essai de tout le matériel \\
+\hline
+\texttt{SERVEUR/ESSAIS.md} & guide des essais et de l'étalonnage \\
+\hline
+\texttt{SERVEUR/fausses\_mesures.py} & fausses mesures pour essayer le dashboard sans capteurs \\
+\hline
+\texttt{SERVEUR/acces.py} & page de connexion, captcha, identifiant et mot de passe partagés \\
+\hline
+\texttt{SERVEUR/diagnostic.py} & liste les modules et capteurs qui répondent vraiment \\
+\hline
+\texttt{SERVEUR/INTERNET.md} & guide de l'accès par Internet (Tailscale\ix{20} Funnel\ix{20}) et du premier accès \\
+\hline
+\texttt{ARDUINO/HydroTour\_Firmata\_uno.hex} & programme de l'Arduino déjà compilé pour l'Uno, à téléverser avec \texttt{avrdude} \\
+\hline
+\end{tabularx}
+\caption{Fichiers du projet.}
+\end{table}
+
+Pour installer la tour, il suffit de copier le dossier \texttt{SERVEUR} sur le Raspberry (dans \texttt{\textasciitilde/hydrotour}) et d'exécuter :
+
+\begin{verbatim}
+sudo apt install python3-flask python3-pil
+python3 -m venv --system-site-packages venv
+venv/bin/pip install pyfirmata2
+venv/bin/python -u server.py
+\end{verbatim}
+
+Sur la tour, la dernière commande est lancée par le service \texttt{hydrotour.service} à chaque démarrage. Pour l'accès par Internet, il faut en plus publier le port 5001 avec \texttt{sudo tailscale funnel --bg 5001} (guide \texttt{INTERNET.md}).
+
+% ---------------------------------------------------------------------
+\Needspace{8\baselineskip}\subsection{La première version du programme : cerveau.py}
+
+Avant l'étude précédente, j'avais écrit une première architecture, dans laquelle un seul programme du Raspberry (\texttt{cerveau.py}) dialoguait avec un Arduino à lignes de texte. Je la garde ici parce que le code correspondant existe encore dans le dossier du projet et que d'autres parties du rapport s'y réfèrent, par exemple la détection de chute (partie 4). Les sous-parties précédentes décrivent la version actuelle ; celles-ci décrivent la première. Seule la version actuelle (\texttt{server.py}, \texttt{pilote.py} et \texttt{arduino.py}) est à installer sur le Raspberry (tutoriel de la partie 10) ; la première version est conservée pour mémoire, et c'est elle qui avait la sécurité de niveau dans l'Arduino.
+
